@@ -51,6 +51,9 @@
     font-family: inherit; cursor: pointer; border: none;
     border-radius: 10px; font-size: .87rem; font-weight: 600;
   }
+  :is(button, a, input, select):focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
   .btn {
     padding: 9px 14px; background: var(--card-bg); color: var(--text);
     border: 1px solid var(--border); box-shadow: var(--shadow);
@@ -61,7 +64,7 @@
   .btn.primary:hover { filter: brightness(1.08); }
   .btn.editing { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  .search-row { margin-bottom: 16px; }
+  .search-row { margin-bottom: 14px; }
   .search-row input {
     width: 100%; padding: 12px 16px; font-size: .95rem;
     border: 1px solid var(--border); border-radius: 12px;
@@ -71,10 +74,13 @@
   .search-row input:focus { border-color: var(--accent); }
 
   .tabs {
-    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 10;
+    padding: 10px 0 12px; margin-bottom: 12px;
+    background: var(--bg);
   }
   .tab {
-    padding: 9px 16px; border-radius: 999px;
+    padding: 10px 16px; border-radius: 999px;
     background: var(--card-bg); color: var(--text-sub);
     border: 1px solid var(--border); font-size: .88rem; font-weight: 600;
   }
@@ -90,17 +96,17 @@
   body.edit-mode .section-title .cat-actions { display: inline-flex; }
   .cat-actions button {
     background: none; border: none; font-size: .78rem; color: var(--text-sub);
-    padding: 2px 6px; border-radius: 6px;
+    padding: 4px 8px; border-radius: 6px;
   }
   .cat-actions button:hover { background: var(--accent-soft); color: var(--accent); }
   .cat-actions button.del:hover { color: var(--danger); }
 
   .grid {
     display: grid; gap: 12px;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
   .card {
-    position: relative; display: block;
+    position: relative; display: flex; gap: 12px; align-items: flex-start;
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 14px; padding: 16px 16px 14px;
     text-decoration: none; color: var(--text);
@@ -108,33 +114,42 @@
     transition: transform .12s, border-color .12s;
   }
   .card:hover { transform: translateY(-2px); border-color: var(--accent); }
-  .card .name {
-    font-weight: 700; font-size: .98rem; margin-bottom: 4px;
-    padding-right: 56px; letter-spacing: -0.01em;
+  .card .icon {
+    flex: 0 0 auto; width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; border-radius: 11px;
+    background: var(--accent-soft);
   }
-  .card .desc { font-size: .82rem; color: var(--text-sub); margin-bottom: 8px; min-height: 1.1em; }
+  .card .body { min-width: 0; flex: 1; }
+  .card .name {
+    font-weight: 700; font-size: .98rem; margin-bottom: 3px;
+    padding-right: 34px; letter-spacing: -0.01em;
+  }
+  .card .desc { font-size: .82rem; color: var(--text-sub); margin-bottom: 7px; min-height: 1.1em; line-height: 1.45; }
   .card .url {
     font-size: .74rem; color: var(--accent); opacity: .85;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
   }
   .card .star-btn {
-    position: absolute; top: 10px; right: 10px;
-    background: none; font-size: 1.15rem; line-height: 1;
-    padding: 6px; border-radius: 8px; color: var(--border);
+    position: absolute; top: 8px; right: 8px;
+    background: none; font-size: 1.2rem; line-height: 1;
+    width: 38px; height: 38px; border-radius: 9px; color: var(--border);
   }
   .card .star-btn:hover { background: var(--accent-soft); }
   .card .star-btn.on { color: var(--star); }
   .card .edit-btns {
-    position: absolute; top: 10px; right: 42px;
-    display: none; gap: 2px;
+    position: absolute; top: 8px; right: 46px;
+    display: none; gap: 0;
   }
   body.edit-mode .card .edit-btns { display: flex; }
+  body.edit-mode .card .name { padding-right: 170px; }
   .card .edit-btns button {
-    background: none; font-size: .95rem; padding: 6px; border-radius: 8px;
+    background: none; font-size: .95rem; width: 34px; height: 38px; border-radius: 9px;
     color: var(--text-sub);
   }
   .card .edit-btns button:hover { background: var(--accent-soft); color: var(--accent); }
   .card .edit-btns button.del:hover { color: var(--danger); }
+  .card .edit-btns button:disabled { opacity: .3; cursor: default; }
 
   .empty {
     text-align: center; color: var(--text-sub); padding: 48px 0; font-size: .92rem;
@@ -150,6 +165,7 @@
   .modal {
     background: var(--card-bg); border-radius: 16px; padding: 24px;
     width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,.25);
+    max-height: 90vh; overflow-y: auto;
   }
   .modal h2 { font-size: 1.1rem; margin-bottom: 16px; }
   .modal label { display: block; font-size: .82rem; font-weight: 600; color: var(--text-sub); margin: 12px 0 5px; }
@@ -159,10 +175,13 @@
     background: var(--bg); color: var(--text); outline: none;
   }
   .modal input:focus, .modal select:focus { border-color: var(--accent); }
+  .modal .row2 { display: flex; gap: 10px; }
+  .modal .row2 > div:first-child { flex: 0 0 90px; }
+  .modal .row2 > div:last-child { flex: 1; }
   .modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
   footer {
-    margin-top: 40px; text-align: center; font-size: .78rem; color: var(--text-sub);
+    margin-top: 40px; text-align: center; font-size: .78rem; color: var(--text-sub); line-height: 1.8;
   }
   footer button { background: none; color: var(--text-sub); text-decoration: underline; font-size: .78rem; font-weight: 500; }
   footer button:hover { color: var(--danger); }
@@ -187,7 +206,7 @@
   <main id="content"></main>
 
   <footer>
-    변경 사항은 이 브라우저에 자동 저장됩니다 ·
+    카드의 ☆를 누르면 즐겨찾기에 모아볼 수 있습니다 · 변경 사항은 이 브라우저에 자동 저장됩니다<br>
     <button id="resetBtn">기본값으로 초기화</button>
   </footer>
 </div>
@@ -196,8 +215,16 @@
 <div class="modal-bg" id="linkModal">
   <div class="modal">
     <h2 id="linkModalTitle">링크 추가</h2>
-    <label>이름</label>
-    <input type="text" id="fName" placeholder="예: 등급 시뮬레이터">
+    <div class="row2">
+      <div>
+        <label>아이콘</label>
+        <input type="text" id="fIcon" placeholder="🔗" maxlength="4">
+      </div>
+      <div>
+        <label>이름</label>
+        <input type="text" id="fName" placeholder="예: 등급 시뮬레이터">
+      </div>
+    </div>
     <label>주소 (URL)</label>
     <input type="url" id="fUrl" placeholder="https://…">
     <label>설명 (선택)</label>
@@ -218,26 +245,27 @@
     "기본값으로 초기화"를 누르면 아래 목록으로 되돌아갑니다)
    ================================================================ */
 const DEFAULT_DATA = {
-  categories: ["툴", "일반 주소"],
+  categories: ["성적", "대입", "국어", "일반 주소"],
   links: [
-    { name: "등급 시뮬레이터",              url: "https://maechorom31-pixel.github.io/grade/",                  desc: "내신 등급 계산 시뮬레이터",        cat: "툴", fav: true },
-    { name: "(지필/수행) 성적 슬립 생성기",  url: "https://maechorom31-pixel.github.io/grade/slip/index.html",   desc: "지필·수행 성적 슬립 생성",         cat: "툴", fav: false },
-    { name: "성취평가 분할점수 예측",        url: "https://maechorom31-pixel.github.io/grade/cutscore/index.html", desc: "성취평가제 분할점수 예측",        cat: "툴", fav: false },
-    { name: "수시입결검색기",               url: "https://maechorom31-pixel.github.io/univ",                    desc: "대입 수시 입시결과 검색",          cat: "툴", fav: true },
-    { name: "탐구 키워드 펼쳐보기",          url: "https://maechorom31-pixel.github.io/keyword-explorer/",       desc: "탐구 주제 키워드 탐색",            cat: "툴", fav: false },
-    { name: "문학 자율학습",                url: "https://maechorom31-pixel.github.io/literary-Texts/",         desc: "문학 지문 자율학습",               cat: "툴", fav: false },
-    { name: "독서 자율학습",                url: "https://maechorom31-pixel.github.io/Non-literary-Texts/",     desc: "독서(비문학) 지문 자율학습",       cat: "툴", fav: false },
-    { name: "전남교육포털",                 url: "https://jne.eduptl.kr/",   desc: "전라남도교육청 교육포털",   cat: "일반 주소", fav: false },
-    { name: "전남스터디",                   url: "https://www.jnstudy.kr/", desc: "전남 학습 지원 사이트",     cat: "일반 주소", fav: false },
-    { name: "전남 AI 교육 플랫폼",           url: "https://ai.jne.kr/",      desc: "전남교육청 AI 플랫폼",      cat: "일반 주소", fav: false }
+    { icon: "📊", name: "등급 시뮬레이터",             url: "https://maechorom31-pixel.github.io/grade/",                    desc: "3학년 1학기 내신 등급 산출 시뮬레이션",                cat: "성적", fav: true },
+    { icon: "🧾", name: "(지필/수행) 성적 슬립 생성기", url: "https://maechorom31-pixel.github.io/grade/slip/index.html",     desc: "지필·수행 점수를 입력해 성적 슬립 생성·출력",           cat: "성적", fav: false },
+    { icon: "✂️", name: "성취평가 분할점수 예측",       url: "https://maechorom31-pixel.github.io/grade/cutscore/index.html", desc: "성취평가제 분할점수(A~E) 예측·종합 관리",              cat: "성적", fav: false },
+    { icon: "🎓", name: "수시입결검색기",              url: "https://maechorom31-pixel.github.io/univ",                      desc: "대입 수시 입시결과 검색 (2022~2026학년도)",            cat: "대입", fav: true },
+    { icon: "💡", name: "탐구 키워드 펼쳐보기",         url: "https://maechorom31-pixel.github.io/keyword-explorer/",         desc: "탐구 주제·키워드 색인을 펼쳐서 탐색",                  cat: "대입", fav: false },
+    { icon: "📖", name: "문학 자율학습",               url: "https://maechorom31-pixel.github.io/literary-Texts/",           desc: "수능특강 문학 — 작품 급소(크럭스)·O/X 선지 판단 학습", cat: "국어", fav: false },
+    { icon: "📚", name: "독서 자율학습",               url: "https://maechorom31-pixel.github.io/Non-literary-Texts/",       desc: "수능특강 독서 — 도식 기반 능동 회상·분산 반복 학습",   cat: "국어", fav: false },
+    { icon: "🏫", name: "전남교육포털",                url: "https://jne.eduptl.kr/",   desc: "전라남도교육청 통합 교육포털",             cat: "일반 주소", fav: false },
+    { icon: "🧑‍🏫", name: "전남교육연수포털",          url: "https://www.jnstudy.kr/", desc: "전남 연수원 — 교원 연수 신청·이수 관리",   cat: "일반 주소", fav: false },
+    { icon: "🤖", name: "AI 맞춤형 교수학습",          url: "https://ai.jne.kr/",      desc: "전남교육청 AI 맞춤형 교수학습 플랫폼",     cat: "일반 주소", fav: false }
   ]
 };
 
-const STORE_KEY = "linkhub-data-v1";
+const STORE_KEY = "linkhub-data-v2";
 let data = loadData();
-let currentTab = "즐겨찾기";
 let editMode = false;
 let editingIndex = null; // null = 새 링크
+// 첫 화면: 즐겨찾기가 있으면 즐겨찾기 탭, 없으면 전체 탭
+let currentTab = data.links.some(l => l.fav) ? "즐겨찾기" : "전체";
 
 function loadData() {
   try {
@@ -335,7 +363,7 @@ function renderContent() {
 
     const grid = document.createElement("div");
     grid.className = "grid";
-    g.links.forEach(l => grid.appendChild(makeCard(l)));
+    g.links.forEach((l, pos) => grid.appendChild(makeCard(l, g.links, pos)));
     if (g.links.length) content.appendChild(grid);
   });
 
@@ -349,12 +377,20 @@ function renderContent() {
   }
 }
 
-function makeCard(l) {
+function makeCard(l, groupLinks, pos) {
   const a = document.createElement("a");
   a.className = "card";
   a.href = l.url;
   a.target = "_blank";
   a.rel = "noopener";
+
+  const icon = document.createElement("div");
+  icon.className = "icon";
+  icon.textContent = l.icon || "🔗";
+  icon.setAttribute("aria-hidden", "true");
+
+  const body = document.createElement("div");
+  body.className = "body";
 
   const name = document.createElement("div");
   name.className = "name";
@@ -368,10 +404,15 @@ function makeCard(l) {
   url.className = "url";
   url.textContent = l.url.replace(/^https?:\/\//, "");
 
+  body.appendChild(name);
+  body.appendChild(desc);
+  body.appendChild(url);
+
   const star = document.createElement("button");
   star.className = "star-btn" + (l.fav ? " on" : "");
   star.textContent = l.fav ? "★" : "☆";
   star.title = "즐겨찾기";
+  star.setAttribute("aria-label", (l.fav ? "즐겨찾기 해제: " : "즐겨찾기 추가: ") + l.name);
   star.onclick = e => {
     e.preventDefault(); e.stopPropagation();
     data.links[l._i].fav = !data.links[l._i].fav;
@@ -380,11 +421,30 @@ function makeCard(l) {
 
   const editBtns = document.createElement("span");
   editBtns.className = "edit-btns";
+
+  // 순서 이동 (같은 화면 그룹 내에서 원본 배열의 위치를 교환)
+  const up = document.createElement("button");
+  up.textContent = "▲"; up.title = "위로";
+  up.disabled = pos === 0;
+  up.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    swapLinks(l._i, groupLinks[pos - 1]._i);
+  };
+  const down = document.createElement("button");
+  down.textContent = "▼"; down.title = "아래로";
+  down.disabled = pos === groupLinks.length - 1;
+  down.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    swapLinks(l._i, groupLinks[pos + 1]._i);
+  };
+
   const eb = document.createElement("button");
   eb.textContent = "✏️"; eb.title = "수정";
+  eb.setAttribute("aria-label", "수정: " + l.name);
   eb.onclick = e => { e.preventDefault(); e.stopPropagation(); openLinkModal(l._i); };
   const db = document.createElement("button");
   db.textContent = "🗑"; db.title = "삭제"; db.className = "del";
+  db.setAttribute("aria-label", "삭제: " + l.name);
   db.onclick = e => {
     e.preventDefault(); e.stopPropagation();
     if (confirm('"' + l.name + '" 링크를 삭제할까요?')) {
@@ -392,14 +452,19 @@ function makeCard(l) {
       saveData(); render();
     }
   };
+  editBtns.appendChild(up); editBtns.appendChild(down);
   editBtns.appendChild(eb); editBtns.appendChild(db);
 
+  a.appendChild(icon);
+  a.appendChild(body);
   a.appendChild(editBtns);
   a.appendChild(star);
-  a.appendChild(name);
-  a.appendChild(desc);
-  a.appendChild(url);
   return a;
+}
+
+function swapLinks(i, j) {
+  [data.links[i], data.links[j]] = [data.links[j], data.links[i]];
+  saveData(); render();
 }
 
 /* ---------- 링크 추가/수정 ---------- */
@@ -416,11 +481,13 @@ function openLinkModal(idx) {
   });
   if (isEdit) {
     const l = data.links[idx];
+    document.getElementById("fIcon").value = l.icon || "";
     document.getElementById("fName").value = l.name;
     document.getElementById("fUrl").value = l.url;
     document.getElementById("fDesc").value = l.desc || "";
     sel.value = data.categories.includes(l.cat) ? l.cat : data.categories[0];
   } else {
+    document.getElementById("fIcon").value = "";
     document.getElementById("fName").value = "";
     document.getElementById("fUrl").value = "";
     document.getElementById("fDesc").value = "";
@@ -431,6 +498,7 @@ function openLinkModal(idx) {
 }
 
 function saveLink() {
+  const icon = document.getElementById("fIcon").value.trim();
   const name = document.getElementById("fName").value.trim();
   let url = document.getElementById("fUrl").value.trim();
   const desc = document.getElementById("fDesc").value.trim();
@@ -439,9 +507,9 @@ function saveLink() {
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
   if (editingIndex !== null) {
-    Object.assign(data.links[editingIndex], { name, url, desc, cat });
+    Object.assign(data.links[editingIndex], { icon, name, url, desc, cat });
   } else {
-    data.links.push({ name, url, desc, cat, fav: false });
+    data.links.push({ icon, name, url, desc, cat, fav: false });
   }
   saveData();
   document.getElementById("linkModal").classList.remove("open");
@@ -505,12 +573,17 @@ document.getElementById("resetBtn").onclick = () => {
   if (confirm("모든 변경 사항을 지우고 기본 목록으로 되돌릴까요?")) {
     localStorage.removeItem(STORE_KEY);
     data = JSON.parse(JSON.stringify(DEFAULT_DATA));
-    currentTab = "즐겨찾기";
+    currentTab = data.links.some(l => l.fav) ? "즐겨찾기" : "전체";
     render();
   }
 };
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") document.getElementById("linkModal").classList.remove("open");
+  // "/" 키로 검색창 바로 이동 (입력 중이 아닐 때)
+  if (e.key === "/" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    document.getElementById("searchInput").focus();
+  }
 });
 
 render();
