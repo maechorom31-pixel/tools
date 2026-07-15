@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>바로가기 모음</title>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card-bg: #ffffff;
+    --text: #1a1f2e;
+    --text-sub: #6b7280;
+    --accent: #3b5bdb;
+    --accent-soft: #e7ecfd;
+    --border: #e3e7ef;
+    --star: #f5b301;
+    --danger: #e03131;
+    --shadow: 0 1px 3px rgba(20, 30, 60, .07), 0 4px 14px rgba(20, 30, 60, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c;
+      --card-bg: #1c212c;
+      --text: #e8eaf0;
+      --text-sub: #9aa2b1;
+      --accent: #6c8bff;
+      --accent-soft: #263054;
+      --border: #2b3242;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .emoji { margin-right: 8px; }
+  .header-btns { display: flex; gap: 8px; }
+
+  button {
+    font-family: inherit; cursor: pointer; border: none;
+    border-radius: 10px; font-size: .87rem; font-weight: 600;
+  }
+  .btn {
+    padding: 9px 14px; background: var(--card-bg); color: var(--text);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.editing { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .search-row { margin-bottom: 16px; }
+  .search-row input {
+    width: 100%; padding: 12px 16px; font-size: .95rem;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card-bg); color: var(--text);
+    box-shadow: var(--shadow); outline: none;
+  }
+  .search-row input:focus { border-color: var(--accent); }
+
+  .tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .tab {
+    padding: 9px 16px; border-radius: 999px;
+    background: var(--card-bg); color: var(--text-sub);
+    border: 1px solid var(--border); font-size: .88rem; font-weight: 600;
+  }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab .count { opacity: .65; font-weight: 500; margin-left: 4px; font-size: .8rem; }
+  .tab.add-cat { border-style: dashed; }
+
+  .section-title {
+    font-size: .95rem; font-weight: 700; color: var(--text-sub);
+    margin: 22px 4px 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .cat-actions { display: none; gap: 6px; }
+  body.edit-mode .section-title .cat-actions { display: inline-flex; }
+  .cat-actions button {
+    background: none; border: none; font-size: .78rem; color: var(--text-sub);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .cat-actions button:hover { background: var(--accent-soft); color: var(--accent); }
+  .cat-actions button.del:hover { color: var(--danger); }
+
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  }
+  .card {
+    position: relative; display: block;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 16px 14px;
+    text-decoration: none; color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform .12s, border-color .12s;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card .name {
+    font-weight: 700; font-size: .98rem; margin-bottom: 4px;
+    padding-right: 56px; letter-spacing: -0.01em;
+  }
+  .card .desc { font-size: .82rem; color: var(--text-sub); margin-bottom: 8px; min-height: 1.1em; }
+  .card .url {
+    font-size: .74rem; color: var(--accent); opacity: .85;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .card .star-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: none; font-size: 1.15rem; line-height: 1;
+    padding: 6px; border-radius: 8px; color: var(--border);
+  }
+  .card .star-btn:hover { background: var(--accent-soft); }
+  .card .star-btn.on { color: var(--star); }
+  .card .edit-btns {
+    position: absolute; top: 10px; right: 42px;
+    display: none; gap: 2px;
+  }
+  body.edit-mode .card .edit-btns { display: flex; }
+  .card .edit-btns button {
+    background: none; font-size: .95rem; padding: 6px; border-radius: 8px;
+    color: var(--text-sub);
+  }
+  .card .edit-btns button:hover { background: var(--accent-soft); color: var(--accent); }
+  .card .edit-btns button.del:hover { color: var(--danger); }
+
+  .empty {
+    text-align: center; color: var(--text-sub); padding: 48px 0; font-size: .92rem;
+  }
+
+  /* modal */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10, 14, 24, .5); z-index: 50;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--card-bg); border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 16px; }
+  .modal label { display: block; font-size: .82rem; font-weight: 600; color: var(--text-sub); margin: 12px 0 5px; }
+  .modal input, .modal select {
+    width: 100%; padding: 10px 12px; font-size: .9rem; font-family: inherit;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+  .modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  footer {
+    margin-top: 40px; text-align: center; font-size: .78rem; color: var(--text-sub);
+  }
+  footer button { background: none; color: var(--text-sub); text-decoration: underline; font-size: .78rem; font-weight: 500; }
+  footer button:hover { color: var(--danger); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="emoji">🔖</span>바로가기 모음</h1>
+    <div class="header-btns">
+      <button class="btn primary" id="addLinkBtn">＋ 링크 추가</button>
+      <button class="btn" id="editModeBtn">✏️ 편집</button>
+    </div>
+  </header>
+
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="🔍 이름, 주소, 설명으로 검색…">
+  </div>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <main id="content"></main>
+
+  <footer>
+    변경 사항은 이 브라우저에 자동 저장됩니다 ·
+    <button id="resetBtn">기본값으로 초기화</button>
+  </footer>
+</div>
+
+<!-- 링크 추가/수정 모달 -->
+<div class="modal-bg" id="linkModal">
+  <div class="modal">
+    <h2 id="linkModalTitle">링크 추가</h2>
+    <label>이름</label>
+    <input type="text" id="fName" placeholder="예: 등급 시뮬레이터">
+    <label>주소 (URL)</label>
+    <input type="url" id="fUrl" placeholder="https://…">
+    <label>설명 (선택)</label>
+    <input type="text" id="fDesc" placeholder="간단한 설명">
+    <label>카테고리</label>
+    <select id="fCat"></select>
+    <div class="modal-btns">
+      <button class="btn" id="linkCancelBtn">취소</button>
+      <button class="btn primary" id="linkSaveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   기본 데이터 — 여기를 직접 수정해도 됩니다.
+   (브라우저에서 편집한 내용은 localStorage에 따로 저장되며,
+    "기본값으로 초기화"를 누르면 아래 목록으로 되돌아갑니다)
+   ================================================================ */
+const DEFAULT_DATA = {
+  categories: ["툴", "일반 주소"],
+  links: [
+    { name: "등급 시뮬레이터",              url: "https://maechorom31-pixel.github.io/grade/",                  desc: "내신 등급 계산 시뮬레이터",        cat: "툴", fav: true },
+    { name: "(지필/수행) 성적 슬립 생성기",  url: "https://maechorom31-pixel.github.io/grade/slip/index.html",   desc: "지필·수행 성적 슬립 생성",         cat: "툴", fav: false },
+    { name: "성취평가 분할점수 예측",        url: "https://maechorom31-pixel.github.io/grade/cutscore/index.html", desc: "성취평가제 분할점수 예측",        cat: "툴", fav: false },
+    { name: "수시입결검색기",               url: "https://maechorom31-pixel.github.io/univ",                    desc: "대입 수시 입시결과 검색",          cat: "툴", fav: true },
+    { name: "탐구 키워드 펼쳐보기",          url: "https://maechorom31-pixel.github.io/keyword-explorer/",       desc: "탐구 주제 키워드 탐색",            cat: "툴", fav: false },
+    { name: "문학 자율학습",                url: "https://maechorom31-pixel.github.io/literary-Texts/",         desc: "문학 지문 자율학습",               cat: "툴", fav: false },
+    { name: "독서 자율학습",                url: "https://maechorom31-pixel.github.io/Non-literary-Texts/",     desc: "독서(비문학) 지문 자율학습",       cat: "툴", fav: false },
+    { name: "전남교육포털",                 url: "https://jne.eduptl.kr/",   desc: "전라남도교육청 교육포털",   cat: "일반 주소", fav: false },
+    { name: "전남스터디",                   url: "https://www.jnstudy.kr/", desc: "전남 학습 지원 사이트",     cat: "일반 주소", fav: false },
+    { name: "전남 AI 교육 플랫폼",           url: "https://ai.jne.kr/",      desc: "전남교육청 AI 플랫폼",      cat: "일반 주소", fav: false }
+  ]
+};
+
+const STORE_KEY = "linkhub-data-v1";
+let data = loadData();
+let currentTab = "즐겨찾기";
+let editMode = false;
+let editingIndex = null; // null = 새 링크
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.links) && Array.isArray(parsed.categories)) return parsed;
+    }
+  } catch (e) { /* 무시하고 기본값 사용 */ }
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveData() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+/* ---------- 렌더링 ---------- */
+function render() {
+  renderTabs();
+  renderContent();
+}
+
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  const favCount = data.links.filter(l => l.fav).length;
+  const defs = [
+    { key: "즐겨찾기", label: "⭐ 즐겨찾기", count: favCount },
+    { key: "전체",     label: "전체",       count: data.links.length },
+    ...data.categories.map(c => ({ key: c, label: c, count: data.links.filter(l => l.cat === c).length }))
+  ];
+  defs.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "tab" + (currentTab === d.key ? " active" : "");
+    b.innerHTML = escapeHtml(d.label) + '<span class="count">' + d.count + "</span>";
+    b.onclick = () => { currentTab = d.key; render(); };
+    tabs.appendChild(b);
+  });
+  if (editMode) {
+    const add = document.createElement("button");
+    add.className = "tab add-cat";
+    add.textContent = "＋ 카테고리";
+    add.onclick = addCategory;
+    tabs.appendChild(add);
+  }
+}
+
+function renderContent() {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  const matches = l =>
+    !q || (l.name + " " + l.url + " " + (l.desc || "")).toLowerCase().includes(q);
+
+  let groups; // [{title, links(원본 인덱스 포함)}]
+  const withIdx = data.links.map((l, i) => ({ ...l, _i: i }));
+
+  if (currentTab === "즐겨찾기") {
+    groups = [{ title: null, links: withIdx.filter(l => l.fav && matches(l)) }];
+  } else if (currentTab === "전체") {
+    groups = data.categories.map(c => ({
+      title: c,
+      links: withIdx.filter(l => l.cat === c && matches(l))
+    }));
+    const orphans = withIdx.filter(l => !data.categories.includes(l.cat) && matches(l));
+    if (orphans.length) groups.push({ title: "기타", links: orphans });
+  } else {
+    groups = [{ title: editMode ? currentTab : null, links: withIdx.filter(l => l.cat === currentTab && matches(l)) }];
+  }
+
+  let any = false;
+  groups.forEach(g => {
+    if (!g.links.length && !(editMode && g.title && data.categories.includes(g.title))) return;
+    any = any || g.links.length > 0;
+
+    if (g.title) {
+      const h = document.createElement("div");
+      h.className = "section-title";
+      h.appendChild(document.createTextNode(g.title));
+      if (data.categories.includes(g.title)) {
+        const acts = document.createElement("span");
+        acts.className = "cat-actions";
+        const ren = document.createElement("button");
+        ren.textContent = "이름변경";
+        ren.onclick = () => renameCategory(g.title);
+        const del = document.createElement("button");
+        del.textContent = "삭제";
+        del.className = "del";
+        del.onclick = () => deleteCategory(g.title);
+        acts.appendChild(ren); acts.appendChild(del);
+        h.appendChild(acts);
+      }
+      content.appendChild(h);
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    g.links.forEach(l => grid.appendChild(makeCard(l)));
+    if (g.links.length) content.appendChild(grid);
+  });
+
+  if (!any) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = currentTab === "즐겨찾기" && !q
+      ? "카드의 ☆ 버튼을 눌러 즐겨찾기에 추가해 보세요."
+      : "표시할 링크가 없습니다.";
+    content.appendChild(e);
+  }
+}
+
+function makeCard(l) {
+  const a = document.createElement("a");
+  a.className = "card";
+  a.href = l.url;
+  a.target = "_blank";
+  a.rel = "noopener";
+
+  const name = document.createElement("div");
+  name.className = "name";
+  name.textContent = l.name;
+
+  const desc = document.createElement("div");
+  desc.className = "desc";
+  desc.textContent = l.desc || "";
+
+  const url = document.createElement("span");
+  url.className = "url";
+  url.textContent = l.url.replace(/^https?:\/\//, "");
+
+  const star = document.createElement("button");
+  star.className = "star-btn" + (l.fav ? " on" : "");
+  star.textContent = l.fav ? "★" : "☆";
+  star.title = "즐겨찾기";
+  star.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    data.links[l._i].fav = !data.links[l._i].fav;
+    saveData(); render();
+  };
+
+  const editBtns = document.createElement("span");
+  editBtns.className = "edit-btns";
+  const eb = document.createElement("button");
+  eb.textContent = "✏️"; eb.title = "수정";
+  eb.onclick = e => { e.preventDefault(); e.stopPropagation(); openLinkModal(l._i); };
+  const db = document.createElement("button");
+  db.textContent = "🗑"; db.title = "삭제"; db.className = "del";
+  db.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    if (confirm('"' + l.name + '" 링크를 삭제할까요?')) {
+      data.links.splice(l._i, 1);
+      saveData(); render();
+    }
+  };
+  editBtns.appendChild(eb); editBtns.appendChild(db);
+
+  a.appendChild(editBtns);
+  a.appendChild(star);
+  a.appendChild(name);
+  a.appendChild(desc);
+  a.appendChild(url);
+  return a;
+}
+
+/* ---------- 링크 추가/수정 ---------- */
+function openLinkModal(idx) {
+  editingIndex = idx;
+  const isEdit = idx !== null;
+  document.getElementById("linkModalTitle").textContent = isEdit ? "링크 수정" : "링크 추가";
+  const sel = document.getElementById("fCat");
+  sel.innerHTML = "";
+  data.categories.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+  if (isEdit) {
+    const l = data.links[idx];
+    document.getElementById("fName").value = l.name;
+    document.getElementById("fUrl").value = l.url;
+    document.getElementById("fDesc").value = l.desc || "";
+    sel.value = data.categories.includes(l.cat) ? l.cat : data.categories[0];
+  } else {
+    document.getElementById("fName").value = "";
+    document.getElementById("fUrl").value = "";
+    document.getElementById("fDesc").value = "";
+    if (data.categories.includes(currentTab)) sel.value = currentTab;
+  }
+  document.getElementById("linkModal").classList.add("open");
+  document.getElementById("fName").focus();
+}
+
+function saveLink() {
+  const name = document.getElementById("fName").value.trim();
+  let url = document.getElementById("fUrl").value.trim();
+  const desc = document.getElementById("fDesc").value.trim();
+  const cat = document.getElementById("fCat").value;
+  if (!name || !url) { alert("이름과 주소를 입력해 주세요."); return; }
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+
+  if (editingIndex !== null) {
+    Object.assign(data.links[editingIndex], { name, url, desc, cat });
+  } else {
+    data.links.push({ name, url, desc, cat, fav: false });
+  }
+  saveData();
+  document.getElementById("linkModal").classList.remove("open");
+  render();
+}
+
+/* ---------- 카테고리 관리 ---------- */
+function addCategory() {
+  const name = prompt("새 카테고리 이름을 입력하세요.\n(예: 툴, 일반 주소, 업무, 참고자료 …)");
+  if (!name) return;
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  if (data.categories.includes(trimmed)) { alert("이미 있는 카테고리입니다."); return; }
+  data.categories.push(trimmed);
+  saveData();
+  currentTab = trimmed;
+  render();
+}
+
+function renameCategory(oldName) {
+  const name = prompt("카테고리 이름 변경:", oldName);
+  if (!name) return;
+  const trimmed = name.trim();
+  if (!trimmed || trimmed === oldName) return;
+  if (data.categories.includes(trimmed)) { alert("이미 있는 카테고리입니다."); return; }
+  data.categories = data.categories.map(c => c === oldName ? trimmed : c);
+  data.links.forEach(l => { if (l.cat === oldName) l.cat = trimmed; });
+  if (currentTab === oldName) currentTab = trimmed;
+  saveData(); render();
+}
+
+function deleteCategory(name) {
+  const count = data.links.filter(l => l.cat === name).length;
+  if (!confirm('"' + name + '" 카테고리를 삭제할까요?' + (count ? "\n(포함된 링크 " + count + "개도 함께 삭제됩니다)" : ""))) return;
+  data.categories = data.categories.filter(c => c !== name);
+  data.links = data.links.filter(l => l.cat !== name);
+  if (currentTab === name) currentTab = "전체";
+  saveData(); render();
+}
+
+/* ---------- 유틸 & 이벤트 ---------- */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+}
+
+document.getElementById("addLinkBtn").onclick = () => openLinkModal(null);
+document.getElementById("editModeBtn").onclick = function () {
+  editMode = !editMode;
+  document.body.classList.toggle("edit-mode", editMode);
+  this.classList.toggle("editing", editMode);
+  this.textContent = editMode ? "✔️ 편집 완료" : "✏️ 편집";
+  render();
+};
+document.getElementById("linkSaveBtn").onclick = saveLink;
+document.getElementById("linkCancelBtn").onclick = () => document.getElementById("linkModal").classList.remove("open");
+document.getElementById("linkModal").onclick = e => {
+  if (e.target === document.getElementById("linkModal")) e.target.classList.remove("open");
+};
+document.getElementById("searchInput").oninput = renderContent;
+document.getElementById("resetBtn").onclick = () => {
+  if (confirm("모든 변경 사항을 지우고 기본 목록으로 되돌릴까요?")) {
+    localStorage.removeItem(STORE_KEY);
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    currentTab = "즐겨찾기";
+    render();
+  }
+};
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") document.getElementById("linkModal").classList.remove("open");
+});
+
+render();
+</script>
+</body>
+</html>
