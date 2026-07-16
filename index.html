@@ -5,51 +5,70 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>바로가기 모음</title>
 <style>
-  /* ── 디자인 토큰 (이미지 도구와 같은 웜 스톤 + 앰버 계열) ── */
+  /* ── 디자인 토큰: 밝은 중립 배경 + 흰 카드 + 파랑 포인트 (고대비) ── */
   :root {
-    --bg: #F7F5F2;
+    --bg: #F4F5F7;
     --card: #FFFFFF;
-    --ink: #1C1917;
-    --ink-soft: #79716B;
-    --line: #E6E2DC;
-    --accent: #B45309;
-    --accent-strong: #92400E;
-    --accent-soft: #FBEEDC;
-    --star: #D97706;
-    --danger: #B91C1C;
-    --shadow: 0 1px 2px rgba(41, 32, 20, .06), 0 4px 14px rgba(41, 32, 20, .05);
-    --shadow-lift: 0 2px 6px rgba(41, 32, 20, .08), 0 10px 26px rgba(41, 32, 20, .09);
+    --ink: #171A20;
+    --ink-soft: #5A616C;
+    --line: #E3E5EA;
+    --accent: #3355D8;
+    --accent-strong: #2543B8;
+    --accent-soft: #EBF0FF;
+    --star: #F59F00;
+    --danger: #D6336C;
+    --shadow: 0 1px 2px rgba(23, 26, 32, .05), 0 4px 14px rgba(23, 26, 32, .06);
+    --shadow-lift: 0 2px 6px rgba(23, 26, 32, .07), 0 12px 28px rgba(23, 26, 32, .11);
   }
+  /* 카테고리 색상 (카드 아이콘 배경·섹션 점 색) — 순서대로 순환 */
+  .tint-0 { --tb: #E8EEFF; --tf: #3B5BDB; } /* 파랑 */
+  .tint-1 { --tb: #F3EBFF; --tf: #7048E8; } /* 보라 */
+  .tint-2 { --tb: #DFF4F0; --tf: #099268; } /* 청록 */
+  .tint-3 { --tb: #FFF0DC; --tf: #E8590C; } /* 주황 */
+  .tint-4 { --tb: #FFE9F0; --tf: #D6336C; } /* 분홍 */
+  .tint-5 { --tb: #EDEFF3; --tf: #4B5563; } /* 회색 */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #16130F;
-      --card: #201C17;
-      --ink: #ECE7E0;
-      --ink-soft: #A69F94;
-      --line: #363028;
-      --accent: #E8A34A;
-      --accent-strong: #F2BA6E;
-      --accent-soft: #362917;
-      --star: #EBA94F;
-      --danger: #F87171;
+      --bg: #14161B;
+      --card: #1D2027;
+      --ink: #EAECF1;
+      --ink-soft: #9BA2AE;
+      --line: #2D313B;
+      --accent: #8298FF;
+      --accent-strong: #A5B4FF;
+      --accent-soft: #242C4E;
+      --star: #FFC94D;
+      --danger: #FF8CB0;
       --shadow: 0 1px 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.28);
-      --shadow-lift: 0 2px 6px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.35);
+      --shadow-lift: 0 2px 6px rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.35);
     }
+    :root:not([data-theme="light"]) .tint-0 { --tb: #26305A; --tf: #91A7FF; }
+    :root:not([data-theme="light"]) .tint-1 { --tb: #2F2455; --tf: #B197FC; }
+    :root:not([data-theme="light"]) .tint-2 { --tb: #1B3A33; --tf: #63E6BE; }
+    :root:not([data-theme="light"]) .tint-3 { --tb: #46301A; --tf: #FFA94D; }
+    :root:not([data-theme="light"]) .tint-4 { --tb: #47222F; --tf: #FAA2C1; }
+    :root:not([data-theme="light"]) .tint-5 { --tb: #2A2F3A; --tf: #ADB5BD; }
   }
   :root[data-theme="dark"] {
-    --bg: #16130F;
-    --card: #201C17;
-    --ink: #ECE7E0;
-    --ink-soft: #A69F94;
-    --line: #363028;
-    --accent: #E8A34A;
-    --accent-strong: #F2BA6E;
-    --accent-soft: #362917;
-    --star: #EBA94F;
-    --danger: #F87171;
+    --bg: #14161B;
+    --card: #1D2027;
+    --ink: #EAECF1;
+    --ink-soft: #9BA2AE;
+    --line: #2D313B;
+    --accent: #8298FF;
+    --accent-strong: #A5B4FF;
+    --accent-soft: #242C4E;
+    --star: #FFC94D;
+    --danger: #FF8CB0;
     --shadow: 0 1px 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.28);
-    --shadow-lift: 0 2px 6px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.35);
+    --shadow-lift: 0 2px 6px rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.35);
   }
+  :root[data-theme="dark"] .tint-0 { --tb: #26305A; --tf: #91A7FF; }
+  :root[data-theme="dark"] .tint-1 { --tb: #2F2455; --tf: #B197FC; }
+  :root[data-theme="dark"] .tint-2 { --tb: #1B3A33; --tf: #63E6BE; }
+  :root[data-theme="dark"] .tint-3 { --tb: #46301A; --tf: #FFA94D; }
+  :root[data-theme="dark"] .tint-4 { --tb: #47222F; --tf: #FAA2C1; }
+  :root[data-theme="dark"] .tint-5 { --tb: #2A2F3A; --tf: #ADB5BD; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { color-scheme: light dark; }
@@ -59,6 +78,7 @@
     color: var(--ink);
     min-height: 100vh;
     padding: 28px 16px 60px;
+    -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 980px; margin: 0 auto; }
 
@@ -67,11 +87,11 @@
     gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
   }
   .title-block h1 {
-    font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
+    font-size: 1.55rem; font-weight: 800; letter-spacing: -0.025em;
     display: flex; align-items: center; gap: 9px;
   }
   .title-block .subtitle {
-    margin-top: 4px; font-size: .82rem; color: var(--ink-soft); letter-spacing: -0.01em;
+    margin-top: 4px; font-size: .84rem; color: var(--ink-soft); letter-spacing: -0.01em;
   }
   .header-btns { display: flex; gap: 8px; align-items: center; }
 
@@ -89,21 +109,26 @@
     transition: background .15s, border-color .15s;
   }
   .btn:hover { background: var(--accent-soft); border-color: var(--accent); }
-  .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
-  .btn.editing { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn.editing { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn.icon-btn { padding: 9px 11px; font-size: 1rem; line-height: 1; }
+  :root[data-theme="dark"] .btn.primary, :root[data-theme="dark"] .btn.editing { color: #14161B; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .btn.primary,
+    :root:not([data-theme="light"]) .btn.editing { color: #14161B; }
+  }
 
   /* ── 검색 ── */
   .search-row { position: relative; margin-bottom: 14px; }
   .search-row input {
-    width: 100%; padding: 12px 84px 12px 42px; font-size: .95rem; font-family: inherit;
+    width: 100%; padding: 13px 84px 13px 42px; font-size: .95rem; font-family: inherit;
     border: 1px solid var(--line); border-radius: 12px;
     background: var(--card); color: var(--ink);
     box-shadow: var(--shadow); outline: none;
-    transition: border-color .15s;
+    transition: border-color .15s, box-shadow .15s;
   }
-  .search-row input:focus { border-color: var(--accent); }
+  .search-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .search-row input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   .search-row .search-ico {
     position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
@@ -130,7 +155,7 @@
   .search-meta.show { display: block; }
   .search-meta b { color: var(--accent); font-weight: 700; }
 
-  /* ── 탭 ── */
+  /* ── 탭: 선택된 탭은 진한 알약으로 확실하게 ── */
   .tabs {
     display: flex; gap: 8px; flex-wrap: wrap;
     position: sticky; top: 0; z-index: 10;
@@ -143,27 +168,31 @@
     border: 1px solid var(--line); font-size: .88rem; font-weight: 600;
     transition: background .12s, color .12s;
   }
-  .tab:hover { background: var(--accent-soft); color: var(--accent); }
-  .tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .tab:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .tab.active { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 700; }
   .tab.active:hover { color: var(--bg); }
-  .tab .count { opacity: .7; font-weight: 500; margin-left: 4px; font-size: .8rem; font-variant-numeric: tabular-nums; }
+  .tab .count { opacity: .65; font-weight: 500; margin-left: 4px; font-size: .8rem; font-variant-numeric: tabular-nums; }
   .tab.add-cat { border-style: dashed; }
 
-  /* ── 섹션 제목 ── */
+  /* ── 섹션 제목: 카테고리 색 점 + 개수 + 가는 선 ── */
   .section-title {
-    font-size: .8rem; font-weight: 700; color: var(--ink-soft);
-    letter-spacing: .06em; text-transform: uppercase;
-    margin: 26px 2px 10px; display: flex; align-items: center; gap: 10px;
+    font-size: .86rem; font-weight: 700; color: var(--ink);
+    letter-spacing: -0.01em;
+    margin: 26px 2px 10px; display: flex; align-items: center; gap: 8px;
   }
+  .section-title .dot {
+    width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--tf, var(--ink-soft));
+  }
+  .section-title .n { color: var(--ink-soft); font-weight: 600; font-size: .8rem; font-variant-numeric: tabular-nums; }
   .section-title::after {
     content: ""; flex: 1; height: 1px; background: var(--line);
   }
-  .section-title .n { color: var(--accent); font-variant-numeric: tabular-nums; }
   .section-title .cat-actions { display: none; gap: 6px; }
   body.edit-mode .section-title .cat-actions { display: inline-flex; }
   .cat-actions button {
     background: none; border: none; font-size: .76rem; color: var(--ink-soft);
-    padding: 4px 8px; border-radius: 6px; letter-spacing: 0; text-transform: none;
+    padding: 4px 8px; border-radius: 6px;
   }
   .cat-actions button:hover { background: var(--accent-soft); color: var(--accent); }
   .cat-actions button.del:hover { color: var(--danger); }
@@ -174,7 +203,7 @@
     grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
   }
   .card {
-    position: relative; display: flex; gap: 12px; align-items: flex-start;
+    position: relative; display: flex; gap: 13px; align-items: flex-start;
     background: var(--card); border: 1px solid var(--line);
     border-radius: 14px; padding: 16px 16px 14px;
     text-decoration: none; color: var(--ink);
@@ -183,22 +212,23 @@
   }
   .card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow-lift); }
   .card .icon {
-    flex: 0 0 auto; width: 42px; height: 42px;
+    flex: 0 0 auto; width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; border-radius: 11px;
-    background: var(--accent-soft);
+    font-size: 1.35rem; border-radius: 12px;
+    background: var(--tb, var(--accent-soft));
   }
   .card .body { min-width: 0; flex: 1; }
   .card .name {
-    font-weight: 700; font-size: .97rem; margin-bottom: 3px;
-    padding-right: 34px; letter-spacing: -0.01em;
+    font-weight: 700; font-size: 1rem; margin-bottom: 3px;
+    padding-right: 34px; letter-spacing: -0.015em; line-height: 1.35;
   }
-  .card .desc { font-size: .82rem; color: var(--ink-soft); margin-bottom: 7px; min-height: 1.1em; line-height: 1.5; }
+  .card .desc { font-size: .84rem; color: var(--ink-soft); margin-bottom: 7px; min-height: 1.1em; line-height: 1.55; }
   .card .url {
-    font-size: .73rem; color: var(--accent); opacity: .9;
+    font-size: .73rem; color: var(--ink-soft); opacity: .8;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
     font-variant-numeric: tabular-nums;
   }
+  .card:hover .url { color: var(--accent); opacity: 1; }
   .card mark {
     background: var(--accent-soft); color: var(--accent-strong);
     border-radius: 3px; padding: 0 1px;
@@ -233,7 +263,7 @@
   /* ── 모달 ── */
   .modal-bg {
     display: none; position: fixed; inset: 0;
-    background: rgba(20, 14, 6, .5); z-index: 50;
+    background: rgba(15, 18, 28, .55); z-index: 50;
     align-items: center; justify-content: center; padding: 16px;
   }
   .modal-bg.open { display: flex; }
@@ -414,6 +444,12 @@ document.getElementById("themeBtn").onclick = () => {
   applyTheme(theme);
 };
 
+/* ---------- 카테고리 색상 (순서대로 6색 순환) ---------- */
+function tintClass(cat) {
+  const i = data.categories.indexOf(cat);
+  return i === -1 ? "" : "tint-" + (i % 6);
+}
+
 /* ---------- 렌더링 ---------- */
 function render() {
   renderTabs();
@@ -488,6 +524,10 @@ function renderContent() {
     if (g.title) {
       const h = document.createElement("div");
       h.className = "section-title";
+      const dot = document.createElement("span");
+      dot.className = ("dot " + tintClass(g.title)).trim();
+      dot.setAttribute("aria-hidden", "true");
+      h.appendChild(dot);
       h.appendChild(document.createTextNode(g.title));
       const n = document.createElement("span");
       n.className = "n";
@@ -550,7 +590,7 @@ function makeCard(l, groupLinks, pos, q) {
   a.rel = "noopener";
 
   const icon = document.createElement("div");
-  icon.className = "icon";
+  icon.className = ("icon " + tintClass(l.cat)).trim();
   icon.textContent = l.icon || "🔗";
   icon.setAttribute("aria-hidden", "true");
 
