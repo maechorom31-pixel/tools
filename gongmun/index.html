@@ -943,12 +943,19 @@ async function streamGroq(apiKey, system, userContent, onChunk) {
   }
   throw lastErr;
 }
+/* 추론 모델의 사고 과정(<think>...</think>) 제거 — 미완결 블록도 숨김 */
+function stripThink(t) {
+  return t.replace(/<think>[\s\S]*?<\/think>\s*/g, "").replace(/<think>[\s\S]*$/g, "");
+}
 async function streamOnce(apiKey, model, system, userContent, onChunk) {
+  const body = { model, max_tokens: 2048, stream: true,
+    messages: [{ role: "system", content: system }, { role: "user", content: userContent }] };
+  // reasoning_effort는 qwen3 계열 전용 옵션 — 다른 모델에 보내면 400 오류
+  if (/qwen/i.test(model)) body.reasoning_effort = "none";
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: 2048, stream: true, reasoning_effort: "none",
-      messages: [{ role: "system", content: system }, { role: "user", content: userContent }] })
+    body: JSON.stringify(body)
   });
   if (!resp.ok) {
     const e = await resp.json().catch(() => ({}));
@@ -961,10 +968,10 @@ async function streamOnce(apiKey, model, system, userContent, onChunk) {
     const lines = buf.split("\n"); buf = lines.pop();
     for (const line of lines) {
       if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
-      try { const d = JSON.parse(line.slice(6)); full += d.choices?.[0]?.delta?.content || ""; onChunk(full); } catch {}
+      try { const d = JSON.parse(line.slice(6)); full += d.choices?.[0]?.delta?.content || ""; onChunk(stripThink(full)); } catch {}
     }
   }
-  return full;
+  return stripThink(full);
 }
 
 function friendlyError(msg) {
