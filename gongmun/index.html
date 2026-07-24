@@ -928,7 +928,8 @@ function getCommonGuidelines(y) {
 /* ====================================================
    Groq 호출 (모델 폴백 체인 + 스트리밍)
    ==================================================== */
-const MODELS = ["qwen/qwen3-32b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+/* 2026. 7. 기준 Groq 제공 모델 확인 완료 (qwen3-32b는 폐기되어 제외) */
+const MODELS = ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
 
 async function streamGroq(apiKey, system, userContent, onChunk) {
   let lastErr = null;
