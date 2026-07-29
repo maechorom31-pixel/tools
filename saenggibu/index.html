@@ -135,12 +135,24 @@ tbody tr.clickable { cursor:pointer; }
 .score.hi { color:var(--danger); } .score.mid { color:var(--warn); } .score.lo { color:var(--ink-soft); }
 .snip { color:var(--ink-soft); font-size:.78rem; }
 mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; padding:0 1px; font-weight:600; }
-.dupe-card { border:1px solid var(--danger); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:var(--danger-soft); }
+.dupe-card {
+  border:1px solid var(--danger); border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  background:var(--danger-soft); cursor:pointer;
+  transition:box-shadow .15s, transform .15s;
+}
+.dupe-card:hover { box-shadow:var(--shadow-lift); transform:translateY(-2px); }
+.dupe-card .more { font-size:.74rem; color:var(--danger); font-weight:600; margin-top:6px; }
+.dupe-members { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+.dupe-members .filechip { background:var(--danger-soft); color:var(--danger); }
 .dupe-card .head { font-weight:700; font-size:.88rem; color:var(--danger); margin-bottom:4px; }
 .dupe-card .who { font-size:.84rem; }
 .dupe-card .snip { margin-top:4px; }
 .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.compare.single { grid-template-columns:1fr; }
 .compare .pane { font-size:.84rem; line-height:1.8; white-space:pre-wrap; word-break:break-all; }
+/* 목록·설명이 섞이는 팝업은 원문 부분만 pre-wrap을 쓴다 (안 그러면 줄간격이 벌어진다) */
+.compare .pane.plain { white-space:normal; }
+.compare .pane.plain .raw { white-space:pre-wrap; }
 .compare .pane h4 { font-size:.8rem; margin-bottom:6px; color:var(--ink-soft); font-weight:600; }
 @media (max-width:720px){ .compare { grid-template-columns:1fr; } }
 
@@ -167,6 +179,11 @@ mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; paddin
 }
 .fix { font-size:.84rem; padding:6px 0; border-top:1px dashed var(--line); }
 .fix:first-of-type { border-top:0; }
+.fix.clickable { cursor:pointer; border-radius:8px; padding:6px 8px; margin:0 -8px; }
+.fix.clickable:hover { background:var(--accent-soft); }
+.fix .peek { font-size:.74rem; color:var(--accent); font-weight:600; margin-top:2px; }
+mark.hot { background:var(--danger-soft); color:var(--danger); outline:2px solid var(--danger); }
+.ctx-list { margin-bottom:10px; }
 .fix .why { color:var(--ink-soft); font-size:.76rem; margin-top:2px; }
 .fix del { color:var(--danger); text-decoration:line-through; }
 .fix ins { color:var(--ok); text-decoration:none; font-weight:700; }
@@ -955,12 +972,20 @@ function renderSim() {
     empty.textContent = "파일을 올리면 겹치는 기록 쌍이 표시됩니다."; return;
   }
   // 완전 동일 묶음 (학생 간 모드에서만 — 재탕 모드는 쌍 목록으로 본다)
-  dupeEl.innerHTML = state.simMode === "peer" ? state.dupeGroups.map(arr => {
+  dupeEl.innerHTML = state.simMode === "peer" ? state.dupeGroups.map((arr, gi) => {
     const members = arr.map(chunkTag).join(" · ");
-    return `<div class="dupe-card"><div class="head">⚠ 글자까지 완전히 동일한 기록 ${arr.length}건</div>
+    return `<div class="dupe-card" data-g="${gi}" role="button" tabindex="0"
+      aria-label="완전히 동일한 기록 ${arr.length}건 — 눌러서 원문 보기">
+      <div class="head">⚠ 글자까지 완전히 동일한 기록 ${arr.length}건</div>
       <div class="who">${members}</div>
-      <div class="snip">"${esc(arr[0].text.slice(0, 90))}…" (${arr[0].text.length}자)</div></div>`;
+      <div class="snip">"${esc(arr[0].text.slice(0, 90))}…" (${arr[0].text.length}자)</div>
+      <div class="more">눌러서 원문 전체 보기 →</div></div>`;
   }).join("") : "";
+  dupeEl.querySelectorAll(".dupe-card").forEach(el => {
+    const open = () => openDupeGroup(state.dupeGroups[parseInt(el.dataset.g, 10)]);
+    el.onclick = open;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
   const list = state.simPairs.filter(p => p.mode === state.simMode && p.score >= state.simThr);
   if (!list.length) {
     table.innerHTML = ""; empty.style.display = "";
@@ -998,8 +1023,24 @@ function paintShared(text, otherSet) {
   }
   return open ? html + "</mark>" : html;
 }
+/* 완전 동일 묶음 — 글자가 같으니 맞대어 봐야 소용없다.
+   누가 이 기록을 함께 쓰고 있는지와 원문 전체를 한 화면에 편다. */
+function openDupeGroup(arr) {
+  const head = arr[0];
+  const sameRaw = arr.every(c => c.text === head.text);
+  $("#cmpTitle").textContent = `글자까지 완전히 동일한 기록 ${arr.length}건`;
+  $("#cmpBody").className = "compare single";
+  $("#cmpBody").innerHTML = `<div class="pane plain">
+    <h4>이 기록을 함께 쓰고 있는 학생 ${arr.length}명</h4>
+    <div class="dupe-members">${arr.map(c => `<span class="filechip">${chunkTag(c)}</span>`).join("")}</div>
+    ${sameRaw ? "" : `<div class="snip">※ 띄어쓰기만 조금 다르고 글자는 모두 같습니다. 아래는 ${chunkTag(head)}의 원문입니다.</div>`}
+    <h4 style="margin-top:12px">기록 전문 · ${head.text.length}자 · ${head.bytes.toLocaleString()}B</h4>
+    <div class="raw">${esc(head.text)}</div></div>`;
+  $("#cmpModal").classList.add("on");
+}
 function openCompare(p) {
   $("#cmpTitle").textContent = `겹침 ${Math.round(p.score*100)}% — 맞대어 보기`;
+  $("#cmpBody").className = "compare";
   $("#cmpBody").innerHTML = `
     <div class="pane"><h4>${chunkTag(p.a)} · ${p.a.bytes.toLocaleString()}B</h4>${paintShared(p.a.text, p.b._ps)}</div>
     <div class="pane"><h4>${chunkTag(p.b)} · ${p.b.bytes.toLocaleString()}B</h4>${paintShared(p.b.text, p.a._ps)}</div>`;
@@ -1132,9 +1173,60 @@ $$(".mclose").forEach(b => b.onclick = () => $("#" + b.dataset.close).classList.
 $$(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("on"); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") $$(".modal.on").forEach(m => m.classList.remove("on")); });
 
-/* ---------- 10. AI 맞춤법 검사 — 학생·학년 단위로 조각을 묶어 보낸다 ---------- */
+/* ---------- 10. AI 맞춤법 검사 — 학생·학년 단위로 조각을 묶어 보낸다 ----------
+   지적만 따로 보면 "왜 이게 틀렸지" 판단이 서지 않으므로,
+   지적을 누르면 그 기록 원문에서 해당 부분에 형광펜을 쳐 맥락째 보여준다. */
+const fixHits = [];   // 팝업에서 되짚어 볼 지적 묶음 {chunk, errors, no, name, grade}
+
+/* 원문에서 틀린 부분들을 찾아 형광펜을 친다. 겹치면 앞선 것을 살린다. */
+function paintErrors(text, errors, focus) {
+  const spans = [];
+  errors.forEach((e, i) => {
+    const bad = String(e.bad || "");
+    if (!bad) return;
+    for (let at = text.indexOf(bad); at !== -1; at = text.indexOf(bad, at + bad.length))
+      spans.push({ start: at, end: at + bad.length, i });
+  });
+  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+  let html = "", cur = 0, shown = new Set();
+  for (const s of spans) {
+    if (s.start < cur) continue;
+    html += esc(text.slice(cur, s.start));
+    const good = errors[s.i].good || "";
+    html += `<mark class="${s.i === focus ? "hot" : ""}" title="${esc(good)}">${esc(text.slice(s.start, s.end))}</mark>`;
+    cur = s.end; shown.add(s.i);
+  }
+  html += esc(text.slice(cur));
+  return { html, shown };
+}
+function openFixContext(hitIdx, focus) {
+  const hit = fixHits[hitIdx];
+  if (!hit) return;
+  const { chunk, errors } = hit;
+  const { html, shown } = paintErrors(chunk.text, errors, focus);
+  const missing = errors.filter((_, i) => !shown.has(i));
+  $("#cmpTitle").textContent = `${hit.no}번 ${hit.name} · ${chunk.label}${chunk.sem ? ` ${chunk.sem}학기` : ""} — 맞춤법 맥락 보기`;
+  $("#cmpBody").className = "compare single";
+  $("#cmpBody").innerHTML = `<div class="pane plain">
+    <h4>지적 ${errors.length}건 — 누른 것은 원문에 빨갛게 표시했습니다</h4>
+    <div class="ctx-list">${errors.map((e, i) => `<div class="fix">${i === focus ? "▶ " : ""}<del>${esc(e.bad)}</del> → <ins>${esc(e.good)}</ins><div class="why">${esc(e.why || "")}</div></div>`).join("")}</div>
+    ${missing.length ? `<div class="snip">※ ${missing.map(e => `"${esc(e.bad)}"`).join(", ")} 은(는) 원문에서 그대로 찾지 못했습니다 — AI가 앞뒤를 다듬어 옮겼을 수 있으니 직접 확인해 주세요.</div>` : ""}
+    <h4 style="margin-top:12px">기록 원문 · ${chunk.text.length}자 · ${chunk.bytes.toLocaleString()}B</h4>
+    <div class="raw">${html}</div></div>`;
+  $("#cmpModal").classList.add("on");
+}
+
 function renderFix() {
   renderGradePills("#fixGrade", state.fixGrade, g => { state.fixGrade = g; renderFix(); });
+}
+function bindFixClicks() {
+  $$("#fixResults .fix.clickable").forEach(el => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    const open = () => openFixContext(parseInt(el.dataset.hit, 10), parseInt(el.dataset.err, 10));
+    el.onclick = open;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
 }
 $("#fixRun").onclick = async () => {
   if (state.aiBusy) return;
@@ -1145,6 +1237,7 @@ $("#fixRun").onclick = async () => {
   if (!students.length) { toast("해당 학년 기록이 없습니다"); return; }
   state.aiBusy = true; $("#fixRun").disabled = true;
   $("#fixResults").innerHTML = "";
+  fixHits.length = 0;
   let done = 0, found = 0, failed = 0;
   const stat = () => { $("#fixStatus").innerHTML =
     `<span class="spin"></span> <span class="progress">검사 중 ${done}/${students.length}명 · 지적 ${found}건${failed ? ` · 실패 ${failed}명` : ""}</span>`; };
@@ -1167,14 +1260,20 @@ ${listing}`;
       const items = (j.items || []).filter(it => (it.errors || []).length);
       found += items.reduce((s, it) => s + it.errors.length, 0);
       if (items.length) {
-        $("#fixResults").insertAdjacentHTML("beforeend", `<div class="ai-item">
-          <div class="head">${no}번 ${esc(name)} <span class="hint">${g}학년</span></div>
-          ${items.map(it => {
-            const c = mine[it.i - 1]; if (!c) return "";
-            return `<div class="chip tint-${(it.i - 1) % 6}">${esc(c.label)}${c.sem ? ` ${c.sem}학기` : ""}</div>
-              ${it.errors.map(e => `<div class="fix"><del>${esc(e.bad)}</del> → <ins>${esc(e.good)}</ins>
-              <div class="why">${esc(e.why || "")}</div></div>`).join("")}`;
-          }).join("")}</div>`);
+        const blocks = items.map(it => {
+          const c = mine[it.i - 1];
+          if (!c) return "";
+          const hitIdx = fixHits.push({ chunk: c, errors: it.errors, no, name, grade: g }) - 1;
+          return `<div class="chip tint-${(it.i - 1) % 6}">${esc(c.label)}${c.sem ? ` ${c.sem}학기` : ""}</div>
+            ${it.errors.map((e, ei) => `<div class="fix clickable" data-hit="${hitIdx}" data-err="${ei}"
+              role="button" tabindex="0" aria-label="원문에서 이 부분 확인">
+              <del>${esc(e.bad)}</del> → <ins>${esc(e.good)}</ins>
+              <div class="why">${esc(e.why || "")}</div>
+              <div class="peek">눌러서 원문 맥락 보기 →</div></div>`).join("")}`;
+        }).join("");
+        $("#fixResults").insertAdjacentHTML("beforeend",
+          `<div class="ai-item"><div class="head">${no}번 ${esc(name)} <span class="hint">${g}학년</span></div>${blocks}</div>`);
+        bindFixClicks();
       }
     } catch (err) {
       failed++;
