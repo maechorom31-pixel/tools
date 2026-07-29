@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생기부 점검실</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect x=%224%22 y=%222.5%22 width=%2216%22 height=%2219%22 rx=%222.5%22 fill=%22%23F4F5F7%22 stroke=%22%233355D8%22 stroke-width=%222%22/><path d=%22M8 12.5l3 3 5.5-6%22 fill=%22none%22 stroke=%22%233355D8%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><line x1=%228%22 y1=%226.5%22 x2=%2216%22 y2=%226.5%22 stroke=%22%233355D8%22 stroke-width=%221.4%22 opacity=%22.5%22/></svg>">
+<style>
+:root {
+  --bg: #F4F5F7; --card: #FFFFFF; --ink: #171A20; --ink-soft: #5A616C;
+  --line: #E3E5EA; --accent: #3355D8; --accent-strong: #2543B8; --accent-soft: #EBF0FF;
+  --star: #F59F00; --danger: #D6336C; --ok: #099268; --warn: #E8590C;
+  --ok-soft: #DFF4F0; --warn-soft: #FFF0DC; --danger-soft: #FFE9F0;
+  --shadow: 0 1px 2px rgba(23,26,32,.05), 0 4px 14px rgba(23,26,32,.06);
+  --shadow-lift: 0 2px 6px rgba(23,26,32,.07), 0 12px 28px rgba(23,26,32,.11);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14161B; --card: #1D2027; --ink: #EAECF1; --ink-soft: #9BA2AE;
+  --line: #2D313B; --accent: #8298FF; --accent-strong: #A5B4FF; --accent-soft: #242C4E;
+  --star: #FFC94D; --danger: #FF8CB0; --ok: #63E6BE; --warn: #FFA94D;
+  --ok-soft: #1B3A33; --warn-soft: #46301A; --danger-soft: #47222F;
+} }
+:root[data-theme="dark"] {
+  --bg: #14161B; --card: #1D2027; --ink: #EAECF1; --ink-soft: #9BA2AE;
+  --line: #2D313B; --accent: #8298FF; --accent-strong: #A5B4FF; --accent-soft: #242C4E;
+  --star: #FFC94D; --danger: #FF8CB0; --ok: #63E6BE; --warn: #FFA94D;
+  --ok-soft: #1B3A33; --warn-soft: #46301A; --danger-soft: #47222F;
+}
+/* 카테고리 6색 (탭·과목 칩 순환) */
+.tint-0 { --tb:#E8EEFF; --tf:#3B5BDB; } .tint-1 { --tb:#F3EBFF; --tf:#7048E8; }
+.tint-2 { --tb:#DFF4F0; --tf:#099268; } .tint-3 { --tb:#FFF0DC; --tf:#E8590C; }
+.tint-4 { --tb:#FFE9F0; --tf:#D6336C; } .tint-5 { --tb:#EDEFF3; --tf:#4B5563; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tint-0 { --tb:#26305A; --tf:#91A7FF; }
+  :root:not([data-theme="light"]) .tint-1 { --tb:#2F2455; --tf:#B197FC; }
+  :root:not([data-theme="light"]) .tint-2 { --tb:#1B3A33; --tf:#63E6BE; }
+  :root:not([data-theme="light"]) .tint-3 { --tb:#46301A; --tf:#FFA94D; }
+  :root:not([data-theme="light"]) .tint-4 { --tb:#47222F; --tf:#FAA2C1; }
+  :root:not([data-theme="light"]) .tint-5 { --tb:#2A2F3A; --tf:#ADB5BD; } }
+:root[data-theme="dark"] .tint-0 { --tb:#26305A; --tf:#91A7FF; }
+:root[data-theme="dark"] .tint-1 { --tb:#2F2455; --tf:#B197FC; }
+:root[data-theme="dark"] .tint-2 { --tb:#1B3A33; --tf:#63E6BE; }
+:root[data-theme="dark"] .tint-3 { --tb:#46301A; --tf:#FFA94D; }
+:root[data-theme="dark"] .tint-4 { --tb:#47222F; --tf:#FAA2C1; }
+:root[data-theme="dark"] .tint-5 { --tb:#2A2F3A; --tf:#ADB5BD; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.55;
+  min-height: 100vh;
+}
+.wrap { max-width: 1020px; margin: 0 auto; padding: 20px 16px 60px; }
+header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+header h1 { font-size:1.5rem; font-weight:800; letter-spacing:-.02em; }
+header .sub { font-size:.78rem; color:var(--ink-soft); margin-top:2px; }
+header .spacer { flex:1; }
+.icon-btn {
+  width:38px; height:38px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); cursor:pointer; font-size:1.05rem; display:inline-flex;
+  align-items:center; justify-content:center; color:var(--ink);
+}
+.icon-btn:hover { border-color:var(--accent); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+.card {
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  box-shadow:var(--shadow); padding:16px;
+}
+/* ---------- 업로드 영역 ---------- */
+.upzone {
+  border:2px dashed var(--line); border-radius:14px; padding:22px 16px; text-align:center;
+  cursor:pointer; transition:border-color .15s, background .15s; background:var(--card);
+}
+.upzone:hover, .upzone.over { border-color:var(--accent); background:var(--accent-soft); }
+.upzone .t { font-weight:700; font-size:.95rem; }
+.upzone .s { font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+.filelist { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.filechip {
+  display:inline-flex; align-items:center; gap:6px; font-size:.78rem;
+  background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:4px 12px;
+  font-weight:600;
+}
+.scan-note { font-size:.82rem; color:var(--ink-soft); margin-top:10px; }
+.scan-note b { color:var(--ink); }
+
+/* ---------- 탭 ---------- */
+.tabs { display:flex; gap:8px; margin:18px 0 14px; flex-wrap:wrap; }
+.tab {
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:999px; padding:8px 16px; font-size:.86rem; font-weight:600; cursor:pointer;
+  min-height:38px;
+}
+.tab:hover { border-color:var(--accent); }
+.tab.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+/* ---------- 알약(학년/모드 선택) ---------- */
+.pills { display:inline-flex; gap:6px; flex-wrap:wrap; }
+.pill {
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:999px; padding:5px 13px; font-size:.8rem; font-weight:600; cursor:pointer;
+  min-height:32px;
+}
+.pill.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.hint { font-size:.78rem; color:var(--ink-soft); }
+.sect-title { font-size:1rem; font-weight:700; letter-spacing:-.015em; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.sect-title::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--tf, var(--accent)); }
+
+/* ---------- 표 ---------- */
+table { border-collapse:collapse; width:100%; font-size:.84rem; }
+th, td { border-bottom:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top; }
+th { font-size:.76rem; color:var(--ink-soft); font-weight:600; white-space:nowrap; }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+tbody tr:hover { background:var(--accent-soft); }
+tbody tr.clickable { cursor:pointer; }
+.table-scroll { overflow-x:auto; }
+.badge {
+  display:inline-block; font-size:.72rem; font-weight:700; border-radius:6px; padding:2px 7px;
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.badge.ok { background:var(--ok-soft); color:var(--ok); }
+.badge.warn { background:var(--warn-soft); color:var(--warn); }
+.badge.over { background:var(--danger-soft); color:var(--danger); }
+.badge.none { background:var(--bg); color:var(--ink-soft); }
+.bar { height:6px; border-radius:4px; background:var(--bg); overflow:hidden; margin-top:3px; min-width:70px; }
+.bar > i { display:block; height:100%; border-radius:4px; background:var(--ok); }
+.bar > i.warn { background:var(--warn); } .bar > i.over { background:var(--danger); }
+
+/* ---------- 겹침 점검 ---------- */
+.simrow { cursor:pointer; }
+.score { font-weight:800; font-variant-numeric:tabular-nums; }
+.score.hi { color:var(--danger); } .score.mid { color:var(--warn); } .score.lo { color:var(--ink-soft); }
+.snip { color:var(--ink-soft); font-size:.78rem; }
+mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; padding:0 1px; font-weight:600; }
+.dupe-card { border:1px solid var(--danger); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:var(--danger-soft); }
+.dupe-card .head { font-weight:700; font-size:.88rem; color:var(--danger); margin-bottom:4px; }
+.dupe-card .who { font-size:.84rem; }
+.dupe-card .snip { margin-top:4px; }
+.compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.compare .pane { font-size:.84rem; line-height:1.8; white-space:pre-wrap; word-break:break-all; }
+.compare .pane h4 { font-size:.8rem; margin-bottom:6px; color:var(--ink-soft); font-weight:600; }
+@media (max-width:720px){ .compare { grid-template-columns:1fr; } }
+
+/* ---------- 버튼 ---------- */
+.btn {
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:10px; padding:9px 16px; font-size:.86rem; font-weight:600; cursor:pointer;
+  min-height:38px;
+}
+.btn:hover { border-color:var(--accent); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn.primary:hover { background:var(--accent-strong); }
+:root[data-theme="dark"] .btn.primary { color:#14161B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color:#14161B; } }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn.small { padding:5px 12px; min-height:32px; font-size:.78rem; }
+
+/* ---------- AI 결과 카드 ---------- */
+.ai-item { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+.ai-item .head { display:flex; align-items:center; gap:8px; font-weight:700; font-size:.88rem; margin-bottom:6px; flex-wrap:wrap; }
+.chip {
+  display:inline-block; font-size:.72rem; font-weight:700; border-radius:6px; padding:2px 8px;
+  background:var(--tb, var(--accent-soft)); color:var(--tf, var(--accent));
+}
+.fix { font-size:.84rem; padding:6px 0; border-top:1px dashed var(--line); }
+.fix:first-of-type { border-top:0; }
+.fix .why { color:var(--ink-soft); font-size:.76rem; margin-top:2px; }
+.fix del { color:var(--danger); text-decoration:line-through; }
+.fix ins { color:var(--ok); text-decoration:none; font-weight:700; }
+.progress { font-size:.82rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.spin { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.box { border-radius:12px; padding:10px 14px; font-size:.8rem; margin:10px 0; }
+.box.ok { background:var(--ok-soft); color:var(--ok); }
+.box.warn { background:var(--warn-soft); color:var(--warn); }
+.box.info { background:var(--accent-soft); color:var(--accent); }
+
+/* ---------- 모달 ---------- */
+.modal { position:fixed; inset:0; background:rgba(15,18,28,.55); display:none; align-items:flex-start; justify-content:center; padding:30px 14px; z-index:50; overflow-y:auto; }
+.modal.on { display:flex; }
+.modal .mcard { background:var(--card); border-radius:16px; max-width:760px; width:100%; padding:22px; box-shadow:var(--shadow-lift); }
+.modal h3 { font-size:1.05rem; margin-bottom:10px; }
+.modal .mclose { float:right; }
+pre.code {
+  width:100%; font-family:ui-monospace, "Cascadia Code", Consolas, monospace; font-size:.74rem;
+  background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:10px;
+  padding:12px; white-space:pre; overflow-x:auto; line-height:1.5;
+}
+input[type=text], input[type=url], select {
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:10px; padding:8px 12px; font-size:.86rem; font-family:inherit; min-height:38px;
+}
+input[type=text]:focus, input[type=url]:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); outline:none; }
+input[type=range] { accent-color: var(--accent); }
+.steps { font-size:.84rem; line-height:1.9; padding-left:20px; margin:8px 0; }
+.steps b { color:var(--accent); }
+footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:center; line-height:1.8; }
+.empty { text-align:center; color:var(--ink-soft); font-size:.86rem; padding:34px 10px; }
+.detail-card { margin-top:14px; }
+.subj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; margin-top:8px; }
+.subj-cell { border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:.78rem; }
+.subj-cell b { font-size:.8rem; }
+.toast {
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  background:var(--ink); color:var(--bg); border-radius:999px; padding:9px 18px;
+  font-size:.82rem; font-weight:600; box-shadow:var(--shadow-lift); z-index:99;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.toast.on { opacity:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🔍 생기부 점검실</h1>
+      <div class="sub">NEIS 엑셀 원본 그대로 — 작성 현황 · 겹침 점검 · AI 교정 · 학급 분석</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="aiSetupBtn" title="AI 연결 설정" aria-label="AI 연결 설정">🤖</button>
+    <button class="icon-btn" id="themeBtn" title="테마 전환" aria-label="테마 전환">🌗</button>
+  </header>
+
+  <!-- 파일 입력 -->
+  <div class="card">
+    <div class="upzone" id="uploadZone" role="button" tabindex="0" aria-label="엑셀 파일 업로드">
+      <div class="t">NEIS 엑셀 파일을 여기로 끌어다 놓기 (여러 개 가능)</div>
+      <div class="s">클릭해서 선택 · [학급담임] 창의적체험활동상황 / 세부능력 및 특기사항 → 엑셀 저장 원본 그대로</div>
+    </div>
+    <input type="file" id="filePick" accept=".xlsx" multiple hidden>
+    <div class="filelist" id="filelist"></div>
+    <div class="scan-note" id="scanNote">파일을 올리면 인식 결과가 여기에 표시됩니다. 올린 파일은 <b>이 컴퓨터 안에서만</b> 읽습니다.</div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="dash" role="tab">📋 작성 현황</button>
+    <button class="tab" data-tab="sim" role="tab">🪞 겹침 점검</button>
+    <button class="tab" data-tab="fix" role="tab">✏️ AI 맞춤법 검사</button>
+    <button class="tab" data-tab="cls" role="tab">🧑‍🏫 학급 총평 분석</button>
+  </div>
+
+  <!-- ① 작성 현황 -->
+  <section id="tab-dash">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <span class="sect-title tint-0" style="margin-bottom:0">작성 현황</span>
+        <div class="pills" id="dashGrade"></div>
+        <div class="spacer" style="flex:1"></div>
+        <span class="hint">바이트: 나이스 계산 방식(한글 3 · 영문/공백 1 · 줄바꿈 2) · 한도: 2026학년도 기준</span>
+      </div>
+      <div class="table-scroll"><table id="dashTable"></table></div>
+      <div id="dashEmpty" class="empty">파일을 올리면 학생별 작성 현황이 표시됩니다.</div>
+    </div>
+    <div class="card detail-card" id="dashDetail" style="display:none"></div>
+  </section>
+
+  <!-- ② 겹침 점검 -->
+  <section id="tab-sim" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <span class="sect-title tint-1" style="margin-bottom:0">겹침 점검</span>
+        <div class="pills" id="simMode">
+          <button class="pill on" data-mode="peer">학생 간 (같은 학년·같은 과목)</button>
+          <button class="pill" data-mode="self">재탕 (같은 학생·학년 간)</button>
+        </div>
+        <label class="hint" for="simThr">기준
+          <input type="range" id="simThr" min="5" max="50" value="12" style="vertical-align:middle">
+          <b id="simThrVal">12%</b>
+        </label>
+      </div>
+      <p class="hint" style="margin-bottom:10px">공백을 뺀 연속 8글자 조각이 두 기록에 함께 나타나는 비율(짧은 기록 기준)로 잽니다. 글자까지 완전히 같은 기록은 위쪽에 묶음으로 모아 보여주고, 행을 누르면 원문을 맞대어 확인할 수 있습니다. 계산은 전부 이 컴퓨터 안에서만 이루어집니다.</p>
+      <div id="dupeGroups"></div>
+      <div class="table-scroll"><table id="simTable"></table></div>
+      <div id="simEmpty" class="empty">파일을 올리면 겹치는 기록 쌍이 표시됩니다.</div>
+    </div>
+    <div class="card detail-card" id="simDetail" style="display:none"></div>
+  </section>
+
+  <!-- ③ AI 교정 -->
+  <section id="tab-fix" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <span class="sect-title tint-2" style="margin-bottom:0">AI 맞춤법·띄어쓰기 검사</span>
+        <div class="pills" id="fixGrade"></div>
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn primary" id="fixRun">전체 검사 시작</button>
+      </div>
+      <p class="hint">학생별로 과목·영역 단위로 나눠 AI에 보냅니다. <b>학생 이름·학교명은 자동 마스킹</b>되고 본문 텍스트만 전송됩니다. 문체(개조식)는 유지하고 맞춤법·띄어쓰기 오류만 찾습니다.</p>
+      <div id="fixStatus" style="margin-top:10px"></div>
+      <div id="fixResults" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <!-- ④ 학급 분석 -->
+  <section id="tab-cls" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <span class="sect-title tint-3" style="margin-bottom:0">학급 총평 분석</span>
+        <div class="pills" id="clsGrade"></div>
+        <select id="clsSubject" aria-label="과목 선택"></select>
+        <button class="btn primary" id="clsRun">일괄 분석</button>
+      </div>
+      <p class="hint">학급 전체 학생의 같은 과목(영역) 기록을 <b>한 번에</b> AI로 보내 — 서로 비슷한 서술 묶음, 반복되는 정형 문구, 눈에 띄는 문제를 종합 진단합니다. 이름·학교명은 마스킹되고 번호로만 식별합니다.</p>
+      <div id="clsStatus" style="margin-top:10px"></div>
+      <div id="clsResults" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <footer>
+    올린 파일과 계산 결과는 전송 없이 이 컴퓨터에서만 처리됩니다 · AI 검사를 실행할 때에만 마스킹된 본문이 선생님의 중계를 거쳐 전달됩니다<br>
+    겹침 비율·바이트 수는 참고용 보조 지표입니다 — 최종 판단은 선생님의 몫입니다
+  </footer>
+</div>
+
+<!-- AI 연결 설정 모달 -->
+<div class="modal" id="aiModal" role="dialog" aria-modal="true" aria-label="AI 연결 설정">
+  <div class="mcard">
+    <button class="icon-btn mclose" data-close="aiModal" aria-label="닫기">✕</button>
+    <h3>🤖 AI 연결 설정</h3>
+    <p class="hint" style="margin-bottom:8px">
+      NVIDIA 무료 API는 브라우저에서 직접 호출할 수 없어(CORS) <b>구글 앱스 스크립트 중계</b>를 한 번만 만들어 연결합니다.
+      API 키는 선생님 구글 계정 안(중계 코드)에만 있고, 이 페이지에는 저장되지 않습니다.
+    </p>
+    <ol class="steps">
+      <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a> 에서 <b>새 프로젝트</b> 만들기</li>
+      <li>아래 코드를 <b>전체 복사</b>해서 Code.gs에 붙여넣기 (키는 이미 들어 있음)</li>
+      <li><b>배포 → 새 배포 → 웹 앱</b> · 실행: <b>나</b> · 액세스: <b>모든 사용자</b> → 배포</li>
+      <li>발급된 <b>웹 앱 URL</b>(https://script.google.com/macros/s/…/exec)을 아래에 붙여넣기</li>
+    </ol>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn small" id="copyGas">중계 코드 복사</button>
+      <span class="hint">배포는 최초 1회면 충분합니다.</span>
+    </div>
+    <pre class="code" id="gasCode" style="max-height:180px; overflow-y:auto"></pre>
+    <div class="row" style="margin-top:12px">
+      <input type="url" id="relayUrl" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1; min-width:220px">
+      <button class="btn primary" id="relaySave">연결</button>
+      <button class="btn" id="relayClear">해제</button>
+    </div>
+    <div id="relayStat" class="hint" style="margin-top:8px"></div>
+    <div class="box info" style="margin-top:10px">
+      쓰는 모델(무료): 맞춤법 검사 <b>DeepSeek V4 Flash</b> → 학급 분석 <b>GLM-5.2</b>.
+      한 모델이 응답하지 않으면 자동으로 다음 모델로 넘어갑니다.
+    </div>
+  </div>
+</div>
+
+<!-- 맞대어 보기 모달 -->
+<div class="modal" id="cmpModal" role="dialog" aria-modal="true" aria-label="기록 맞대어 보기">
+  <div class="mcard" style="max-width:900px">
+    <button class="icon-btn mclose" data-close="cmpModal" aria-label="닫기">✕</button>
+    <h3 id="cmpTitle">맞대어 보기</h3>
+    <div class="compare" id="cmpBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ----------------------------------------------------------------
+   생기부 점검실
+   NEIS [학급담임] 창체·세특 엑셀 출력물을 가공 없이 그대로 읽어
+   작성 현황 / 겹침 점검 / AI 교정 / 학급 일괄 분석을 제공한다.
+   파일 해석과 겹침 계산은 전부 이 브라우저 안에서 끝나고,
+   AI 검사를 실행할 때에만 마스킹된 본문이 중계(GAS)로 나간다.
+   ---------------------------------------------------------------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("on"), 2200);
+}
+
+/* ---------- 테마 (자동 → 라이트 → 다크) ---------- */
+const THEME_KEY = "sgb-theme", THEME_ORDER = ["auto","light","dark"];
+const THEME_LABEL = { auto:"🌗", light:"☀️", dark:"🌙" };
+function applyTheme(m) {
+  if (m === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", m);
+  $("#themeBtn").textContent = THEME_LABEL[m];
+}
+let theme = localStorage.getItem(THEME_KEY);
+if (!THEME_ORDER.includes(theme)) theme = "auto";
+applyTheme(theme);
+$("#themeBtn").onclick = () => {
+  theme = THEME_ORDER[(THEME_ORDER.indexOf(theme)+1) % THEME_ORDER.length];
+  localStorage.setItem(THEME_KEY, theme); applyTheme(theme);
+};
+
+/* ---------- 1. XLSX 읽기 ----------
+   xlsx는 zip 컨테이너다. 외부 라이브러리 없이 zip 목차(EOCD → 중앙
+   디렉터리)를 읽되, 필요한 항목(공유 문자열·첫 시트)만 골라서
+   브라우저 내장 DecompressionStream으로 푼다 — 전체 해제보다 빠르다. */
+function makeByteReader(buf) {
+  const view = new DataView(buf);
+  return {
+    bytes: new Uint8Array(buf),
+    u16: p => view.getUint16(p, true),
+    u32: p => view.getUint32(p, true),
+    len: buf.byteLength,
+  };
+}
+function findEocd(r) {
+  // EOCD 시그니처(50 4b 05 06)를 파일 끝에서 역방향 탐색 (주석 최대 64KB)
+  const sig = [0x50, 0x4b, 0x05, 0x06];
+  const stop = Math.max(0, r.len - 22 - 65536);
+  for (let p = r.len - 22; p >= stop; p--) {
+    if (r.bytes[p] === sig[0] && r.bytes[p+1] === sig[1] && r.bytes[p+2] === sig[2] && r.bytes[p+3] === sig[3]) return p;
+  }
+  throw new Error("엑셀(xlsx) 파일이 아닙니다.");
+}
+function listZipEntries(r) {
+  const eocd = findEocd(r);
+  const total = r.u16(eocd + 10);
+  const entries = [];
+  let p = r.u32(eocd + 16); // 중앙 디렉터리 시작
+  const utf8 = new TextDecoder();
+  for (let n = 0; n < total && r.u32(p) === 0x02014b50; n++) {
+    const nameLen = r.u16(p + 28);
+    entries.push({
+      name: utf8.decode(r.bytes.subarray(p + 46, p + 46 + nameLen)),
+      deflated: r.u16(p + 10) === 8,
+      packedSize: r.u32(p + 20),
+      headerAt: r.u32(p + 42),
+    });
+    p += 46 + nameLen + r.u16(p + 30) + r.u16(p + 32);
+  }
+  return entries;
+}
+async function extractZipEntry(r, entry) {
+  // 로컬 헤더의 가변 길이(이름·extra)를 건너뛴 지점부터 압축 데이터
+  const h = entry.headerAt;
+  const dataAt = h + 30 + r.u16(h + 26) + r.u16(h + 28);
+  const packed = r.bytes.subarray(dataAt, dataAt + entry.packedSize);
+  if (!entry.deflated) return packed.slice();
+  const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+/* 네임스페이스 접두사 유무와 무관하게 localName으로 요소를 모은다 */
+function collectByLocal(doc, name) {
+  const out = [];
+  for (const el of doc.getElementsByTagName("*")) if (el.localName === name) out.push(el);
+  return out;
+}
+function cellText(el) {
+  let s = "";
+  for (const t of collectByLocal(el, "t")) s += t.textContent;
+  return s;
+}
+async function readXlsx(buf) {
+  const r = makeByteReader(buf);
+  const entries = listZipEntries(r);
+  const utf8 = new TextDecoder();
+  const xml = new DOMParser();
+  const pick = pred => entries.find(pred);
+  // 공유 문자열 사전 (없는 파일도 있다)
+  let sst = [];
+  const sstEntry = pick(e => e.name === "xl/sharedStrings.xml");
+  if (sstEntry) {
+    const doc = xml.parseFromString(utf8.decode(await extractZipEntry(r, sstEntry)), "text/xml");
+    sst = collectByLocal(doc, "si").map(cellText);
+  }
+  // 번호가 가장 작은 시트 하나만 (NEIS 출력물은 단일 시트)
+  const sheets = entries
+    .map(e => ({ e, m: e.name.match(/^xl\/worksheets\/sheet(\d+)\.xml$/) }))
+    .filter(x => x.m)
+    .sort((a, b) => +a.m[1] - +b.m[1]);
+  if (!sheets.length) throw new Error("시트를 찾지 못했습니다.");
+  const doc = xml.parseFromString(utf8.decode(await extractZipEntry(r, sheets[0].e)), "text/xml");
+  const grid = []; // grid[행번호] = { 열문자: 값 }
+  for (const rowEl of collectByLocal(doc, "row")) {
+    const line = {};
+    for (const c of collectByLocal(rowEl, "c")) {
+      const col = (c.getAttribute("r") || "").replace(/\d+/g, "");
+      const kind = c.getAttribute("t");
+      let v = null;
+      if (kind === "inlineStr") v = cellText(c);
+      else {
+        const vEl = collectByLocal(c, "v")[0];
+        if (vEl) v = kind === "s" ? sst[+vEl.textContent] : vEl.textContent;
+      }
+      if (v !== null && v !== "") line[col] = v;
+    }
+    grid[+rowEl.getAttribute("r")] = line;
+  }
+  return grid;
+}
+
+/* ---------- 2. NEIS 출력물 해석 ----------
+   NEIS 엑셀은 인쇄 지면을 그대로 옮긴 구조라 쪽마다 머리글이 반복되고
+   본문이 행·쪽 경계에서 끊긴다. 행을 위에서 아래로 읽으며
+   [학생 → 학년 → 영역] 문맥을 유지하는 상태 머신으로 복원한다.
+   창체: 번호(A)·성명(B)·학년(C)·영역(D)·시간(E)·특기사항(F)
+   세특: 번호(A)·성명(B)·학년(C)·본문(D) */
+const AREAS = ["자율활동", "동아리활동", "진로활동"];
+const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(v).trim());
+
+function detectDocType(grid) {
+  for (let i = 1; i < Math.min(grid.length, 8); i++) {
+    for (const v of Object.values(grid[i] || {})) {
+      if (typeof v !== "string") continue;
+      if (v.includes("창의적체험활동")) return "창체";
+      if (v.includes("세부능력")) return "세특";
+      if (v.includes("행동특성")) return "행특";
+    }
+  }
+  return null;
+}
+
+function parseNeis(grid) {
+  const doctype = detectDocType(grid);
+  if (!doctype) throw new Error("창의적체험활동/세부능력 출력물이 아닙니다.");
+  if (doctype === "행특") throw new Error("행동특성 파일은 아직 지원하지 않습니다. (창체·세특만 가능)");
+  const recs = {};   // "no|name|grade|area" → { no, name, grade, area, text, hope }
+  let school = "", klass = "";
+  let cur = null, grade = null, area = null;
+  const ensure = a => {
+    const k = [cur.no, cur.name, grade, a].join("|");
+    if (!recs[k]) recs[k] = { no: cur.no, name: cur.name, grade, area: a, text: "", hope: "" };
+    return recs[k];
+  };
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i]; if (!c) continue;
+    const vals = Object.values(c);
+    // 쪽번호 행("n / 총쪽수" + 학교명) — 학교명은 마스킹에 쓰려고 기억해 둔다
+    if (vals.includes("/")) {
+      const sch = vals.find(v => typeof v === "string" && /학교$/.test(v.trim()));
+      if (sch) school = sch.trim();
+      continue;
+    }
+    // A열이 숫자가 아닌 문자열이면 데이터 행이 아니다 (열 머리글·반 표시·날짜)
+    if (c.A !== undefined && !isNum(c.A)) {
+      if (/^\d학년\s*\d+반$/.test(String(c.A).trim())) klass = String(c.A).trim();
+      continue;
+    }
+    if (c.D === "영역") continue; // 창체 머리글 둘째 줄
+    if (isNum(c.A) && c.B !== undefined && !isNum(c.B)) {
+      cur = { no: parseInt(c.A, 10), name: String(c.B).trim() };
+    }
+    if (!cur) continue;
+    if (isNum(c.C)) { grade = parseInt(c.C, 10); area = null; }
+    if (!grade) continue;
+    if (doctype === "창체") {
+      if (typeof c.D === "string" && AREAS.includes(c.D.trim())) area = c.D.trim();
+      if (c.F === "희망분야") { if (area) ensure(area).hope = String(c.G || "").trim(); continue; }
+      if (typeof c.F === "string" && c.F && area) ensure(area).text += c.F;
+      else if (area) ensure(area); // 텍스트 없는 영역도 0자 기록으로 남긴다
+    } else { // 세특 — 본문은 D열. 제목 문자열은 위 규칙들이 걸러낸다
+      if (typeof c.D === "string" && c.D && !c.D.trim().startsWith("세부능력")) ensure("세특").text += c.D;
+    }
+  }
+  return { doctype, school, klass, recs: Object.values(recs) };
+}
+
+/* 세특 본문을 과목 조각으로 나눈다 — "(1학기)국어:", "독서:" 라벨 기준 */
+const SUBJ_BOUND = /(?=\(\d학기\)[^:\n]{1,20}:|(?<=[.함임됨움짐냄듦씀킴큼])\s*[가-힣A-Za-zⅠⅡⅢ·\s]{2,18}:)/;
+const SUBJ_LABEL = /^(?:\((\d)학기\))?\s*([가-힣A-Za-zⅠⅡⅢ·\s]{1,20}):\s*/;
+function splitSubjects(text) {
+  const out = [];
+  for (const raw of text.split(SUBJ_BOUND)) {
+    const p = raw.trim();
+    if (!p) continue;
+    const m = p.match(SUBJ_LABEL);
+    if (m) out.push({ subject: m[2].trim(), sem: m[1] || "", body: p.slice(m[0].length) });
+    else if (out.length) out[out.length-1].body += p;
+    else out.push({ subject: "(미분류)", sem: "", body: p });
+  }
+  return out;
+}
+
+/* ---------- 3. 나이스 바이트 계산 ----------
+   나이스 입력기 기준: 한글·한자 등 전각 3바이트, 줄바꿈 2바이트,
+   ASCII(영문·숫자·공백·문장부호)와 세특에 흔한 가운뎃점·곡선따옴표 1바이트 */
+const ONE_BYTE = /[\x20-\x7E·‘’“”]/;
+function neisBytes(t) {
+  let total = 0;
+  for (const ch of t) total += ch === "\n" ? 2 : ONE_BYTE.test(ch) ? 1 : 3;
+  return total;
+}
+const LIMITS = { "자율활동": 1500, "동아리활동": 1500, "진로활동": 1500, "세특": 1500 }; // 2026학년도, 세특은 과목당
+
+/* ---------- 4. 전역 상태 ---------- */
+const state = {
+  files: [],           // {name, doctype}
+  recs: new Map(),     // "no|name|grade|area" → rec (여러 파일 병합: 긴 텍스트 우선)
+  school: "", klass: "",
+  chunks: [],          // {no, name, grade, kind:'area'|'subj', label, sem, text, bytes}
+  grades: [],
+  tab: "dash", dashGrade: null, fixGrade: null, clsGrade: null,
+  simMode: "peer", simThr: 0.12, simPairs: [], dupeGroups: [],
+  relay: localStorage.getItem("sgb-relay") || "",
+  aiBusy: false,
+};
+
+function rebuild() {
+  const recs = [...state.recs.values()];
+  state.chunks = [];
+  for (const r of recs) {
+    if (r.area === "세특") {
+      for (const s of splitSubjects(r.text)) {
+        if (s.body.trim().length < 2) continue;
+        state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "subj",
+          label: s.subject, sem: s.sem, text: s.body.trim(), bytes: neisBytes(s.body.trim()) });
+      }
+    } else {
+      state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "area",
+        label: r.area, sem: "", text: r.text.trim(), bytes: neisBytes(r.text.trim()), hope: r.hope });
+    }
+  }
+  state.grades = [...new Set(recs.map(r => r.grade))].sort();
+  const g = state.grades[state.grades.length - 1] || null;
+  if (!state.grades.includes(state.dashGrade)) state.dashGrade = g;
+  if (!state.grades.includes(state.fixGrade)) state.fixGrade = g;
+  if (!state.grades.includes(state.clsGrade)) state.clsGrade = g;
+  computeSim();
+  renderAll();
+}
+
+/* ---------- 5. 파일 입력 ---------- */
+async function handleFiles(files) {
+  for (const f of files) {
+    try {
+      const grid = await readXlsx(await f.arrayBuffer());
+      const { doctype, school, klass, recs } = parseNeis(grid);
+      if (school) state.school = school;
+      if (klass) state.klass = klass;
+      for (const r of recs) {
+        const k = [r.no, r.name, r.grade, r.area].join("|");
+        const old = state.recs.get(k);
+        if (!old || r.text.length > old.text.length) state.recs.set(k, r);
+        else if (old && r.hope && !old.hope) old.hope = r.hope;
+      }
+      state.files.push({ name: f.name, doctype });
+    } catch (err) {
+      toast(`${f.name}: ${err.message}`);
+    }
+  }
+  rebuild(); renderFiles();
+}
+function renderFiles() {
+  $("#filelist").innerHTML = state.files.map(f =>
+    `<span class="filechip">${f.doctype === "창체" ? "🎯" : "📚"} ${esc(f.name)} · ${f.doctype}</span>`).join("");
+  const students = new Set([...state.recs.values()].map(r => r.no + "|" + r.name));
+  $("#scanNote").innerHTML = state.files.length
+    ? `<b>${esc(state.klass || "")}</b> 학생 <b>${students.size}명</b> · 학년 <b>${state.grades.join("·")}</b> · 기록 조각 <b>${state.chunks.length}개</b> 인식 완료. 올린 파일은 이 컴퓨터 안에서만 읽습니다.`
+    : "파일을 올리면 인식 결과가 여기에 표시됩니다. 올린 파일은 <b>이 컴퓨터 안에서만</b> 읽습니다.";
+}
+const upzone = $("#uploadZone");
+upzone.onclick = () => $("#filePick").click();
+upzone.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#filePick").click(); } };
+$("#filePick").onchange = e => { handleFiles([...e.target.files]); e.target.value = ""; };
+["dragover","dragenter"].forEach(ev => upzone.addEventListener(ev, e => { e.preventDefault(); upzone.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => upzone.addEventListener(ev, e => { e.preventDefault(); upzone.classList.remove("over"); }));
+upzone.addEventListener("drop", e => handleFiles([...e.dataTransfer.files].filter(f => f.name.endsWith(".xlsx"))));
+
+/* ---------- 6. 탭 전환 ---------- */
+$$(".tab").forEach(b => b.onclick = () => {
+  state.tab = b.dataset.tab;
+  $$(".tab").forEach(x => x.classList.toggle("on", x === b));
+  ["dash","sim","fix","cls"].forEach(t => $("#tab-" + t).style.display = t === state.tab ? "" : "none");
+});
+
+/* 학년 알약 공통 */
+function renderGradePills(elId, cur, onPick) {
+  const el = $(elId);
+  el.innerHTML = state.grades.map(g =>
+    `<button class="pill ${g === cur ? "on" : ""}" data-g="${g}">${g}학년</button>`).join("");
+  el.querySelectorAll(".pill").forEach(p => p.onclick = () => onPick(parseInt(p.dataset.g, 10)));
+}
+
+/* ---------- 7. 작성 현황 ---------- */
+function byteBadge(bytes, limit) {
+  if (!bytes) return `<span class="badge none">미작성</span>`;
+  const pct = bytes / limit;
+  const cls = pct > 1 ? "over" : pct > 0.9 ? "warn" : "ok";
+  return `<span class="badge ${cls}">${bytes.toLocaleString()}B</span>`;
+}
+function renderDash() {
+  renderGradePills("#dashGrade", state.dashGrade, g => { state.dashGrade = g; renderDash(); });
+  const g = state.dashGrade;
+  const table = $("#dashTable"), empty = $("#dashEmpty");
+  if (!g) { table.innerHTML = ""; empty.style.display = ""; $("#dashDetail").style.display = "none"; return; }
+  empty.style.display = "none";
+  const students = [...new Set(state.chunks.map(c => c.no + "|" + c.name))]
+    .map(s => { const [no, name] = s.split("|"); return { no: parseInt(no, 10), name }; })
+    .sort((a, b) => a.no - b.no);
+  const rows = students.map(st => {
+    const mine = state.chunks.filter(c => c.no === st.no && c.grade === g);
+    const areas = AREAS.map(a => {
+      const c = mine.find(x => x.kind === "area" && x.label === a);
+      return byteBadge(c ? c.bytes : 0, LIMITS[a]);
+    });
+    const subjs = mine.filter(c => c.kind === "subj");
+    const subjSum = subjs.reduce((s, c) => s + c.bytes, 0);
+    const over = subjs.filter(c => c.bytes > LIMITS["세특"]).length;
+    const hope = mine.find(c => c.hope)?.hope || "";
+    return `<tr class="clickable" data-no="${st.no}">
+      <td class="num">${st.no}</td><td>${esc(st.name)}</td>
+      <td>${areas[0]}</td><td>${areas[1]}</td><td>${areas[2]}</td>
+      <td>${esc(hope) || "<span class='hint'>—</span>"}</td>
+      <td class="num">${subjs.length ? `${subjs.length}과목 · ${subjSum.toLocaleString()}B` : "<span class='badge none'>미작성</span>"}
+        ${over ? `<span class="badge over">한도초과 ${over}</span>` : ""}</td>
+    </tr>`;
+  }).join("");
+  table.innerHTML = `<thead><tr><th class="num">번호</th><th>성명</th>
+    <th>자율활동</th><th>동아리활동</th><th>진로활동</th><th>진로희망</th><th class="num">세특</th></tr></thead>
+    <tbody>${rows}</tbody>`;
+  table.querySelectorAll("tr.clickable").forEach(tr => tr.onclick = () => renderDashDetail(parseInt(tr.dataset.no, 10)));
+}
+function renderDashDetail(no) {
+  const g = state.dashGrade;
+  const mine = state.chunks.filter(c => c.no === no && c.grade === g);
+  if (!mine.length) return;
+  const name = mine[0].name;
+  const cell = c => {
+    const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+    const pct = Math.min(c.bytes / limit * 100, 100);
+    const cls = c.bytes > limit ? "over" : c.bytes > limit * 0.9 ? "warn" : "";
+    return `<div class="subj-cell"><b>${esc(c.label)}</b>${c.sem ? ` <span class="hint">${c.sem}학기</span>` : ""}
+      <div class="hint">${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B</div>
+      <div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`;
+  };
+  const areas = mine.filter(c => c.kind === "area" && c.bytes);
+  const subjs = mine.filter(c => c.kind === "subj").sort((a, b) => b.bytes - a.bytes);
+  $("#dashDetail").style.display = "";
+  $("#dashDetail").innerHTML = `<div class="sect-title tint-0">${no}번 ${esc(name)} · ${g}학년 상세</div>
+    ${areas.length ? `<div class="subj-grid">${areas.map(cell).join("")}</div>` : ""}
+    ${subjs.length ? `<div class="hint" style="margin-top:10px">세특 (과목당 한도 ${LIMITS["세특"].toLocaleString()}B)</div>
+      <div class="subj-grid">${subjs.map(cell).join("")}</div>` : ""}`;
+  $("#dashDetail").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* ---------- 8. 겹침 점검 ----------
+   공백을 뺀 연속 PIECE(8)글자 조각을 집합으로 만들어, 두 기록이
+   공유하는 조각 수를 짧은 쪽 조각 수로 나눈 비율을 쓴다.
+   짧은 쪽 기준이라 "작년 기록 일부를 올해 재활용"한 경우도 잡힌다.
+   완전 동일(정규화 텍스트 일치) 기록은 쌍 대신 묶음으로 모아 보여준다. */
+const PIECE = 8; // 한글 두세 어절 길이 — 우연히 겹치기 어려운 최소 단위
+const squeeze = t => t.replace(/\s+/g, "");
+function pieceSet(t) {
+  const set = new Set();
+  const end = t.length - PIECE;
+  for (let i = 0; i <= end; i++) set.add(t.substr(i, PIECE));
+  return set;
+}
+function overlapRatio(sa, sb) {
+  const [probe, base] = sa.size <= sb.size ? [sa, sb] : [sb, sa];
+  if (!probe.size) return 0;
+  let shared = 0;
+  probe.forEach(p => { if (base.has(p)) shared++; });
+  return shared / probe.size;
+}
+/* 상대 조각 집합과 겹치는 최장 연속 구간 길이(공백 제외 글자 수) */
+function longestRun(t, otherSet) {
+  let best = 0, run = 0;
+  for (let i = 0; i + PIECE <= t.length; i++) {
+    if (otherSet.has(t.substr(i, PIECE))) { run = run ? run + 1 : PIECE; if (run > best) best = run; }
+    else run = 0;
+  }
+  return best;
+}
+function computeSim() {
+  const chunks = state.chunks.filter(c => c.text.length >= PIECE + 4);
+  for (const c of chunks) { c._sq = squeeze(c.text); c._ps = pieceSet(c._sq); }
+  // 완전 동일 묶음 — 정규화 텍스트가 글자까지 같은 기록끼리
+  const byText = new Map();
+  for (const c of chunks) {
+    if (!byText.has(c._sq)) byText.set(c._sq, []);
+    byText.get(c._sq).push(c);
+  }
+  state.dupeGroups = [...byText.values()]
+    .filter(arr => new Set(arr.map(c => c.no + "@" + c.grade)).size > 1)
+    .sort((a, b) => b[0]._sq.length - a[0]._sq.length);
+  const dupeKeys = new Set();
+  for (const arr of state.dupeGroups) for (const c of arr) dupeKeys.add(c);
+  // 학생 간: 같은 학년·같은 과목(영역) 묶음 안에서 전수 비교
+  const pairs = [];
+  const groups = new Map();
+  for (const c of chunks) {
+    const k = c.grade + "|" + c.kind + "|" + c.label + "|" + c.sem;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(c);
+  }
+  const addPair = (mode, x, y) => {
+    if (dupeKeys.has(x) && dupeKeys.has(y) && x._sq === y._sq) return; // 묶음에서 이미 보여줌
+    const s = overlapRatio(x._ps, y._ps);
+    if (s > 0.03) pairs.push({ mode, a: x, b: y, score: s });
+  };
+  for (const arr of groups.values())
+    for (let i = 0; i < arr.length; i++)
+      for (let j = i + 1; j < arr.length; j++)
+        if (arr[i].no !== arr[j].no) addPair("peer", arr[i], arr[j]);
+  // 재탕: 같은 학생의 서로 다른 학년 조각끼리
+  const byStu = new Map();
+  for (const c of chunks) {
+    if (!byStu.has(c.no)) byStu.set(c.no, []);
+    byStu.get(c.no).push(c);
+  }
+  for (const arr of byStu.values())
+    for (let i = 0; i < arr.length; i++)
+      for (let j = i + 1; j < arr.length; j++)
+        if (arr[i].grade !== arr[j].grade) addPair("self", arr[i], arr[j]);
+  pairs.sort((x, y) => y.score - x.score);
+  state.simPairs = pairs;
+}
+function chunkTag(c) { return `${c.no}번 ${esc(c.name)} · ${c.grade}학년 ${esc(c.label)}${c.sem ? `(${c.sem}학기)` : ""}`; }
+function renderSim() {
+  $$("#simMode .pill").forEach(p => p.classList.toggle("on", p.dataset.mode === state.simMode));
+  const table = $("#simTable"), empty = $("#simEmpty"), dupeEl = $("#dupeGroups");
+  if (!state.chunks.length) {
+    table.innerHTML = ""; dupeEl.innerHTML = ""; empty.style.display = "";
+    empty.textContent = "파일을 올리면 겹치는 기록 쌍이 표시됩니다."; return;
+  }
+  // 완전 동일 묶음 (학생 간 모드에서만 — 재탕 모드는 쌍 목록으로 본다)
+  dupeEl.innerHTML = state.simMode === "peer" ? state.dupeGroups.map(arr => {
+    const members = arr.map(chunkTag).join(" · ");
+    return `<div class="dupe-card"><div class="head">⚠ 글자까지 완전히 동일한 기록 ${arr.length}건</div>
+      <div class="who">${members}</div>
+      <div class="snip">"${esc(arr[0].text.slice(0, 90))}…" (${arr[0].text.length}자)</div></div>`;
+  }).join("") : "";
+  const list = state.simPairs.filter(p => p.mode === state.simMode && p.score >= state.simThr);
+  if (!list.length) {
+    table.innerHTML = ""; empty.style.display = "";
+    empty.textContent = (state.simMode === "peer" && state.dupeGroups.length)
+      ? "동일 묶음 외에 기준을 넘는 쌍이 없습니다."
+      : `기준(${Math.round(state.simThr*100)}%)을 넘는 쌍이 없습니다. 슬라이더를 낮춰 보세요.`;
+    return;
+  }
+  empty.style.display = "none";
+  table.innerHTML = `<thead><tr><th class="num">겹침</th><th class="num">최장 구절</th><th>기록 A</th><th>기록 B</th></tr></thead>
+    <tbody>${list.slice(0, 200).map((p, i) => {
+      const cls = p.score >= 0.3 ? "hi" : p.score >= 0.15 ? "mid" : "lo";
+      const run = longestRun(p.a._sq, p.b._ps);
+      return `<tr class="simrow" data-i="${i}">
+        <td class="num"><span class="score ${cls}">${Math.round(p.score*100)}%</span></td>
+        <td class="num">${run}자</td>
+        <td>${chunkTag(p.a)}</td><td>${chunkTag(p.b)}</td></tr>`;
+    }).join("")}</tbody>`;
+  table.querySelectorAll(".simrow").forEach(tr => tr.onclick = () => openCompare(list[parseInt(tr.dataset.i, 10)]));
+}
+/* 상대 기록과 공유하는 조각 구간을 원문 위에 형광펜 표시 */
+function paintShared(text, otherSet) {
+  const solidChars = [], origPos = [];
+  for (let i = 0; i < text.length; i++)
+    if (!/\s/.test(text[i])) { solidChars.push(text[i]); origPos.push(i); }
+  const hot = new Array(text.length).fill(false);
+  const solid = solidChars.join("");
+  for (let i = 0; i + PIECE <= solid.length; i++)
+    if (otherSet.has(solid.substr(i, PIECE)))
+      for (let k = i; k < i + PIECE; k++) hot[origPos[k]] = true;
+  let html = "", open = false;
+  for (let i = 0; i < text.length; i++) {
+    if (hot[i] !== open) { html += hot[i] ? "<mark>" : "</mark>"; open = hot[i]; }
+    html += esc(text[i]);
+  }
+  return open ? html + "</mark>" : html;
+}
+function openCompare(p) {
+  $("#cmpTitle").textContent = `겹침 ${Math.round(p.score*100)}% — 맞대어 보기`;
+  $("#cmpBody").innerHTML = `
+    <div class="pane"><h4>${chunkTag(p.a)} · ${p.a.bytes.toLocaleString()}B</h4>${paintShared(p.a.text, p.b._ps)}</div>
+    <div class="pane"><h4>${chunkTag(p.b)} · ${p.b.bytes.toLocaleString()}B</h4>${paintShared(p.b.text, p.a._ps)}</div>`;
+  $("#cmpModal").classList.add("on");
+}
+$("#simThr").oninput = e => {
+  state.simThr = parseInt(e.target.value, 10) / 100;
+  $("#simThrVal").textContent = e.target.value + "%";
+  renderSim();
+};
+$$("#simMode .pill").forEach(p => p.onclick = () => { state.simMode = p.dataset.mode; renderSim(); });
+
+/* ---------- 9. AI 호출 ----------
+   NVIDIA API는 브라우저 교차 출처 요청을 막으므로 선생님 소유의
+   앱스 스크립트 웹앱이 중계한다. text/plain 단순 요청이라 preflight가
+   없고, API 키는 중계 코드 안에만 있다. 모델이 내려가면 다음 모델로. */
+const CHAIN_FIX = [   // 맞춤법: 빠르고 과교정 없는 순서 (2026-07-29 실측)
+  { model: "deepseek-ai/deepseek-v4-flash", opts: { chat_template_kwargs: { thinking: false } } },
+  { model: "z-ai/glm-5.2", opts: { chat_template_kwargs: { enable_thinking: false } } },
+  { model: "openai/gpt-oss-120b", opts: { reasoning_effort: "low" } },
+];
+const CHAIN_CLS = [   // 학급 분석: 묶음 진단이 구체적인 순서
+  { model: "z-ai/glm-5.2", opts: { chat_template_kwargs: { enable_thinking: false } } },
+  { model: "deepseek-ai/deepseek-v4-flash", opts: { chat_template_kwargs: { thinking: false } } },
+  { model: "openai/gpt-oss-120b", opts: { reasoning_effort: "low" } },
+];
+const GAS_CODE = `// 생기부 점검실 — NVIDIA API 중계 (최초 1회만 배포)
+// 배포: 배포 > 새 배포 > 웹 앱 / 실행: 나 / 액세스: 모든 사용자
+const KEY = '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';
+function doPost(e) {
+  try {
+    const res = UrlFetchApp.fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + KEY },
+      payload: e.postData.contents,
+      muteHttpExceptions: true,
+    });
+    return ContentService.createTextOutput(res.getContentText())
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: { message: String(err) } }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+/* 응답에서 JSON 오브젝트만 건져낸다. 추론형 모델이 생각을 본문에 섞어도
+   중괄호 짝을 세며 훑으므로 생각 속 { }에 속지 않는다. */
+function pluckJson(raw) {
+  for (let at = raw.indexOf("{"); at !== -1; at = raw.indexOf("{", at + 1)) {
+    let depth = 0, inStr = false, escd = false;
+    for (let k = at; k < raw.length; k++) {
+      const ch = raw[k];
+      if (inStr) {
+        if (escd) escd = false;
+        else if (ch === "\\") escd = true;
+        else if (ch === '"') inStr = false;
+      }
+      else if (ch === '"') inStr = true;
+      else if (ch === "{") depth++;
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          try { return JSON.parse(raw.slice(at, k + 1)); } catch { break; }
+        }
+      }
+    }
+  }
+  return null;
+}
+async function aiCall(messages, chain, maxTokens) {
+  if (!state.relay) throw new Error("AI 중계가 연결되지 않았습니다. 우측 상단 🤖 버튼에서 설정해 주세요.");
+  let lastErr = "";
+  for (const step of chain) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 120000);
+      const res = await fetch(state.relay, {
+        method: "POST", redirect: "follow", signal: ctrl.signal,
+        body: JSON.stringify({ messages, temperature: 0, max_tokens: maxTokens, stream: false, model: step.model, ...step.opts }),
+      });
+      clearTimeout(timer);
+      const text = await res.text();
+      let j; try { j = JSON.parse(text); } catch { throw new Error("중계 응답이 JSON이 아닙니다 — 배포 설정(액세스: 모든 사용자)을 확인해 주세요."); }
+      if (j.error) throw new Error(j.error.message || "API 오류");
+      const content = j.choices?.[0]?.message?.content;
+      if (!content) throw new Error("빈 응답");
+      return content;
+    } catch (err) {
+      lastErr = `${step.model.split("/")[1]}: ${err.message}`;
+    }
+  }
+  throw new Error("모든 모델이 응답하지 않았습니다 — " + lastErr);
+}
+/* 마스킹: 학생 이름·학교명을 전송 전에 치환한다 */
+function maskText(t) {
+  let out = t;
+  if (state.school) {
+    out = out.split(state.school).join("○○학교");
+    const short = state.school.replace(/(등학교|학교)$/, "");
+    if (short.length >= 2) out = out.split(short).join("○○");
+  }
+  const names = [...new Set([...state.recs.values()].map(r => r.name))].sort((a, b) => b.length - a.length);
+  for (const n of names) if (n.length >= 2) out = out.split(n).join("○○○");
+  return out;
+}
+
+/* ---------- AI 연결 설정 모달 ---------- */
+$("#gasCode").textContent = GAS_CODE;
+$("#aiSetupBtn").onclick = () => { $("#relayUrl").value = state.relay; updateRelayStat(); $("#aiModal").classList.add("on"); };
+$("#copyGas").onclick = async () => { await navigator.clipboard.writeText(GAS_CODE); toast("중계 코드를 복사했습니다"); };
+$("#relaySave").onclick = () => {
+  const v = $("#relayUrl").value.trim();
+  if (!/^https:\/\/script\.google(?:usercontent)?\.com\/.+/.test(v)) { toast("script.google.com 웹 앱 URL을 붙여넣어 주세요"); return; }
+  state.relay = v; localStorage.setItem("sgb-relay", v);
+  updateRelayStat(); toast("AI 중계가 연결되었습니다");
+};
+$("#relayClear").onclick = () => { state.relay = ""; localStorage.removeItem("sgb-relay"); $("#relayUrl").value = ""; updateRelayStat(); };
+function updateRelayStat() {
+  $("#relayStat").innerHTML = state.relay
+    ? `✅ 연결됨: <b>${esc(state.relay.slice(0, 60))}…</b>`
+    : "아직 연결되지 않았습니다. AI 검사 없이도 현황·겹침 기능은 모두 사용할 수 있습니다.";
+  $("#aiSetupBtn").style.borderColor = state.relay ? "var(--ok)" : "";
+}
+updateRelayStat();
+$$(".mclose").forEach(b => b.onclick = () => $("#" + b.dataset.close).classList.remove("on"));
+$$(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("on"); }));
+document.addEventListener("keydown", e => { if (e.key === "Escape") $$(".modal.on").forEach(m => m.classList.remove("on")); });
+
+/* ---------- 10. AI 맞춤법 검사 — 학생·학년 단위로 조각을 묶어 보낸다 ---------- */
+function renderFix() {
+  renderGradePills("#fixGrade", state.fixGrade, g => { state.fixGrade = g; renderFix(); });
+}
+$("#fixRun").onclick = async () => {
+  if (state.aiBusy) return;
+  const g = state.fixGrade;
+  if (!g) { toast("먼저 파일을 올려 주세요"); return; }
+  if (!state.relay) { $("#aiModal").classList.add("on"); return; }
+  const students = [...new Set(state.chunks.filter(c => c.grade === g).map(c => c.no))].sort((a, b) => a - b);
+  if (!students.length) { toast("해당 학년 기록이 없습니다"); return; }
+  state.aiBusy = true; $("#fixRun").disabled = true;
+  $("#fixResults").innerHTML = "";
+  let done = 0, found = 0, failed = 0;
+  const stat = () => { $("#fixStatus").innerHTML =
+    `<span class="spin"></span> <span class="progress">검사 중 ${done}/${students.length}명 · 지적 ${found}건${failed ? ` · 실패 ${failed}명` : ""}</span>`; };
+  stat();
+  for (const no of students) {
+    const mine = state.chunks.filter(c => c.no === no && c.grade === g && c.text.length > 10);
+    if (!mine.length) { done++; stat(); continue; }
+    const name = mine[0].name;
+    const listing = mine.map((c, i) => `[${i + 1}] (${c.label}${c.sem ? ` ${c.sem}학기` : ""}) ${maskText(c.text)}`).join("\n\n");
+    const prompt = `너는 학교생활기록부 감수자다. 아래 각 항목에서 맞춤법·띄어쓰기 오류만 찾아라.
+개조식 문체('~함.' 종결)는 올바른 것이니 지적하지 마라. 내용·표현 다듬기도 하지 마라. 확실한 오류만 보고하라.
+JSON으로만 답하라. 설명 금지. 오류가 없는 항목은 결과에서 생략하라.
+형식: {"items":[{"i":항목번호,"errors":[{"bad":"틀린 부분","good":"고친 부분","why":"짧은 이유"}]}]}
+
+${listing}`;
+    try {
+      const out = await aiCall([{ role: "user", content: prompt }], CHAIN_FIX, 4000);
+      const j = pluckJson(out);
+      if (!j) throw new Error("응답 해석 실패");
+      const items = (j.items || []).filter(it => (it.errors || []).length);
+      found += items.reduce((s, it) => s + it.errors.length, 0);
+      if (items.length) {
+        $("#fixResults").insertAdjacentHTML("beforeend", `<div class="ai-item">
+          <div class="head">${no}번 ${esc(name)} <span class="hint">${g}학년</span></div>
+          ${items.map(it => {
+            const c = mine[it.i - 1]; if (!c) return "";
+            return `<div class="chip tint-${(it.i - 1) % 6}">${esc(c.label)}${c.sem ? ` ${c.sem}학기` : ""}</div>
+              ${it.errors.map(e => `<div class="fix"><del>${esc(e.bad)}</del> → <ins>${esc(e.good)}</ins>
+              <div class="why">${esc(e.why || "")}</div></div>`).join("")}`;
+          }).join("")}</div>`);
+      }
+    } catch (err) {
+      failed++;
+      $("#fixResults").insertAdjacentHTML("beforeend",
+        `<div class="ai-item"><div class="head">${no}번 ${esc(name)} <span class="badge over">실패</span></div>
+         <div class="hint">${esc(err.message)}</div></div>`);
+    }
+    done++; stat();
+  }
+  $("#fixStatus").innerHTML = `<span class="progress">✅ 완료 — ${students.length}명 중 지적 ${found}건${failed ? ` · 실패 ${failed}명` : ""}. AI 교정은 참고용이니 반드시 검토 후 반영해 주세요.</span>`;
+  if (!found && !failed) $("#fixResults").innerHTML = `<div class="box ok">지적할 오류를 찾지 못했습니다. 🎉</div>`;
+  state.aiBusy = false; $("#fixRun").disabled = false;
+};
+
+/* ---------- 11. 학급 총평 분석 — 같은 과목 전원을 한 번에 보낸다 ---------- */
+function renderCls() {
+  renderGradePills("#clsGrade", state.clsGrade, g => { state.clsGrade = g; renderCls(); });
+  const g = state.clsGrade;
+  const sel = $("#clsSubject");
+  if (!g) { sel.innerHTML = "<option>과목 없음</option>"; return; }
+  const labels = [...new Set(state.chunks.filter(c => c.grade === g).map(c => c.kind + "|" + c.label))];
+  const areas = labels.filter(l => l.startsWith("area|")).map(l => l.slice(5));
+  const subjs = labels.filter(l => l.startsWith("subj|")).map(l => l.slice(5)).sort((a, b) => a.localeCompare(b, "ko"));
+  const cur = sel.value;
+  sel.innerHTML = [
+    ...subjs.map(s => `<option value="subj|${esc(s)}">세특 · ${esc(s)}</option>`),
+    ...areas.map(a => `<option value="area|${esc(a)}">창체 · ${esc(a)}</option>`),
+  ].join("");
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+$("#clsRun").onclick = async () => {
+  if (state.aiBusy) return;
+  const g = state.clsGrade, v = $("#clsSubject").value;
+  if (!g || !v) { toast("먼저 파일을 올려 주세요"); return; }
+  if (!state.relay) { $("#aiModal").classList.add("on"); return; }
+  const [kind, label] = v.split("|");
+  const arr = state.chunks.filter(c => c.grade === g && c.kind === kind && c.label === label && c.text.length > 20);
+  if (arr.length < 2) { toast("비교할 기록이 2건 이상 필요합니다"); return; }
+  // 같은 과목이 학기별 조각으로 나뉘어 있으면 학생별로 합친다
+  const byNo = new Map();
+  for (const c of arr) byNo.set(c.no, (byNo.get(c.no) || "") + (byNo.has(c.no) ? " " : "") + c.text);
+  const blob = [...byNo.entries()].sort((a, b) => a[0] - b[0])
+    .map(([no, t]) => `[학생${no}] ${maskText(t)}`).join("\n\n");
+  const prompt = `아래는 한 학급 학생들의 ${g}학년 「${label}」 학교생활기록부 기록이다. 학생 식별자는 번호뿐이다.
+다음을 분석해 JSON으로만 답하라. 설명 금지.
+형식: {"clusters":[{"students":[번호],"shared":"공통으로 반복되는 서술 요약","severity":"high|mid|low"}],"boilerplate":["여러 학생에게 동일하게 들어간 정형 문구"],"quality_flags":[{"student":번호,"issue":"맞춤법·번역투·기재 유의사항 등 지적"}]}
+- clusters: 서술이 서로 비슷해 재활용이 의심되는 학생 묶음 (구체적 근거가 있는 것만, 없으면 빈 배열)
+- boilerplate: 다수 학생에게 반복되는 문구 (최대 8개)
+- quality_flags: 눈에 띄는 문제 (최대 10개)
+
+${blob}`;
+  state.aiBusy = true; $("#clsRun").disabled = true;
+  $("#clsStatus").innerHTML = `<span class="spin"></span> <span class="progress">학생 ${byNo.size}명 · 약 ${Math.round(blob.length / 1000)}천 자를 한 번에 분석 중… (30초~1분)</span>`;
+  $("#clsResults").innerHTML = "";
+  try {
+    const out = await aiCall([{ role: "user", content: prompt }], CHAIN_CLS, 4000);
+    const j = pluckJson(out);
+    if (!j) throw new Error("응답 해석 실패");
+    const sevCls = s => s === "high" ? "over" : s === "mid" ? "warn" : "ok";
+    const sevKo = s => s === "high" ? "높음" : s === "mid" ? "중간" : "낮음";
+    const stuName = no => { const c = state.chunks.find(x => x.no === no); return c ? `${no}번 ${c.name}` : `${no}번`; };
+    $("#clsResults").innerHTML = `
+      ${(j.clusters || []).length ? `<div class="ai-item"><div class="head">🪞 비슷한 서술 묶음</div>
+        ${j.clusters.map(c => `<div class="fix"><span class="badge ${sevCls(c.severity)}">유사 ${sevKo(c.severity)}</span>
+          <b>${(c.students || []).map(stuName).map(esc).join(", ")}</b>
+          <div class="why">${esc(c.shared || "")}</div></div>`).join("")}</div>` : `<div class="box ok">재활용이 의심되는 묶음이 없습니다.</div>`}
+      ${(j.boilerplate || []).length ? `<div class="ai-item"><div class="head">📋 반복되는 정형 문구</div>
+        ${j.boilerplate.map(b => `<div class="fix">${esc(b)}</div>`).join("")}</div>` : ""}
+      ${(j.quality_flags || []).length ? `<div class="ai-item"><div class="head">⚠️ 확인이 필요한 기록</div>
+        ${j.quality_flags.map(f => `<div class="fix"><b>${esc(stuName(f.student))}</b>
+          <div class="why">${esc(f.issue || "")}</div></div>`).join("")}</div>` : ""}
+      <div class="box warn">AI 진단은 참고용입니다. 표현이 비슷하다는 것이 곧 잘못은 아니니, 맞대어 보기(겹침 탭)로 원문을 확인해 주세요.</div>`;
+    $("#clsStatus").innerHTML = `<span class="progress">✅ 분석 완료 — ${byNo.size}명 일괄 진단</span>`;
+  } catch (err) {
+    $("#clsStatus").innerHTML = "";
+    $("#clsResults").innerHTML = `<div class="box warn">분석 실패: ${esc(err.message)}</div>`;
+  }
+  state.aiBusy = false; $("#clsRun").disabled = false;
+};
+
+/* ---------- 12. 전체 렌더 ---------- */
+function renderAll() { renderDash(); renderSim(); renderFix(); renderCls(); }
+renderAll();
+</script>
+</body>
+</html>
