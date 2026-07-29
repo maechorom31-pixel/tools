@@ -149,12 +149,23 @@ mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; paddin
 .dupe-card .snip { margin-top:4px; }
 .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .compare.single { grid-template-columns:1fr; }
-.compare.multi { grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); }
+/* 다단 비교는 한 줄에 최대 4단, 모두 같은 폭 (좁은 화면에서는 접는다) */
+.compare.multi { grid-template-columns:repeat(var(--cols, 2), 1fr); }
+@media (max-width: 940px) { .compare.multi { grid-template-columns:repeat(2, 1fr); } }
+@media (max-width: 560px) { .compare.multi { grid-template-columns:1fr; } }
 .compare .full { grid-column:1 / -1; white-space:normal; }
 .compare .pane { font-size:.84rem; line-height:1.8; white-space:pre-wrap; word-break:break-all; }
 /* 목록·설명이 섞이는 팝업은 원문 부분만 pre-wrap을 쓴다 (안 그러면 줄간격이 벌어진다) */
 .compare .pane.plain { white-space:normal; }
-.compare .pane.plain .raw { white-space:pre-wrap; }
+.compare .pane.plain .raw, .compare .seg { white-space:pre-wrap; }
+/* 한 과목이 학기별로 갈린 경우 — 학기마다 구간을 나누고, 문제가 된 학기에 줄을 세운다 */
+.seg { margin-top:10px; }
+.seg:first-of-type { margin-top:4px; }
+.seg.target { border-left:3px solid var(--accent); padding-left:9px; margin-left:-12px; }
+.seg-tag {
+  display:inline-block; font-size:.72rem; font-weight:700; border-radius:6px; padding:1px 7px;
+  margin-right:6px; background:var(--accent-soft); color:var(--accent); vertical-align:1px;
+}
 .compare .pane h4 { font-size:.8rem; margin-bottom:6px; color:var(--ink-soft); font-weight:600; }
 @media (max-width:720px){ .compare { grid-template-columns:1fr; } }
 
@@ -201,6 +212,8 @@ mark.hot { background:var(--danger-soft); color:var(--danger); outline:2px solid
 .modal { position:fixed; inset:0; background:rgba(15,18,28,.55); display:none; align-items:flex-start; justify-content:center; padding:30px 14px; z-index:50; overflow-y:auto; }
 .modal.on { display:flex; }
 .modal .mcard { background:var(--card); border-radius:16px; max-width:760px; width:100%; padding:22px; box-shadow:var(--shadow-lift); }
+.modal .cmp-card { max-width:900px; }
+.modal .cmp-card.wide { max-width:1200px; }
 .modal h3 { font-size:1.05rem; margin-bottom:10px; }
 .modal .mclose { float:right; }
 pre.code {
@@ -303,7 +316,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
           <b id="simThrVal">12%</b>
         </label>
       </div>
-      <p class="hint" style="margin-bottom:10px">공백을 뺀 연속 8글자 조각이 두 기록에 함께 나타나는 비율(짧은 기록 기준)로 잽니다. 글자까지 완전히 같은 기록은 위쪽에 묶음으로 모아 보여주고, 행을 누르면 원문을 맞대어 확인할 수 있습니다. 계산은 전부 이 컴퓨터 안에서만 이루어집니다.</p>
+      <p class="hint" style="margin-bottom:10px">공백을 뺀 연속 8글자 조각이 두 기록에 함께 나타나는 비율(짧은 기록 기준)로 잽니다. 글자까지 똑같이 겹치는 대목은 위쪽에 묶음으로 모아 보여줍니다. 묶음이든 아래 목록이든 <b>누르면 그 과목·영역 기록 전체</b>가 열리고, 겹치는 부분에 형광펜이 칠해집니다. 계산은 전부 이 컴퓨터 안에서만 이루어집니다.</p>
       <div id="dupeGroups"></div>
       <div class="table-scroll"><table id="simTable"></table></div>
       <div id="simEmpty" class="empty">파일을 올리면 겹치는 기록 쌍이 표시됩니다.</div>
@@ -389,7 +402,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
 
 <!-- 맞대어 보기 모달 -->
 <div class="modal" id="cmpModal" role="dialog" aria-modal="true" aria-label="기록 맞대어 보기">
-  <div class="mcard" style="max-width:900px">
+  <div class="mcard cmp-card" id="cmpCard">
     <button class="icon-btn mclose" data-close="cmpModal" aria-label="닫기">✕</button>
     <h3 id="cmpTitle">맞대어 보기</h3>
     <div class="compare" id="cmpBody"></div>
@@ -770,6 +783,7 @@ function rebuild() {
         label: r.area, sem: "", text: r.text.trim(), bytes: neisBytes(r.text.trim()), hope: r.hope });
     }
   }
+  state.chunks.forEach((c, i) => { c.seq = i; });   // 원문에 나온 차례 — 학기 순서를 되살릴 때 쓴다
   state.grades = [...new Set(recs.map(r => r.grade))].sort();
   const g = state.grades[state.grades.length - 1] || null;
   if (!state.grades.includes(state.dashGrade)) state.dashGrade = g;
@@ -1029,6 +1043,36 @@ function computeSim() {
   state.simPairs = pairs;
 }
 function chunkTag(c) { return `${c.no}번 ${esc(c.name)} · ${c.grade}학년 ${esc(c.label)}${c.sem ? `(${c.sem}학기)` : ""}`; }
+function recordTag(c) { return `${c.no}번 ${esc(c.name)} · ${c.grade}학년 ${esc(c.label)}`; }
+
+/* ---------- 기록 전체 끌어오기 ----------
+   조각(학기 단위)은 계산의 단위일 뿐이고, 선생님이 실제로 손보는 것은
+   "그 과목의 세특 전체"다. 한 과목이 1·2학기로 갈라진 경우가 적지 않아
+   조각만 띄우면 절반만 보인다. 그래서 팝업은 언제나 조각이 속한
+   기록 전체를 끌어와 펴고, 문제가 된 대목에만 표시를 남긴다. */
+function siblingsOf(c) {
+  return state.chunks
+    .filter(x => x.no === c.no && x.grade === c.grade && x.kind === c.kind && x.label === c.label)
+    .sort((a, b) => a.seq - b.seq);
+}
+function fullTextOf(c) { return siblingsOf(c).map(s => s.text).join("\n"); }
+function fullPieces(c) { return pieceSet(squeeze(fullTextOf(c))); }
+/* paint(조각) → 그 구간의 HTML. 강조할 것이 없으면 esc만 돌려주면 된다. */
+function renderRecord(c, paint) {
+  const sibs = siblingsOf(c);
+  const chars = sibs.reduce((s, x) => s + x.text.length, 0);
+  const bytes = sibs.reduce((s, x) => s + x.bytes, 0);
+  const segs = sibs.map(s => {
+    const tag = s.sem ? `<span class="seg-tag">${s.sem}학기</span>` : "";
+    const mark = sibs.length > 1 && s === c ? " target" : "";
+    return `<div class="seg${mark}">${tag}${paint(s)}</div>`;
+  }).join("");
+  return { segs, chars, bytes, count: sibs.length };
+}
+function recordHead(c, r) {
+  return `<h4>${recordTag(c)} · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B` +
+    (r.count > 1 ? ` <span class="hint">(${r.count}개 학기 전체)</span>` : "") + `</h4>`;
+}
 function renderSim() {
   $$("#simMode .pill").forEach(p => p.classList.toggle("on", p.dataset.mode === state.simMode));
   renderGradePills("#simGrade", state.simGrade, g => { state.simGrade = g; renderSim(); }, true);
@@ -1047,8 +1091,8 @@ function renderSim() {
   dupeEl.innerHTML = state.simMode === "peer" ? groups.map((arr, gi) => {
     const members = arr.map(chunkTag).join(" · ");
     return `<div class="dupe-card" data-g="${gi}" role="button" tabindex="0"
-      aria-label="완전히 동일한 기록 ${arr.length}건 — 눌러서 원문 보기">
-      <div class="head">⚠ 글자까지 완전히 동일한 기록 ${arr.length}건</div>
+      aria-label="${arr.length}명이 똑같이 쓴 대목 — 눌러서 기록 전체 보기">
+      <div class="head">⚠ ${arr.length}명이 글자까지 똑같이 쓴 대목 — ${esc(arr[0].label)}${arr[0].sem ? ` ${arr[0].sem}학기` : ""}</div>
       <div class="who">${members}</div>
       <div class="snip">"${esc(arr[0].text.slice(0, 90))}…" (${arr[0].text.length}자)</div>
       <div class="more">눌러서 원문 전체 보기 →</div></div>`;
@@ -1106,43 +1150,63 @@ function paintShared(text, otherSet) {
 /* 완전 동일 묶음 — 쌍 비교와 같은 방식으로, 학생마다 한 단씩 원문을 세우고
    다른 학생과 겹치는 부분에 형광펜을 친다. 전체가 노랗게 물드는 것 자체가
    "이 기록은 통째로 같다"를 눈으로 보여 준다. */
+const DUPE_COLS = 4;   // 한 화면에 같은 폭으로 세울 수 있는 최대 단 수
 function openDupeGroup(arr) {
   const head = arr[0];
   const sameRaw = arr.every(c => c.text === head.text);
-  $("#cmpTitle").textContent = `글자까지 완전히 동일한 기록 ${arr.length}건`;
+  const shown = arr.slice(0, DUPE_COLS), rest = arr.slice(DUPE_COLS);
+  // 학생마다 "나를 뺀 나머지가 가진 조각"을 모아 두고, 그와 겹치는 대목에 형광펜을 친다
+  // (견주는 상대는 잘라내지 않은 묶음 전원이다)
+  const pieces = new Map(arr.map(c => [c, fullPieces(c)]));
+  $("#cmpTitle").textContent = `${arr.length}명이 글자까지 똑같이 쓴 ${head.label}${head.sem ? ` ${head.sem}학기` : ""}`;
   $("#cmpBody").className = "compare multi";
-  const panes = arr.map(c => {
-    // 자기 자신을 뺀 나머지가 가진 조각 전부와 견준다
+  $("#cmpBody").style.setProperty("--cols", shown.length);
+  $("#cmpCard").classList.toggle("wide", shown.length >= 3);
+  const panes = shown.map(c => {
     const others = new Set();
-    for (const o of arr) if (o !== c) o._ps.forEach(p => others.add(p));
-    return `<div class="pane"><h4>${chunkTag(c)} · ${c.text.length}자 · ${c.bytes.toLocaleString()}B</h4>
-      ${paintShared(c.text, others)}</div>`;
+    for (const o of arr) if (o !== c) pieces.get(o).forEach(p => others.add(p));
+    const r = renderRecord(c, s => paintShared(s.text, others));
+    return `<div class="pane plain">${recordHead(c, r)}${r.segs}</div>`;
   }).join("");
   $("#cmpBody").innerHTML = `<div class="pane plain full">
-      <div class="box warn" style="margin:0">학생 <b>${arr.length}명</b>의 <b>${esc(head.label)}</b> 기록이 글자까지 같습니다.
-      아래는 학생별 원문이며, <mark>형광펜</mark> 부분이 서로 겹치는 대목입니다.
-      ${sameRaw ? "" : " (띄어쓰기만 조금씩 다릅니다.)"}</div>
+      <div class="box warn" style="margin:0">학생 <b>${arr.length}명</b>의 <b>${esc(head.label)}</b> 기록에
+      글자까지 같은 대목이 있습니다. 아래는 학생별 <b>기록 전체</b>이며, <mark>형광펜</mark>이 서로 겹치는 부분입니다 —
+      칠해지지 않은 곳이 그 학생만의 서술입니다.${sameRaw ? "" : " (띄어쓰기만 조금씩 다릅니다.)"}
+      ${rest.length ? `<br>화면에는 앞의 ${DUPE_COLS}명만 폈습니다. 나머지: <b>${rest.map(c => `${c.no}번 ${esc(c.name)}`).join(", ")}</b>` : ""}</div>
     </div>${panes}`;
   $("#cmpModal").classList.add("on");
 }
-/* 작성 현황에서 칸 하나를 눌렀을 때 — 그 기록 원문만 펼친다 */
+/* 작성 현황에서 칸 하나를 눌렀을 때 — 그 과목·영역 기록 전체를 펼친다 */
 function openRecord(c) {
   const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
-  $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label}${c.sem ? ` ${c.sem}학기` : ""}`;
+  const r = renderRecord(c, s => esc(s.text));
+  $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label}`;
+  $("#cmpCard").classList.remove("wide");
   $("#cmpBody").className = "compare single";
   $("#cmpBody").innerHTML = `<div class="pane plain">
-    <h4>${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B · ${c.text.length}자
-      ${c.bytes > limit ? '<span class="badge over">한도 초과</span>' : ""}
+    <h4>${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B
+      ${r.count > 1 ? `<span class="hint">(${r.count}개 학기 합계 · 학기별 ${siblingsOf(c).map(s => s.bytes.toLocaleString() + "B").join(" + ")})</span>`
+                    : `<span class="hint">/ 한도 ${limit.toLocaleString()}B</span>`}
+      ${r.count === 1 && c.bytes > limit ? '<span class="badge over">한도 초과</span>' : ""}
       ${c.hope ? `· 진로희망 <b>${esc(c.hope)}</b>` : ""}</h4>
-    ${c.text ? `<div class="raw">${esc(c.text)}</div>` : `<div class="snip">아직 작성되지 않았습니다.</div>`}</div>`;
+    ${r.chars ? r.segs : `<div class="snip">아직 작성되지 않았습니다.</div>`}</div>`;
   $("#cmpModal").classList.add("on");
 }
 function openCompare(p) {
+  // 상대 기록 '전체'와 견준다 — 조각끼리만 견주면 다른 학기로 옮겨 붙인 대목을 놓친다
+  const aSet = fullPieces(p.b), bSet = fullPieces(p.a);
+  const A = renderRecord(p.a, s => paintShared(s.text, aSet));
+  const B = renderRecord(p.b, s => paintShared(s.text, bSet));
   $("#cmpTitle").textContent = `겹침 ${Math.round(p.score*100)}% — 맞대어 보기`;
+  $("#cmpCard").classList.remove("wide");
   $("#cmpBody").className = "compare";
   $("#cmpBody").innerHTML = `
-    <div class="pane"><h4>${chunkTag(p.a)} · ${p.a.bytes.toLocaleString()}B</h4>${paintShared(p.a.text, p.b._ps)}</div>
-    <div class="pane"><h4>${chunkTag(p.b)} · ${p.b.bytes.toLocaleString()}B</h4>${paintShared(p.b.text, p.a._ps)}</div>`;
+    <div class="pane plain full"><div class="box info" style="margin:0">
+      두 학생의 <b>기록 전체</b>를 나란히 폈습니다. <mark>형광펜</mark>이 서로 겹치는 대목입니다 —
+      목록의 ${Math.round(p.score*100)}%는 ${esc(p.a.label)}${p.a.sem ? ` ${p.a.sem}학기` : ""} 구간을 기준으로 잰 값입니다.
+    </div></div>
+    <div class="pane plain">${recordHead(p.a, A)}${A.segs}</div>
+    <div class="pane plain">${recordHead(p.b, B)}${B.segs}</div>`;
   $("#cmpModal").classList.add("on");
 }
 $("#simThr").oninput = e => {
@@ -1303,16 +1367,24 @@ function openFixContext(hitIdx, focus) {
   const hit = fixHits[hitIdx];
   if (!hit) return;
   const { chunk, errors } = hit;
-  const { html, shown } = paintErrors(chunk.text, errors, focus);
+  // 검사에 보낸 구간에만 표시를 남기되, 화면에는 그 과목 기록 전체를 편다
+  const shown = new Set();
+  const r = renderRecord(chunk, s => {
+    if (s !== chunk) return esc(s.text);
+    const painted = paintErrors(s.text, errors, focus);
+    painted.shown.forEach(i => shown.add(i));
+    return painted.html;
+  });
   const missing = errors.filter((_, i) => !shown.has(i));
-  $("#cmpTitle").textContent = `${hit.no}번 ${hit.name} · ${chunk.label}${chunk.sem ? ` ${chunk.sem}학기` : ""} — 맞춤법 맥락 보기`;
+  $("#cmpTitle").textContent = `${hit.no}번 ${hit.name} · ${chunk.label} — 맞춤법 맥락 보기`;
+  $("#cmpCard").classList.remove("wide");
   $("#cmpBody").className = "compare single";
   $("#cmpBody").innerHTML = `<div class="pane plain">
     <h4>지적 ${errors.length}건 — 누른 것은 원문에 빨갛게 표시했습니다</h4>
     <div class="ctx-list">${errors.map((e, i) => `<div class="fix">${i === focus ? "▶ " : ""}<del>${esc(e.bad)}</del> → <ins>${esc(e.good)}</ins><div class="why">${esc(e.why || "")}</div></div>`).join("")}</div>
     ${missing.length ? `<div class="snip">※ ${missing.map(e => `"${esc(e.bad)}"`).join(", ")} 은(는) 원문에서 그대로 찾지 못했습니다 — AI가 앞뒤를 다듬어 옮겼을 수 있으니 직접 확인해 주세요.</div>` : ""}
-    <h4 style="margin-top:12px">기록 원문 · ${chunk.text.length}자 · ${chunk.bytes.toLocaleString()}B</h4>
-    <div class="raw">${html}</div></div>`;
+    <h4 style="margin-top:12px">기록 전체 · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B${r.count > 1 ? ` <span class="hint">(${r.count}개 학기 · 검사한 학기는 왼쪽에 줄로 표시)</span>` : ""}</h4>
+    ${r.segs}</div>`;
   $("#cmpModal").classList.add("on");
 }
 
