@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>색감 노트 — 디자이너 색 레퍼런스</title>
+<style>
+  :root {
+    --bg: #F4F5F7;
+    --card: #FFFFFF;
+    --ink: #171A20;
+    --ink-soft: #5A616C;
+    --line: #E3E5EA;
+    --accent: #3355D8;
+    --accent-strong: #2543B8;
+    --accent-soft: #EBF0FF;
+    --danger: #D6336C;
+    --shadow: 0 1px 2px rgba(23,26,32,.05), 0 4px 14px rgba(23,26,32,.06);
+    --shadow-lift: 0 2px 6px rgba(23,26,32,.07), 0 12px 28px rgba(23,26,32,.11);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161B; --card: #1D2027; --ink: #EAECF1; --ink-soft: #9BA2AE;
+      --line: #2D313B; --accent: #8298FF; --accent-strong: #A5B4FF;
+      --accent-soft: #242C4E; --danger: #FF8CB0;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+      --shadow-lift: 0 2px 6px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161B; --card: #1D2027; --ink: #EAECF1; --ink-soft: #9BA2AE;
+    --line: #2D313B; --accent: #8298FF; --accent-strong: #A5B4FF;
+    --accent-soft: #242C4E; --danger: #FF8CB0;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+    --shadow-lift: 0 2px 6px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+  }
+  body {
+    font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+
+  :is(button, a, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button { font-family: inherit; cursor: pointer; }
+
+  header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px;
+  }
+  h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .emoji { margin-right: 8px; }
+  .subtitle { margin-top: 5px; font-size: 0.84rem; color: var(--ink-soft); line-height: 1.55; }
+  .icon-btn {
+    flex: 0 0 auto; width: 42px; height: 42px; font-size: 1.05rem;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  .icon-btn:hover { background: var(--accent-soft); }
+
+  .search-row { margin-bottom: 12px; }
+  .search-row input {
+    width: 100%; padding: 12px 16px; font-size: 0.95rem; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--card); color: var(--ink);
+    box-shadow: var(--shadow); outline: none;
+  }
+  .search-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+  .tabs {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 10;
+    padding: 10px 0 12px; margin-bottom: 8px;
+    background: var(--bg);
+  }
+  .tab {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 15px; border-radius: 999px;
+    background: var(--card); color: var(--ink-soft);
+    border: 1px solid var(--line); font-size: 0.86rem; font-weight: 600;
+  }
+  .tab .dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+  .tab.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tab:not(.active):hover { background: var(--accent-soft); }
+
+  .section { margin-bottom: 30px; }
+  .section-head { margin: 20px 4px 4px; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .section-head .dot { width: 12px; height: 12px; border-radius: 50%; align-self: center; flex: 0 0 auto; }
+  .section-head h2 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.015em; }
+  .section-head .feel { font-size: 0.84rem; color: var(--ink-soft); font-weight: 600; }
+  .section-tip { margin: 2px 4px 12px 25px; font-size: 0.8rem; color: var(--ink-soft); line-height: 1.55; }
+
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .ccard {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .12s, border-color .12s, box-shadow .12s;
+  }
+  .ccard:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow-lift); }
+  .swatch {
+    display: block; width: 100%; height: 92px; border: 0; padding: 8px 10px;
+    text-align: right; vertical-align: bottom;
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    font-size: 0.76rem; font-weight: 700; letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    opacity: 1; transition: filter .12s;
+  }
+  .swatch:hover { filter: brightness(0.96); }
+  .swatch .hexlabel { opacity: .0; transition: opacity .12s; }
+  .ccard:hover .hexlabel, .swatch:focus-visible .hexlabel { opacity: .95; }
+  .cbody { padding: 11px 13px 12px; }
+  .cname { font-size: 0.94rem; font-weight: 700; letter-spacing: -0.015em; }
+  .cname .en { font-size: 0.74rem; font-weight: 600; color: var(--ink-soft); margin-left: 6px; }
+  .cfeel { margin-top: 3px; font-size: 0.8rem; color: var(--ink-soft); line-height: 1.5; min-height: 2.4em; }
+  .codes { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    font-size: 0.72rem; font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 4px 8px; border-radius: 7px;
+  }
+  .chip:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .chip b { font-weight: 700; opacity: .55; margin-right: 3px; font-size: 0.66rem; }
+  .tags { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: 0.68rem; font-weight: 600; color: var(--ink-soft);
+    background: var(--bg); border-radius: 999px; padding: 2px 8px;
+  }
+
+  /* 추천 조합 */
+  .pal {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 12px;
+  }
+  .pal-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pal-head h3 { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.015em; }
+  .pal-head .use { font-size: 0.78rem; color: var(--ink-soft); }
+  .pal-head .copy-all {
+    margin-left: auto; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    font-size: 0.76rem; font-weight: 600; padding: 6px 11px; border-radius: 8px;
+  }
+  .pal-head .copy-all:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .pal-strip { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .pal-strip button {
+    flex: 1; height: 58px; border: 0; position: relative;
+    font-size: 0.68rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px;
+  }
+  .pal-strip button span { opacity: 0; transition: opacity .12s; }
+  .pal-strip button:hover span, .pal-strip button:focus-visible span { opacity: .95; }
+
+  .empty { text-align: center; color: var(--ink-soft); padding: 48px 0; font-size: 0.92rem; }
+
+  footer {
+    margin-top: 40px; font-size: 0.78rem; color: var(--ink-soft); line-height: 1.8;
+    border-top: 1px solid var(--line); padding-top: 16px;
+  }
+  footer b { color: var(--ink); }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 28px;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--ink); color: var(--bg);
+    font-size: 0.82rem; font-weight: 600;
+    padding: 10px 18px; border-radius: 999px;
+    box-shadow: var(--shadow-lift);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 100; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .cfeel { min-height: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="emoji">🎨</span>색감 노트</h1>
+      <p class="subtitle">디자이너가 즐겨 쓰는 색을 계열별로 정리했습니다. 색마다 다른 <b>느낌</b>과 HEX·RGB·HSL 코드를 함께 — 누르면 복사됩니다.</p>
+    </div>
+    <button class="icon-btn" id="themeBtn" title="테마 전환 (자동 → 라이트 → 다크)" aria-label="테마 전환">🌗</button>
+  </header>
+
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="🔍 색 이름, 코드, 느낌으로 검색… (예: 세련, 네이비, #FF)">
+  </div>
+
+  <nav class="tabs" id="tabs" aria-label="색 계열"></nav>
+
+  <main id="content"></main>
+
+  <footer>
+    <b>색 고르는 3가지 요령</b><br>
+    ① 주인공 색은 하나만 — 넓은 면적은 낮은 채도로 깔고, 선명한 색은 강조할 한 곳에만 씁니다.<br>
+    ② 글자는 명도 차이가 생명 — 밝은 배경엔 잉크·차콜처럼 충분히 어두운 색을 쓰세요. 노랑·파스텔은 글자색으로 쓰지 않습니다.<br>
+    ③ 순수 #000000·#FFFFFF보다 잉크(#171A20)·오프화이트(#FAF9F6)처럼 살짝 물든 톤이 한층 편안하고 세련되어 보입니다.
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================================================================
+   색 데이터 — { ko, en, hex, feel, tags }
+   느낌(feel)은 디자인 현장에서 통용되는 인상을 짧게 정리한 것.
+   ================================================================ */
+const FAMILIES = [
+  {
+    id: "red", name: "빨강", rep: "#E03131",
+    feel: "열정 · 긴급 · 강조",
+    tip: "시선을 가장 먼저 붙잡는 색. 포인트로 소량만 쓰고, 넓은 면적에는 와인·벽돌처럼 톤을 낮춰 쓰면 부담이 없습니다.",
+    colors: [
+      { ko: "시그널 레드", en: "Signal Red",  hex: "#E03131", feel: "명확하고 단호한 — 경고·삭제 버튼의 표준", tags: ["강렬", "UI"] },
+      { ko: "크림슨",     en: "Crimson",     hex: "#DC143C", feel: "드라마틱하고 정열적인 클래식 레드",        tags: ["강렬", "클래식"] },
+      { ko: "버밀리언",   en: "Vermilion",   hex: "#E34234", feel: "회화의 주홍 — 강렬하지만 따뜻한",          tags: ["클래식", "따뜻함"] },
+      { ko: "토마토",     en: "Tomato",      hex: "#FF6347", feel: "밝고 생기 있는, 식욕을 돋우는",            tags: ["활기", "식품"] },
+      { ko: "체리",       en: "Cherry",      hex: "#D2042F", feel: "선명하고 젊은 에너지",                     tags: ["활기", "강렬"] },
+      { ko: "벽돌색",     en: "Brick Red",   hex: "#B22222", feel: "견고하고 믿음직한, 빈티지한 무게감",        tags: ["안정", "빈티지"] },
+      { ko: "와인",       en: "Wine",        hex: "#722F37", feel: "성숙하고 중후한 — 격식 있는 자리에",        tags: ["고급", "차분"] },
+      { ko: "카민",       en: "Carmine",     hex: "#960018", feel: "깊고 호화로운 진홍",                       tags: ["고급", "강렬"] }
+    ]
+  },
+  {
+    id: "orange", name: "주황", rep: "#E8590C",
+    feel: "활력 · 친근 · 온기",
+    tip: "에너지가 넘치고 친근한 계열. 채도를 낮춘 테라코타·번트 오렌지는 요즘 인테리어와 브랜딩이 가장 사랑하는 톤입니다.",
+    colors: [
+      { ko: "탠저린",     en: "Tangerine",    hex: "#F76707", feel: "활기차고 외향적인 — 세일·이벤트의 색",   tags: ["활기", "UI"] },
+      { ko: "앰버",       en: "Amber",        hex: "#F59F00", feel: "따뜻하게 빛나는, 주목성 높은",           tags: ["따뜻함", "UI"] },
+      { ko: "테라코타",   en: "Terracotta",   hex: "#E2725B", feel: "흙의 온기 — 편안하면서 세련된",          tags: ["트렌디", "차분"] },
+      { ko: "번트 오렌지", en: "Burnt Orange", hex: "#CC5500", feel: "가을의 깊이, 빈티지한 성숙함",           tags: ["빈티지", "따뜻함"] },
+      { ko: "코랄",       en: "Coral",        hex: "#FF7F50", feel: "화사하고 다정한 — 부드러운 포인트",      tags: ["활기", "트렌디"] },
+      { ko: "캐럿",       en: "Carrot",       hex: "#ED9121", feel: "신선하고 명랑한",                        tags: ["활기"] },
+      { ko: "피치",       en: "Peach",        hex: "#FFCBA4", feel: "보드랍고 상냥한 파스텔",                 tags: ["파스텔", "따뜻함"] },
+      { ko: "살구",       en: "Apricot",      hex: "#FBCEB1", feel: "은은하게 따뜻한 바탕색",                 tags: ["파스텔", "차분"] }
+    ]
+  },
+  {
+    id: "yellow", name: "노랑", rep: "#F4C430",
+    feel: "명랑 · 주의 · 빛",
+    tip: "가장 밝고 눈에 띄는 계열. 흰 배경 위 글자색으로는 금물 — 배경 면이나 포인트 도형으로 쓰고, 글자는 진한 색으로 얹으세요.",
+    colors: [
+      { ko: "선샤인",   en: "Sunshine",   hex: "#FFD43B", feel: "쾌활하고 낙천적인 — 하이라이트의 정석",  tags: ["활기", "UI"] },
+      { ko: "카나리아", en: "Canary",     hex: "#FFE066", feel: "밝고 사랑스러운",                        tags: ["활기", "파스텔"] },
+      { ko: "사프란",   en: "Saffron",    hex: "#F4C430", feel: "이국적이고 풍요로운",                    tags: ["따뜻함", "클래식"] },
+      { ko: "골드",     en: "Gold",       hex: "#D4AF37", feel: "품격과 성취 — 상장·메달의 색",           tags: ["고급", "클래식"] },
+      { ko: "꿀",       en: "Honey",      hex: "#E8A33D", feel: "달콤하고 따뜻한",                        tags: ["따뜻함"] },
+      { ko: "머스터드", en: "Mustard",    hex: "#D4A017", feel: "빈티지하고 구수한 — 가을 니트의 색",     tags: ["빈티지", "트렌디"] },
+      { ko: "샴페인",   en: "Champagne",  hex: "#F7E7CE", feel: "우아하고 은은한 축하의 빛",              tags: ["고급", "파스텔"] },
+      { ko: "크림",     en: "Cream",      hex: "#FFFDD0", feel: "부드럽고 아늑한 바탕색",                 tags: ["파스텔", "베이식"] }
+    ]
+  },
+  {
+    id: "green", name: "초록", rep: "#2F9E44",
+    feel: "안정 · 자연 · 성장",
+    tip: "눈이 가장 편안해하는 계열. 신뢰를 주면서 지루하지 않으려면 세이지·에메랄드처럼 톤을 골라 쓰는 것이 요령입니다.",
+    colors: [
+      { ko: "포레스트 그린", en: "Forest Green", hex: "#228B22", feel: "깊은 숲의 안정감",                    tags: ["안정", "자연"] },
+      { ko: "에메랄드",     en: "Emerald",      hex: "#50C878", feel: "생동감 있는 보석빛",                  tags: ["활기", "고급"] },
+      { ko: "세이지",       en: "Sage",         hex: "#9CAF88", feel: "차분하고 세련된 — 인테리어의 총아",   tags: ["차분", "트렌디"] },
+      { ko: "올리브",       en: "Olive",        hex: "#708238", feel: "클래식하고 자연스러운",               tags: ["빈티지", "자연"] },
+      { ko: "민트",         en: "Mint",         hex: "#3EB489", feel: "상쾌하고 깨끗한",                     tags: ["청량", "활기"] },
+      { ko: "라임",         en: "Lime",         hex: "#82C91E", feel: "톡 쏘는 신선함",                      tags: ["활기", "청량"] },
+      { ko: "보틀 그린",    en: "Bottle Green", hex: "#006A4E", feel: "전통 있는 깊은 초록 — 영국풍 격조",   tags: ["고급", "안정"] },
+      { ko: "피스타치오",   en: "Pistachio",    hex: "#93C572", feel: "부드럽고 산뜻한 파스텔 그린",         tags: ["파스텔", "자연"] }
+    ]
+  },
+  {
+    id: "teal", name: "청록", rep: "#0B7285",
+    feel: "지적 · 청량 · 균형",
+    tip: "파랑의 신뢰와 초록의 편안함을 함께 가진 계열. IT·의료·교육 브랜드가 특히 사랑합니다.",
+    colors: [
+      { ko: "틸",         en: "Teal",       hex: "#008080", feel: "지적이고 안정된 균형감",             tags: ["안정", "UI"] },
+      { ko: "딥 틸",      en: "Deep Teal",  hex: "#0B7285", feel: "차분한 전문성",                      tags: ["안정", "UI"] },
+      { ko: "피콕",       en: "Peacock",    hex: "#005F69", feel: "깊고 우아한 공작새의 빛",            tags: ["고급", "차분"] },
+      { ko: "터쿼이즈",   en: "Turquoise",  hex: "#40E0D0", feel: "청량하고 이국적인",                  tags: ["청량", "활기"] },
+      { ko: "시안",       en: "Cyan",       hex: "#15AABF", feel: "디지털의 산뜻함",                    tags: ["청량", "UI"] },
+      { ko: "아쿠아",     en: "Aqua",       hex: "#66D9E8", feel: "맑은 물빛 파스텔",                   tags: ["파스텔", "청량"] },
+      { ko: "아쿠아마린", en: "Aquamarine", hex: "#7FFFD4", feel: "투명하고 시원한",                    tags: ["파스텔", "청량"] }
+    ]
+  },
+  {
+    id: "blue", name: "파랑", rep: "#3355D8",
+    feel: "신뢰 · 차분 · 집중",
+    tip: "전 세계에서 가장 사랑받는 색. 기업·공공 디자인의 기본값이며, 실패 확률이 가장 낮은 선택지이기도 합니다.",
+    colors: [
+      { ko: "코발트",       en: "Cobalt",        hex: "#0047AB", feel: "자신감 있는 선명함",                    tags: ["강렬", "클래식"] },
+      { ko: "네이비",       en: "Navy",          hex: "#1B2A4A", feel: "신뢰와 격식 — 정장의 색",               tags: ["안정", "고급"] },
+      { ko: "로열 블루",    en: "Royal Blue",    hex: "#4169E1", feel: "당당하고 활동적인",                     tags: ["활기", "UI"] },
+      { ko: "프러시안 블루", en: "Prussian Blue", hex: "#003153", feel: "깊고 사색적인",                         tags: ["차분", "클래식"] },
+      { ko: "클라인 블루",  en: "Klein Blue",    hex: "#002FA7", feel: "예술이 된 파랑 — 강렬한 몰입",          tags: ["강렬", "예술"] },
+      { ko: "데님",         en: "Denim",         hex: "#1560BD", feel: "편안하고 일상적인",                     tags: ["캐주얼", "안정"] },
+      { ko: "스카이",       en: "Sky Blue",      hex: "#74C0FC", feel: "맑고 개방적인",                         tags: ["파스텔", "청량"] },
+      { ko: "파우더 블루",  en: "Powder Blue",   hex: "#B0E0E6", feel: "은은하고 단정한 바탕색",                tags: ["파스텔", "차분"] }
+    ]
+  },
+  {
+    id: "purple", name: "보라", rep: "#7048E8",
+    feel: "상상 · 품위 · 신비",
+    tip: "예부터 귀한 신분의 색. 밝게 쓰면 몽환적이고, 어둡게 쓰면 위엄이 생기는 두 얼굴의 계열입니다.",
+    colors: [
+      { ko: "로열 퍼플",  en: "Royal Purple", hex: "#6B3FA0", feel: "위엄 있고 풍부한",                  tags: ["고급", "클래식"] },
+      { ko: "바이올렛",   en: "Violet",       hex: "#7048E8", feel: "창의적이고 대담한",                 tags: ["강렬", "UI"] },
+      { ko: "아메시스트", en: "Amethyst",     hex: "#9966CC", feel: "보석의 신비로움",                   tags: ["고급"] },
+      { ko: "인디고",     en: "Indigo",       hex: "#4B0082", feel: "깊은 밤의 사색",                    tags: ["차분", "클래식"] },
+      { ko: "플럼",       en: "Plum",         hex: "#8E4585", feel: "농익은 자두빛 — 성숙한 화려함",     tags: ["고급", "차분"] },
+      { ko: "라벤더",     en: "Lavender",     hex: "#B197FC", feel: "몽환적이고 부드러운",               tags: ["파스텔", "차분"] },
+      { ko: "라일락",     en: "Lilac",        hex: "#C8A2C8", feel: "봄의 산뜻한 낭만",                  tags: ["파스텔"] }
+    ]
+  },
+  {
+    id: "pink", name: "분홍", rep: "#D6336C",
+    feel: "다정 · 낭만 · 생기",
+    tip: "요즘은 고정관념을 벗고 세련된 브랜드 컬러로 재발견되는 계열. 채도를 낮춘 더스티 로즈는 어른스러운 선택입니다.",
+    colors: [
+      { ko: "핫핑크",      en: "Hot Pink",   hex: "#FF69B4", feel: "발랄하고 대담한",                     tags: ["활기", "강렬"] },
+      { ko: "마젠타",      en: "Magenta",    hex: "#D6336C", feel: "선명하고 현대적인",                   tags: ["강렬", "UI"] },
+      { ko: "로즈",        en: "Rose",       hex: "#E64980", feel: "화사한 장미빛",                       tags: ["활기"] },
+      { ko: "살몬",        en: "Salmon",     hex: "#FA8072", feel: "따뜻하고 부드러운",                   tags: ["따뜻함", "파스텔"] },
+      { ko: "더스티 로즈", en: "Dusty Rose", hex: "#C08081", feel: "차분하게 성숙한 — 어른의 분홍",       tags: ["차분", "트렌디"] },
+      { ko: "블러시",      en: "Blush",      hex: "#F4C2C2", feel: "수줍은 홍조 같은 파스텔",             tags: ["파스텔"] },
+      { ko: "베이비 핑크", en: "Baby Pink",  hex: "#FFD6E7", feel: "포근하고 순한",                       tags: ["파스텔"] }
+    ]
+  },
+  {
+    id: "brown", name: "갈색", rep: "#8B5E3C",
+    feel: "온기 · 진정성 · 수공예",
+    tip: "커피·나무·가죽의 색. 편안함과 진정성을 전하고 싶을 때, 그리고 베이지·샌드는 만능 바탕색으로 활약합니다.",
+    colors: [
+      { ko: "초콜릿", en: "Chocolate", hex: "#5D4037", feel: "진하고 달콤한 무게감",             tags: ["안정", "따뜻함"] },
+      { ko: "모카",   en: "Mocha",     hex: "#6F4E37", feel: "커피 한 잔의 여유",                tags: ["차분", "따뜻함"] },
+      { ko: "체스트넛", en: "Chestnut", hex: "#954535", feel: "붉은기 도는 따뜻함",              tags: ["따뜻함", "빈티지"] },
+      { ko: "카멜",   en: "Camel",     hex: "#C19A6B", feel: "클래식 코트의 품격",               tags: ["고급", "클래식"] },
+      { ko: "탄",     en: "Tan",       hex: "#D2B48C", feel: "자연스럽고 무난한",                tags: ["베이식"] },
+      { ko: "카키",   en: "Khaki",     hex: "#C3B091", feel: "자연스러운 실용성",                tags: ["베이식", "자연"] },
+      { ko: "샌드",   en: "Sand",      hex: "#E3C9A8", feel: "모래처럼 포근한 바탕색",           tags: ["파스텔", "베이식"] },
+      { ko: "베이지", en: "Beige",     hex: "#E8DCC8", feel: "어디에나 어울리는 바탕",           tags: ["베이식", "차분"] }
+    ]
+  },
+  {
+    id: "neutral", name: "중성", rep: "#64748B",
+    feel: "여백 · 정돈 · 기본기",
+    tip: "좋은 디자인의 8할은 잘 고른 회색. 순수한 검정·흰색보다 살짝 물든 톤이 눈에 편하고 세련되어 보입니다.",
+    colors: [
+      { ko: "잉크",      en: "Ink",        hex: "#171A20", feel: "순검정보다 부드러운 본문 글자색",   tags: ["UI", "베이식"] },
+      { ko: "차콜",      en: "Charcoal",   hex: "#36454F", feel: "세련된 검정 대체재",                tags: ["고급", "UI"] },
+      { ko: "슬레이트",  en: "Slate",      hex: "#64748B", feel: "푸른기 도는 지적인 회색",           tags: ["UI", "차분"] },
+      { ko: "웜 그레이", en: "Warm Gray",  hex: "#8A817C", feel: "온기가 남아 있는 회색",             tags: ["차분", "베이식"] },
+      { ko: "실버",      en: "Silver",     hex: "#C9CED6", feel: "가볍고 현대적인",                   tags: ["베이식"] },
+      { ko: "미스트",    en: "Mist",       hex: "#E9ECEF", feel: "옅은 안개 — 구분선·배경용",         tags: ["베이식", "UI"] },
+      { ko: "아이보리",  en: "Ivory",      hex: "#FFFFF0", feel: "흰색보다 따뜻한",                   tags: ["베이식", "파스텔"] },
+      { ko: "오프화이트", en: "Off White", hex: "#FAF9F6", feel: "눈이 편안한 흰색",                  tags: ["베이식", "UI"] }
+    ]
+  }
+];
+
+/* 추천 조합 — 목적이 있는 5색 팔레트 */
+const PALETTES = [
+  { name: "신뢰의 정석",   use: "보고서 · 공문 · 발표자료",     colors: ["#1B2A4A", "#0047AB", "#74C0FC", "#E7EDF7", "#171A20"] },
+  { name: "차분한 숲",     use: "안내물 · 환경 · 도서관",       colors: ["#006A4E", "#9CAF88", "#E3C9A8", "#F6F1E7", "#6F4E37"] },
+  { name: "따뜻한 환대",   use: "초대장 · 행사 포스터",         colors: ["#E2725B", "#F59F00", "#FFCBA4", "#FFF6E5", "#5D4037"] },
+  { name: "모던 모노",     use: "포트폴리오 · 표지 디자인",     colors: ["#171A20", "#36454F", "#64748B", "#C9CED6", "#FAF9F6"] },
+  { name: "싱그러운 봄",   use: "학급 게시판 · 축제 홍보",      colors: ["#3EB489", "#FFD43B", "#74C0FC", "#FF7F50", "#FAF9F6"] },
+  { name: "우아한 밤",     use: "시상식 · 기념 행사",           colors: ["#12131A", "#D4AF37", "#722F37", "#36454F", "#F7E7CE"] }
+];
+
+/* ---------- 색 계산 ---------- */
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+/* 어두운 색 위에는 밝은 글자, 밝은 색 위에는 어두운 글자 */
+function labelColor(hex) {
+  const [r, g, b] = hexToRgb(hex);
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return lum > 150 ? "rgba(23,26,32,.82)" : "rgba(255,255,255,.94)";
+}
+
+/* ---------- 복사 & 토스트 ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+function copyText(text, label) {
+  const done = () => toast((label || text) + " 복사됨");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { toast("복사에 실패했습니다"); }
+  document.body.removeChild(ta);
+}
+
+/* ---------- 렌더링 ---------- */
+let currentFamily = "all";
+
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  const defs = [{ id: "all", name: "전체", rep: null }, ...FAMILIES, { id: "pal", name: "추천 조합", rep: null }];
+  defs.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "tab" + (currentFamily === d.id ? " active" : "");
+    if (d.rep) {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = d.rep;
+      b.appendChild(dot);
+    }
+    b.appendChild(document.createTextNode(d.name));
+    b.onclick = () => { currentFamily = d.id; render(); };
+    tabs.appendChild(b);
+  });
+}
+
+function matches(c, q) {
+  if (!q) return true;
+  const hay = (c.ko + " " + c.en + " " + c.hex + " " + c.feel + " " + c.tags.join(" ")).toLowerCase();
+  return hay.includes(q);
+}
+
+function makeColorCard(c) {
+  const card = document.createElement("div");
+  card.className = "ccard";
+
+  const sw = document.createElement("button");
+  sw.className = "swatch";
+  sw.style.background = c.hex;
+  sw.style.color = labelColor(c.hex);
+  sw.setAttribute("aria-label", c.ko + " " + c.hex + " 복사");
+  const hl = document.createElement("span");
+  hl.className = "hexlabel";
+  hl.textContent = c.hex;
+  sw.appendChild(hl);
+  sw.onclick = () => copyText(c.hex);
+
+  const body = document.createElement("div");
+  body.className = "cbody";
+
+  const name = document.createElement("div");
+  name.className = "cname";
+  name.textContent = c.ko;
+  const en = document.createElement("span");
+  en.className = "en";
+  en.textContent = c.en;
+  name.appendChild(en);
+
+  const feel = document.createElement("div");
+  feel.className = "cfeel";
+  feel.textContent = c.feel;
+
+  const [r, g, b] = hexToRgb(c.hex);
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const codes = document.createElement("div");
+  codes.className = "codes";
+  [
+    { label: "HEX", text: c.hex,                          copy: c.hex },
+    { label: "RGB", text: r + " " + g + " " + b,          copy: "rgb(" + r + ", " + g + ", " + b + ")" },
+    { label: "HSL", text: h + "° " + s + "% " + l + "%", copy: "hsl(" + h + ", " + s + "%, " + l + "%)" }
+  ].forEach(k => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.title = k.copy + " 복사";
+    const bb = document.createElement("b");
+    bb.textContent = k.label;
+    chip.appendChild(bb);
+    chip.appendChild(document.createTextNode(k.text));
+    chip.onclick = () => copyText(k.copy);
+    codes.appendChild(chip);
+  });
+
+  const tags = document.createElement("div");
+  tags.className = "tags";
+  c.tags.forEach(t => {
+    const tg = document.createElement("span");
+    tg.className = "tag";
+    tg.textContent = "#" + t;
+    tags.appendChild(tg);
+  });
+
+  body.appendChild(name);
+  body.appendChild(feel);
+  body.appendChild(codes);
+  body.appendChild(tags);
+  card.appendChild(sw);
+  card.appendChild(body);
+  return card;
+}
+
+function makePalette(p) {
+  const pal = document.createElement("div");
+  pal.className = "pal";
+
+  const head = document.createElement("div");
+  head.className = "pal-head";
+  const h3 = document.createElement("h3");
+  h3.textContent = p.name;
+  const use = document.createElement("span");
+  use.className = "use";
+  use.textContent = p.use;
+  const copyAll = document.createElement("button");
+  copyAll.className = "copy-all";
+  copyAll.textContent = "전체 복사";
+  copyAll.onclick = () => copyText(p.colors.join(", "), p.name + " 팔레트");
+  head.appendChild(h3); head.appendChild(use); head.appendChild(copyAll);
+
+  const strip = document.createElement("div");
+  strip.className = "pal-strip";
+  p.colors.forEach(hex => {
+    const b = document.createElement("button");
+    b.style.background = hex;
+    b.style.color = labelColor(hex);
+    b.setAttribute("aria-label", hex + " 복사");
+    const sp = document.createElement("span");
+    sp.textContent = hex;
+    b.appendChild(sp);
+    b.onclick = () => copyText(hex);
+    strip.appendChild(b);
+  });
+
+  pal.appendChild(head);
+  pal.appendChild(strip);
+  return pal;
+}
+
+function render() {
+  renderTabs();
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  let any = false;
+
+  if (currentFamily !== "pal") {
+    const fams = currentFamily === "all" ? FAMILIES : FAMILIES.filter(f => f.id === currentFamily);
+    fams.forEach(f => {
+      const list = f.colors.filter(c => matches(c, q));
+      if (!list.length) return;
+      any = true;
+
+      const sec = document.createElement("section");
+      sec.className = "section";
+
+      const head = document.createElement("div");
+      head.className = "section-head";
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = f.rep;
+      const h2 = document.createElement("h2");
+      h2.textContent = f.name;
+      const feel = document.createElement("span");
+      feel.className = "feel";
+      feel.textContent = f.feel;
+      head.appendChild(dot); head.appendChild(h2); head.appendChild(feel);
+
+      const tip = document.createElement("p");
+      tip.className = "section-tip";
+      tip.textContent = f.tip;
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      list.forEach(c => grid.appendChild(makeColorCard(c)));
+
+      sec.appendChild(head);
+      sec.appendChild(tip);
+      sec.appendChild(grid);
+      content.appendChild(sec);
+    });
+  }
+
+  if (currentFamily === "all" || currentFamily === "pal") {
+    const pals = PALETTES.filter(p => !q || (p.name + " " + p.use + " " + p.colors.join(" ")).toLowerCase().includes(q));
+    if (pals.length) {
+      any = true;
+      const sec = document.createElement("section");
+      sec.className = "section";
+      const head = document.createElement("div");
+      head.className = "section-head";
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = "linear-gradient(135deg, #E03131, #F4C430, #2F9E44, #3355D8)";
+      const h2 = document.createElement("h2");
+      h2.textContent = "추천 조합";
+      const feel = document.createElement("span");
+      feel.className = "feel";
+      feel.textContent = "목적에 맞게 고른 5색 팔레트";
+      head.appendChild(dot); head.appendChild(h2); head.appendChild(feel);
+      const tip = document.createElement("p");
+      tip.className = "section-tip";
+      tip.textContent = "왼쪽부터 주조색 → 보조색 → 바탕색 순서로 배치했습니다. 「전체 복사」를 누르면 다섯 코드를 한 번에 가져갈 수 있어요.";
+      sec.appendChild(head);
+      sec.appendChild(tip);
+      pals.forEach(p => sec.appendChild(makePalette(p)));
+      content.appendChild(sec);
+    }
+  }
+
+  if (!any) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "검색 결과가 없습니다.";
+    content.appendChild(e);
+  }
+}
+
+/* ---------- 테마 (자동 → 라이트 → 다크 순환) ---------- */
+const THEME_KEY = "colornote-theme";
+const THEME_ORDER = ["auto", "light", "dark"];
+const THEME_LABEL = { auto: "🌗", light: "☀️", dark: "🌙" };
+const THEME_NAME  = { auto: "자동", light: "라이트", dark: "다크" };
+function applyTheme(mode) {
+  if (mode === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", mode);
+  const btn = document.getElementById("themeBtn");
+  btn.textContent = THEME_LABEL[mode];
+  btn.title = "테마: " + THEME_NAME[mode] + " (누르면 전환)";
+}
+let theme = localStorage.getItem(THEME_KEY);
+if (!THEME_ORDER.includes(theme)) theme = "auto";
+applyTheme(theme);
+document.getElementById("themeBtn").onclick = () => {
+  theme = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+};
+
+/* ---------- 이벤트 ---------- */
+document.getElementById("searchInput").oninput = render;
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    document.getElementById("searchInput").focus();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
