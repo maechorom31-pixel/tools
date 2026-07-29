@@ -149,6 +149,8 @@ mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; paddin
 .dupe-card .snip { margin-top:4px; }
 .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .compare.single { grid-template-columns:1fr; }
+.compare.multi { grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); }
+.compare .full { grid-column:1 / -1; white-space:normal; }
 .compare .pane { font-size:.84rem; line-height:1.8; white-space:pre-wrap; word-break:break-all; }
 /* 목록·설명이 섞이는 팝업은 원문 부분만 pre-wrap을 쓴다 (안 그러면 줄간격이 벌어진다) */
 .compare .pane.plain { white-space:normal; }
@@ -219,6 +221,8 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
 .detail-card { margin-top:14px; }
 .subj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; margin-top:8px; }
 .subj-cell { border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:.78rem; }
+.subj-cell.clickable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+.subj-cell.clickable:hover { border-color:var(--accent); box-shadow:var(--shadow-lift); transform:translateY(-2px); }
 .subj-cell b { font-size:.8rem; }
 .toast {
   position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
@@ -284,6 +288,16 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
           <button class="pill on" data-mode="peer">학생 간 (같은 학년·같은 과목)</button>
           <button class="pill" data-mode="self">재탕 (같은 학생·학년 간)</button>
         </div>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <span class="hint">범위</span>
+        <div class="pills" id="simGrade"></div>
+        <select id="simKind" aria-label="점검할 기록 종류"></select>
+        <select id="simSort" aria-label="정렬 기준">
+          <option value="score">겹침 높은 순</option>
+          <option value="run">겹친 구절 긴 순</option>
+          <option value="no">학생 번호 순</option>
+        </select>
         <label class="hint" for="simThr">기준
           <input type="range" id="simThr" min="5" max="50" value="12" style="vertical-align:middle">
           <b id="simThrVal">12%</b>
@@ -303,8 +317,9 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
       <div class="row" style="margin-bottom:12px">
         <span class="sect-title tint-2" style="margin-bottom:0">AI 맞춤법·띄어쓰기 검사</span>
         <div class="pills" id="fixGrade"></div>
+        <select id="fixScope" aria-label="검사할 기록 종류"></select>
         <div class="spacer" style="flex:1"></div>
-        <button class="btn primary" id="fixRun">전체 검사 시작</button>
+        <button class="btn primary" id="fixRun">검사 시작</button>
       </div>
       <p class="hint">학생별로 과목·영역 단위로 나눠 AI에 보냅니다. <b>학생 이름·학교명은 자동 마스킹</b>되고 본문 텍스트만 전송됩니다. 문체(개조식)는 유지하고 맞춤법·띄어쓰기 오류만 찾습니다.</p>
       <div id="fixStatus" style="margin-top:10px"></div>
@@ -735,6 +750,7 @@ const state = {
   grades: [],
   tab: "dash", dashGrade: null, fixGrade: null, clsGrade: null,
   simMode: "peer", simThr: 0.12, simPairs: [], dupeGroups: [],
+  simGrade: null, simKind: "", simSort: "score", fixScope: "",
   relay: localStorage.getItem("sgb-relay") || DEFAULT_RELAY,
   aiBusy: false,
 };
@@ -820,12 +836,51 @@ $$(".tab").forEach(b => b.onclick = () => {
   ["dash","sim","fix","cls"].forEach(t => $("#tab-" + t).style.display = t === state.tab ? "" : "none");
 });
 
-/* 학년 알약 공통 */
-function renderGradePills(elId, cur, onPick) {
+/* 학년 알약 공통. withAll을 켜면 맨 앞에 '전체'가 붙고 그때 값은 null이다. */
+function renderGradePills(elId, cur, onPick, withAll) {
   const el = $(elId);
-  el.innerHTML = state.grades.map(g =>
-    `<button class="pill ${g === cur ? "on" : ""}" data-g="${g}">${g}학년</button>`).join("");
-  el.querySelectorAll(".pill").forEach(p => p.onclick = () => onPick(parseInt(p.dataset.g, 10)));
+  const items = withAll ? [{ g: null, t: "전체 학년" }] : [];
+  state.grades.forEach(g => items.push({ g, t: g + "학년" }));
+  el.innerHTML = items.map(it =>
+    `<button class="pill ${it.g === cur ? "on" : ""}" data-g="${it.g === null ? "" : it.g}">${it.t}</button>`).join("");
+  el.querySelectorAll(".pill").forEach(p =>
+    p.onclick = () => onPick(p.dataset.g === "" ? null : parseInt(p.dataset.g, 10)));
+}
+
+/* ---------- 범위 지정 ----------
+   "3학년 세특", "2학년 창체 진로활동"처럼 좁혀서 보기 위한 공통 장치.
+   값의 꼴: "" 전체 · "subj" 세특 전체 · "area" 창체 전체 · "subj:국어" · "area:자율활동" */
+function matchScope(c, scope) {
+  if (!scope) return true;
+  const [kind, label] = scope.split(":");
+  return c.kind === kind && (!label || c.label === label);
+}
+function scopeLabel(scope) {
+  if (!scope) return "전체";
+  const [kind, label] = scope.split(":");
+  const head = kind === "subj" ? "세특" : "창체";
+  return label ? `${head} ${label}` : `${head} 전체`;
+}
+/* 지금 올라온 자료에 실제로 있는 것만 골라 담는다 — 없는 과목이 뜨면 헷갈린다 */
+function fillScopeSelect(elId, grade, cur, onPick) {
+  const el = $(elId);
+  const pool = state.chunks.filter(c => !grade || c.grade === grade);
+  const areas = [...new Set(pool.filter(c => c.kind === "area").map(c => c.label))];
+  const subjs = [...new Set(pool.filter(c => c.kind === "subj").map(c => c.label))]
+    .sort((a, b) => a.localeCompare(b, "ko"));
+  let html = `<option value="">전체 (${pool.length}개 기록)</option>`;
+  if (subjs.length) {
+    html += `<option value="subj">세특 전체 — ${subjs.length}과목</option>`;
+    html += subjs.map(s => `<option value="subj:${esc(s)}">　세특 · ${esc(s)}</option>`).join("");
+  }
+  if (areas.length) {
+    html += `<option value="area">창체 전체 — ${areas.length}영역</option>`;
+    html += areas.map(a => `<option value="area:${esc(a)}">　창체 · ${esc(a)}</option>`).join("");
+  }
+  el.innerHTML = html;
+  el.value = [...el.options].some(o => o.value === cur) ? cur : "";
+  el.onchange = () => onPick(el.value);
+  return el.value;
 }
 
 /* ---------- 7. 작성 현황 ---------- */
@@ -872,21 +927,31 @@ function renderDashDetail(no) {
   const mine = state.chunks.filter(c => c.no === no && c.grade === g);
   if (!mine.length) return;
   const name = mine[0].name;
+  const shown = [];
   const cell = c => {
     const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
     const pct = Math.min(c.bytes / limit * 100, 100);
     const cls = c.bytes > limit ? "over" : c.bytes > limit * 0.9 ? "warn" : "";
-    return `<div class="subj-cell"><b>${esc(c.label)}</b>${c.sem ? ` <span class="hint">${c.sem}학기</span>` : ""}
+    const idx = shown.push(c) - 1;
+    return `<div class="subj-cell clickable" data-i="${idx}" role="button" tabindex="0"
+      aria-label="${esc(c.label)} 원문 보기">
+      <b>${esc(c.label)}</b>${c.sem ? ` <span class="hint">${c.sem}학기</span>` : ""}
       <div class="hint">${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B</div>
       <div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`;
   };
   const areas = mine.filter(c => c.kind === "area" && c.bytes);
   const subjs = mine.filter(c => c.kind === "subj").sort((a, b) => b.bytes - a.bytes);
   $("#dashDetail").style.display = "";
-  $("#dashDetail").innerHTML = `<div class="sect-title tint-0">${no}번 ${esc(name)} · ${g}학년 상세</div>
+  $("#dashDetail").innerHTML = `<div class="sect-title tint-0">${no}번 ${esc(name)} · ${g}학년 상세
+      <span class="hint" style="font-weight:400">— 칸을 누르면 원문이 열립니다</span></div>
     ${areas.length ? `<div class="subj-grid">${areas.map(cell).join("")}</div>` : ""}
     ${subjs.length ? `<div class="hint" style="margin-top:10px">세특 (과목당 한도 ${LIMITS["세특"].toLocaleString()}B)</div>
       <div class="subj-grid">${subjs.map(cell).join("")}</div>` : ""}`;
+  $("#dashDetail").querySelectorAll(".subj-cell.clickable").forEach(el => {
+    const open = () => openRecord(shown[parseInt(el.dataset.i, 10)]);
+    el.onclick = open;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
   $("#dashDetail").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
@@ -966,13 +1031,20 @@ function computeSim() {
 function chunkTag(c) { return `${c.no}번 ${esc(c.name)} · ${c.grade}학년 ${esc(c.label)}${c.sem ? `(${c.sem}학기)` : ""}`; }
 function renderSim() {
   $$("#simMode .pill").forEach(p => p.classList.toggle("on", p.dataset.mode === state.simMode));
+  renderGradePills("#simGrade", state.simGrade, g => { state.simGrade = g; renderSim(); }, true);
+  state.simKind = fillScopeSelect("#simKind", state.simGrade, state.simKind, v => { state.simKind = v; renderSim(); });
+  $("#simSort").value = state.simSort;
   const table = $("#simTable"), empty = $("#simEmpty"), dupeEl = $("#dupeGroups");
   if (!state.chunks.length) {
     table.innerHTML = ""; dupeEl.innerHTML = ""; empty.style.display = "";
     empty.textContent = "파일을 올리면 겹치는 기록 쌍이 표시됩니다."; return;
   }
+  // 지금 고른 범위에 드는 기록인가 (쌍은 한쪽만 걸려도 보여준다)
+  const inScope = c => (!state.simGrade || c.grade === state.simGrade) && matchScope(c, state.simKind);
   // 완전 동일 묶음 (학생 간 모드에서만 — 재탕 모드는 쌍 목록으로 본다)
-  dupeEl.innerHTML = state.simMode === "peer" ? state.dupeGroups.map((arr, gi) => {
+  const groups = state.dupeGroups.filter(arr => arr.some(inScope));
+  state.dupeShown = groups;
+  dupeEl.innerHTML = state.simMode === "peer" ? groups.map((arr, gi) => {
     const members = arr.map(chunkTag).join(" · ");
     return `<div class="dupe-card" data-g="${gi}" role="button" tabindex="0"
       aria-label="완전히 동일한 기록 ${arr.length}건 — 눌러서 원문 보기">
@@ -982,29 +1054,37 @@ function renderSim() {
       <div class="more">눌러서 원문 전체 보기 →</div></div>`;
   }).join("") : "";
   dupeEl.querySelectorAll(".dupe-card").forEach(el => {
-    const open = () => openDupeGroup(state.dupeGroups[parseInt(el.dataset.g, 10)]);
+    const open = () => openDupeGroup(state.dupeShown[parseInt(el.dataset.g, 10)]);
     el.onclick = open;
     el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
   });
-  const list = state.simPairs.filter(p => p.mode === state.simMode && p.score >= state.simThr);
+  const list = state.simPairs.filter(p => p.mode === state.simMode && p.score >= state.simThr
+    && (inScope(p.a) || inScope(p.b)));
+  for (const p of list) if (p._run === undefined) p._run = longestRun(p.a._sq, p.b._ps);
+  if (state.simSort === "run") list.sort((x, y) => y._run - x._run || y.score - x.score);
+  else if (state.simSort === "no") list.sort((x, y) => Math.min(x.a.no, x.b.no) - Math.min(y.a.no, y.b.no) || y.score - x.score);
+  else list.sort((x, y) => y.score - x.score);
   if (!list.length) {
     table.innerHTML = ""; empty.style.display = "";
-    empty.textContent = (state.simMode === "peer" && state.dupeGroups.length)
+    empty.textContent = (state.simMode === "peer" && groups.length)
       ? "동일 묶음 외에 기준을 넘는 쌍이 없습니다."
-      : `기준(${Math.round(state.simThr*100)}%)을 넘는 쌍이 없습니다. 슬라이더를 낮춰 보세요.`;
+      : `이 범위에서 기준(${Math.round(state.simThr*100)}%)을 넘는 쌍이 없습니다. 범위를 넓히거나 슬라이더를 낮춰 보세요.`;
     return;
   }
   empty.style.display = "none";
-  table.innerHTML = `<thead><tr><th class="num">겹침</th><th class="num">최장 구절</th><th>기록 A</th><th>기록 B</th></tr></thead>
-    <tbody>${list.slice(0, 200).map((p, i) => {
+  const CAP = 200;
+  table.innerHTML = `<thead><tr><th class="num">겹침</th><th class="num">겹친 구절</th><th>기록 A</th><th>기록 B</th></tr></thead>
+    <tbody>${list.slice(0, CAP).map((p, i) => {
       const cls = p.score >= 0.3 ? "hi" : p.score >= 0.15 ? "mid" : "lo";
-      const run = longestRun(p.a._sq, p.b._ps);
       return `<tr class="simrow" data-i="${i}">
         <td class="num"><span class="score ${cls}">${Math.round(p.score*100)}%</span></td>
-        <td class="num">${run}자</td>
+        <td class="num">${p._run}자</td>
         <td>${chunkTag(p.a)}</td><td>${chunkTag(p.b)}</td></tr>`;
     }).join("")}</tbody>`;
   table.querySelectorAll(".simrow").forEach(tr => tr.onclick = () => openCompare(list[parseInt(tr.dataset.i, 10)]));
+  // 잘라낸 것이 있으면 숨기지 않고 알린다
+  empty.style.display = list.length > CAP ? "" : "none";
+  if (list.length > CAP) empty.textContent = `겹침이 큰 ${CAP}쌍만 표시했습니다 (해당 ${list.length}쌍). 범위를 좁히거나 기준을 올리면 줄어듭니다.`;
 }
 /* 상대 기록과 공유하는 조각 구간을 원문 위에 형광펜 표시 */
 function paintShared(text, otherSet) {
@@ -1023,19 +1103,38 @@ function paintShared(text, otherSet) {
   }
   return open ? html + "</mark>" : html;
 }
-/* 완전 동일 묶음 — 글자가 같으니 맞대어 봐야 소용없다.
-   누가 이 기록을 함께 쓰고 있는지와 원문 전체를 한 화면에 편다. */
+/* 완전 동일 묶음 — 쌍 비교와 같은 방식으로, 학생마다 한 단씩 원문을 세우고
+   다른 학생과 겹치는 부분에 형광펜을 친다. 전체가 노랗게 물드는 것 자체가
+   "이 기록은 통째로 같다"를 눈으로 보여 준다. */
 function openDupeGroup(arr) {
   const head = arr[0];
   const sameRaw = arr.every(c => c.text === head.text);
   $("#cmpTitle").textContent = `글자까지 완전히 동일한 기록 ${arr.length}건`;
+  $("#cmpBody").className = "compare multi";
+  const panes = arr.map(c => {
+    // 자기 자신을 뺀 나머지가 가진 조각 전부와 견준다
+    const others = new Set();
+    for (const o of arr) if (o !== c) o._ps.forEach(p => others.add(p));
+    return `<div class="pane"><h4>${chunkTag(c)} · ${c.text.length}자 · ${c.bytes.toLocaleString()}B</h4>
+      ${paintShared(c.text, others)}</div>`;
+  }).join("");
+  $("#cmpBody").innerHTML = `<div class="pane plain full">
+      <div class="box warn" style="margin:0">학생 <b>${arr.length}명</b>의 <b>${esc(head.label)}</b> 기록이 글자까지 같습니다.
+      아래는 학생별 원문이며, <mark>형광펜</mark> 부분이 서로 겹치는 대목입니다.
+      ${sameRaw ? "" : " (띄어쓰기만 조금씩 다릅니다.)"}</div>
+    </div>${panes}`;
+  $("#cmpModal").classList.add("on");
+}
+/* 작성 현황에서 칸 하나를 눌렀을 때 — 그 기록 원문만 펼친다 */
+function openRecord(c) {
+  const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+  $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label}${c.sem ? ` ${c.sem}학기` : ""}`;
   $("#cmpBody").className = "compare single";
   $("#cmpBody").innerHTML = `<div class="pane plain">
-    <h4>이 기록을 함께 쓰고 있는 학생 ${arr.length}명</h4>
-    <div class="dupe-members">${arr.map(c => `<span class="filechip">${chunkTag(c)}</span>`).join("")}</div>
-    ${sameRaw ? "" : `<div class="snip">※ 띄어쓰기만 조금 다르고 글자는 모두 같습니다. 아래는 ${chunkTag(head)}의 원문입니다.</div>`}
-    <h4 style="margin-top:12px">기록 전문 · ${head.text.length}자 · ${head.bytes.toLocaleString()}B</h4>
-    <div class="raw">${esc(head.text)}</div></div>`;
+    <h4>${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B · ${c.text.length}자
+      ${c.bytes > limit ? '<span class="badge over">한도 초과</span>' : ""}
+      ${c.hope ? `· 진로희망 <b>${esc(c.hope)}</b>` : ""}</h4>
+    ${c.text ? `<div class="raw">${esc(c.text)}</div>` : `<div class="snip">아직 작성되지 않았습니다.</div>`}</div>`;
   $("#cmpModal").classList.add("on");
 }
 function openCompare(p) {
@@ -1052,6 +1151,7 @@ $("#simThr").oninput = e => {
   renderSim();
 };
 $$("#simMode .pill").forEach(p => p.onclick = () => { state.simMode = p.dataset.mode; renderSim(); });
+$("#simSort").onchange = e => { state.simSort = e.target.value; renderSim(); };
 
 /* ---------- 9. AI 호출 ----------
    NVIDIA API는 브라우저 교차 출처 요청을 막으므로 선생님 소유의
@@ -1218,6 +1318,12 @@ function openFixContext(hitIdx, focus) {
 
 function renderFix() {
   renderGradePills("#fixGrade", state.fixGrade, g => { state.fixGrade = g; renderFix(); });
+  state.fixScope = fillScopeSelect("#fixScope", state.fixGrade, state.fixScope, v => { state.fixScope = v; renderFix(); });
+  const n = state.chunks.filter(c => c.grade === state.fixGrade && matchScope(c, state.fixScope) && c.text.length > 10).length;
+  $("#fixRun").textContent = state.fixGrade
+    ? `${state.fixGrade}학년 ${scopeLabel(state.fixScope)} 검사 (${n}개)`
+    : "검사 시작";
+  $("#fixRun").disabled = state.aiBusy || !n;
 }
 function bindFixClicks() {
   $$("#fixResults .fix.clickable").forEach(el => {
@@ -1233,8 +1339,10 @@ $("#fixRun").onclick = async () => {
   const g = state.fixGrade;
   if (!g) { toast("먼저 파일을 올려 주세요"); return; }
   if (!state.relay) { $("#aiModal").classList.add("on"); return; }
-  const students = [...new Set(state.chunks.filter(c => c.grade === g).map(c => c.no))].sort((a, b) => a - b);
-  if (!students.length) { toast("해당 학년 기록이 없습니다"); return; }
+  const scope = state.fixScope;
+  const pool = state.chunks.filter(c => c.grade === g && matchScope(c, scope) && c.text.length > 10);
+  const students = [...new Set(pool.map(c => c.no))].sort((a, b) => a - b);
+  if (!students.length) { toast("고른 범위에 검사할 기록이 없습니다"); return; }
   state.aiBusy = true; $("#fixRun").disabled = true;
   $("#fixResults").innerHTML = "";
   fixHits.length = 0;
@@ -1243,7 +1351,7 @@ $("#fixRun").onclick = async () => {
     `<span class="spin"></span> <span class="progress">검사 중 ${done}/${students.length}명 · 지적 ${found}건${failed ? ` · 실패 ${failed}명` : ""}</span>`; };
   stat();
   for (const no of students) {
-    const mine = state.chunks.filter(c => c.no === no && c.grade === g && c.text.length > 10);
+    const mine = pool.filter(c => c.no === no);
     if (!mine.length) { done++; stat(); continue; }
     const name = mine[0].name;
     const listing = mine.map((c, i) => `[${i + 1}] (${c.label}${c.sem ? ` ${c.sem}학기` : ""}) ${maskText(c.text)}`).join("\n\n");
@@ -1285,7 +1393,7 @@ ${listing}`;
   }
   $("#fixStatus").innerHTML = `<span class="progress">✅ 완료 — ${students.length}명 중 지적 ${found}건${failed ? ` · 실패 ${failed}명` : ""}. AI 교정은 참고용이니 반드시 검토 후 반영해 주세요.</span>`;
   if (!found && !failed) $("#fixResults").innerHTML = `<div class="box ok">지적할 오류를 찾지 못했습니다. 🎉</div>`;
-  state.aiBusy = false; $("#fixRun").disabled = false;
+  state.aiBusy = false; renderFix();
 };
 
 /* ---------- 11. 학급 총평 분석 — 같은 과목 전원을 한 번에 보낸다 ---------- */
