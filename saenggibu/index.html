@@ -321,10 +321,15 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
   <div class="mcard">
     <button class="icon-btn mclose" data-close="aiModal" aria-label="닫기">✕</button>
     <h3>🤖 AI 연결 설정</h3>
+    <div class="box ok" style="margin-top:0">
+      <b>이미 연결되어 있습니다.</b> AI 맞춤법 검사와 학급 총평 분석을 바로 쓰실 수 있으니,
+      아래 내용은 <b>중계를 직접 만들어 바꾸고 싶을 때만</b> 보시면 됩니다.
+    </div>
     <p class="hint" style="margin-bottom:8px">
-      NVIDIA 무료 API는 브라우저에서 직접 호출할 수 없어(CORS) <b>구글 앱스 스크립트 중계</b>를 한 번만 만들어 연결합니다.
-      API 키는 선생님 구글 계정 안(중계 코드)에만 있고, 이 페이지에는 저장되지 않습니다.
+      NVIDIA 무료 API는 브라우저에서 직접 호출할 수 없어(CORS) <b>구글 앱스 스크립트 중계</b>를 거칩니다.
+      API 키는 그 중계 안에만 있고, 이 페이지에는 저장되지 않습니다.
     </p>
+    <details style="margin-bottom:6px"><summary class="hint" style="cursor:pointer">중계를 직접 만들려면 (선택)</summary>
     <ol class="steps">
       <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a> 에서 <b>새 프로젝트</b> 만들기</li>
       <li>아래 코드를 <b>전체 복사</b>해서 Code.gs에 붙여넣기 (키는 이미 들어 있음)</li>
@@ -336,10 +341,11 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
       <span class="hint">배포는 최초 1회면 충분합니다.</span>
     </div>
     <pre class="code" id="gasCode" style="max-height:180px; overflow-y:auto"></pre>
+    </details>
     <div class="row" style="margin-top:12px">
       <input type="url" id="relayUrl" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1; min-width:220px">
       <button class="btn primary" id="relaySave">연결</button>
-      <button class="btn" id="relayClear">해제</button>
+      <button class="btn" id="relayClear">기본값으로</button>
     </div>
     <div id="relayStat" class="hint" style="margin-top:8px"></div>
     <div class="box info" style="margin-top:10px">
@@ -398,6 +404,120 @@ $("#themeBtn").onclick = () => {
    xlsx는 zip 컨테이너다. 외부 라이브러리 없이 zip 목차(EOCD → 중앙
    디렉터리)를 읽되, 필요한 항목(공유 문자열·첫 시트)만 골라서
    브라우저 내장 DecompressionStream으로 푼다 — 전체 해제보다 빠르다. */
+/* 브라우저에 DecompressionStream이 없을 때 쓰는 자체 해제기 (RFC 1951 raw deflate).
+   학교 PC의 오래된 크롬·사파리·파이어폭스에서도 파일이 열리게 하려는 것이다.
+   이게 없으면 같은 파일을 넣고도 어떤 선생님은 열리고 어떤 선생님은 안 열린다. */
+const LEN_BASE  = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+const LEN_EXTRA = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+const DIST_BASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+const DIST_EXTRA= [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+const CLEN_ORDER= [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+function inflateFallback(src) {
+  let at = 0, buf = 0, have = 0, size = 0;
+  let out = new Uint8Array(Math.max(4096, src.length * 5));
+  const room = need => {
+    if (size + need <= out.length) return;
+    let cap = out.length;
+    while (cap < size + need) cap *= 2;
+    const bigger = new Uint8Array(cap);
+    bigger.set(out.subarray(0, size));
+    out = bigger;
+  };
+  const take = n => {
+    while (have < n) { buf |= src[at++] << have; have += 8; }
+    const v = buf & ((1 << n) - 1);
+    buf >>>= n; have -= n;
+    return v;
+  };
+  const alignToByte = () => {
+    take(have & 7);        // 남은 자투리 비트 버리기
+    at -= have >> 3;       // 미리 읽어 둔 온전한 바이트는 되돌린다
+    buf = 0; have = 0;
+  };
+  const buildTree = lens => {
+    let maxBits = 0;
+    for (const l of lens) if (l > maxBits) maxBits = l;
+    const perLen = new Array(maxBits + 1).fill(0);
+    for (const l of lens) if (l) perLen[l]++;
+    const nextCode = new Array(maxBits + 1).fill(0);
+    let code = 0;
+    for (let b = 1; b <= maxBits; b++) { code = (code + perLen[b - 1]) << 1; nextCode[b] = code; }
+    const table = new Map();
+    for (let i = 0; i < lens.length; i++) if (lens[i]) table.set((lens[i] << 16) | nextCode[lens[i]]++, i);
+    return { table, maxBits };
+  };
+  const readSym = tree => {
+    let code = 0;
+    for (let len = 1; len <= tree.maxBits; len++) {
+      code = (code << 1) | take(1);
+      const sym = tree.table.get((len << 16) | code);
+      if (sym !== undefined) return sym;
+    }
+    throw new Error("압축을 푸는 중 오류가 났습니다.");
+  };
+  let fixedLit = null, fixedDist = null;
+  for (;;) {
+    const last = take(1), kind = take(2);
+    if (kind === 0) {                       // 비압축 블록
+      alignToByte();
+      const len = src[at] | (src[at + 1] << 8);
+      at += 4;
+      room(len);
+      out.set(src.subarray(at, at + len), size);
+      size += len; at += len;
+    } else {
+      let litTree, distTree;
+      if (kind === 1) {                     // 고정 허프만
+        if (!fixedLit) {
+          const l = new Array(288);
+          for (let i = 0; i < 288; i++) l[i] = i < 144 ? 8 : i < 256 ? 9 : i < 280 ? 7 : 8;
+          fixedLit = buildTree(l);
+          fixedDist = buildTree(new Array(30).fill(5));
+        }
+        litTree = fixedLit; distTree = fixedDist;
+      } else if (kind === 2) {              // 동적 허프만
+        const nLit = take(5) + 257, nDist = take(5) + 1, nClen = take(4) + 4;
+        const clen = new Array(19).fill(0);
+        for (let i = 0; i < nClen; i++) clen[CLEN_ORDER[i]] = take(3);
+        const clTree = buildTree(clen);
+        const lens = [];
+        while (lens.length < nLit + nDist) {
+          const sym = readSym(clTree);
+          if (sym < 16) lens.push(sym);
+          else if (sym === 16) { const prev = lens[lens.length - 1]; let r = 3 + take(2); while (r--) lens.push(prev); }
+          else if (sym === 17) { let r = 3 + take(3); while (r--) lens.push(0); }
+          else { let r = 11 + take(7); while (r--) lens.push(0); }
+        }
+        litTree = buildTree(lens.slice(0, nLit));
+        distTree = buildTree(lens.slice(nLit));
+      } else throw new Error("알 수 없는 압축 형식입니다.");
+      for (;;) {
+        const sym = readSym(litTree);
+        if (sym === 256) break;
+        if (sym < 256) { room(1); out[size++] = sym; }
+        else {
+          const li = sym - 257;
+          const runLen = LEN_BASE[li] + take(LEN_EXTRA[li]);
+          const di = readSym(distTree);
+          const back = DIST_BASE[di] + take(DIST_EXTRA[di]);
+          room(runLen);
+          let from = size - back;
+          for (let k = 0; k < runLen; k++) out[size++] = out[from++];
+        }
+      }
+    }
+    if (last) break;
+  }
+  return out.subarray(0, size);
+}
+async function inflate(packed) {
+  if (typeof DecompressionStream === "function") {
+    const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  return inflateFallback(packed);
+}
+
 function makeByteReader(buf) {
   const view = new DataView(buf);
   return {
@@ -440,8 +560,7 @@ async function extractZipEntry(r, entry) {
   const dataAt = h + 30 + r.u16(h + 26) + r.u16(h + 28);
   const packed = r.bytes.subarray(dataAt, dataAt + entry.packedSize);
   if (!entry.deflated) return packed.slice();
-  const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  return inflate(packed);
 }
 /* 네임스페이스 접두사 유무와 무관하게 localName으로 요소를 모은다 */
 function collectByLocal(doc, name) {
@@ -499,6 +618,10 @@ async function readXlsx(buf) {
    [학생 → 학년 → 영역] 문맥을 유지하는 상태 머신으로 복원한다.
    창체: 번호(A)·성명(B)·학년(C)·영역(D)·시간(E)·특기사항(F)
    세특: 번호(A)·성명(B)·학년(C)·본문(D) */
+/* AI 중계 주소 — 이미 배포해 둔 앱스 스크립트 웹앱. 그대로 쓰면 설정 없이 AI 기능이 돈다.
+   다른 중계를 쓰고 싶으면 🤖 버튼에서 바꿀 수 있고, 그 값은 이 브라우저에만 저장된다. */
+const DEFAULT_RELAY = "https://script.google.com/macros/s/AKfycbxMqZ__mwxQ3lDypIUNvTRM0C35osm2Ms3R9gr33EaFgqwVhQVqyjhUoHQX6U36PccQ/exec";
+
 const AREAS = ["자율활동", "동아리활동", "진로활동"];
 const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(v).trim());
 
@@ -595,7 +718,7 @@ const state = {
   grades: [],
   tab: "dash", dashGrade: null, fixGrade: null, clsGrade: null,
   simMode: "peer", simThr: 0.12, simPairs: [], dupeGroups: [],
-  relay: localStorage.getItem("sgb-relay") || "",
+  relay: localStorage.getItem("sgb-relay") || DEFAULT_RELAY,
   aiBusy: false,
 };
 
@@ -634,22 +757,35 @@ async function handleFiles(files) {
       for (const r of recs) {
         const k = [r.no, r.name, r.grade, r.area].join("|");
         const old = state.recs.get(k);
-        if (!old || r.text.length > old.text.length) state.recs.set(k, r);
-        else if (old && r.hope && !old.hope) old.hope = r.hope;
+        if (!old) { state.recs.set(k, r); continue; }
+        // 같은 칸이 여러 파일에 있으면 긴 쪽을 남기되, 진로희망은 어느 쪽에 있든 지키다
+        const keep = r.text.length > old.text.length ? r : old;
+        keep.hope = keep.hope || old.hope || r.hope;
+        state.recs.set(k, keep);
       }
-      state.files.push({ name: f.name, doctype });
+      // 이 파일 하나가 무엇을 담고 있었는지 — 두 사람이 화면을 비교할 때의 근거
+      state.files.push({
+        name: f.name, doctype,
+        grades: [...new Set(recs.map(r => r.grade))].sort((a, b) => a - b),
+        students: new Set(recs.map(r => r.no)).size,
+      });
     } catch (err) {
-      toast(`${f.name}: ${err.message}`);
+      const hint = /DecompressionStream|압축/.test(err.message)
+        ? "이 브라우저가 파일 압축 해제를 지원하지 않습니다. 크롬이나 엣지에서 열어 주세요."
+        : err.message;
+      toast(`${f.name}: ${hint}`);
     }
   }
   rebuild(); renderFiles();
 }
 function renderFiles() {
   $("#filelist").innerHTML = state.files.map(f =>
-    `<span class="filechip">${f.doctype === "창체" ? "🎯" : "📚"} ${esc(f.name)} · ${f.doctype}</span>`).join("");
+    `<span class="filechip">${f.doctype === "창체" ? "🎯" : "📚"} ${esc(f.name)} · ${f.doctype}
+      · ${f.grades.join("·")}학년 · ${f.students}명</span>`).join("");
   const students = new Set([...state.recs.values()].map(r => r.no + "|" + r.name));
   $("#scanNote").innerHTML = state.files.length
-    ? `<b>${esc(state.klass || "")}</b> 학생 <b>${students.size}명</b> · 학년 <b>${state.grades.join("·")}</b> · 기록 조각 <b>${state.chunks.length}개</b> 인식 완료. 올린 파일은 이 컴퓨터 안에서만 읽습니다.`
+    ? `<b>${esc(state.klass || "")}</b> 학생 <b>${students.size}명</b> · 학년 <b>${state.grades.join("·")}</b> · 기록 조각 <b>${state.chunks.length}개</b> 인식 완료.
+       <span class="hint">화면이 다른 선생님과 다르게 보이면 위 파일 칸의 <b>학년 범위</b>부터 견주어 보세요 — 같은 이름의 NEIS 파일도 내려받을 때 고른 학년에 따라 내용이 다릅니다.</span>`
     : "파일을 올리면 인식 결과가 여기에 표시됩니다. 올린 파일은 <b>이 컴퓨터 안에서만</b> 읽습니다.";
 }
 const upzone = $("#uploadZone");
@@ -980,11 +1116,15 @@ $("#relaySave").onclick = () => {
   state.relay = v; localStorage.setItem("sgb-relay", v);
   updateRelayStat(); toast("AI 중계가 연결되었습니다");
 };
-$("#relayClear").onclick = () => { state.relay = ""; localStorage.removeItem("sgb-relay"); $("#relayUrl").value = ""; updateRelayStat(); };
+$("#relayClear").onclick = () => {
+  state.relay = DEFAULT_RELAY; localStorage.removeItem("sgb-relay");
+  $("#relayUrl").value = DEFAULT_RELAY; updateRelayStat(); toast("기본 중계로 되돌렸습니다");
+};
 function updateRelayStat() {
-  $("#relayStat").innerHTML = state.relay
-    ? `✅ 연결됨: <b>${esc(state.relay.slice(0, 60))}…</b>`
-    : "아직 연결되지 않았습니다. AI 검사 없이도 현황·겹침 기능은 모두 사용할 수 있습니다.";
+  const own = state.relay && state.relay !== DEFAULT_RELAY;
+  $("#relayStat").innerHTML = own
+    ? `✅ 직접 만드신 중계에 연결됨: <b>${esc(state.relay.slice(0, 60))}…</b>`
+    : `✅ <b>기본 중계에 연결되어 있습니다</b> — 따로 설정하지 않아도 AI 검사가 바로 동작합니다.`;
   $("#aiSetupBtn").style.borderColor = state.relay ? "var(--ok)" : "";
 }
 updateRelayStat();
