@@ -262,7 +262,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
   <div class="card">
     <div class="upzone" id="uploadZone" role="button" tabindex="0" aria-label="엑셀 파일 업로드">
       <div class="t">NEIS 엑셀 파일을 여기로 끌어다 놓기 (여러 개 가능)</div>
-      <div class="s">클릭해서 선택 · [학급담임] 창의적체험활동상황 / 세부능력 및 특기사항 → 엑셀 저장 원본 그대로</div>
+      <div class="s">클릭해서 선택 · 창의적체험활동상황 · 세부능력 및 특기사항 · 개인별 세부능력 및 특기사항 → 엑셀 저장 원본 그대로</div>
     </div>
     <input type="file" id="filePick" accept=".xlsx" multiple hidden>
     <div class="filelist" id="filelist"></div>
@@ -668,24 +668,76 @@ async function readXlsx(buf) {
 const DEFAULT_RELAY = "https://script.google.com/macros/s/AKfycbxMqZ__mwxQ3lDypIUNvTRM0C35osm2Ms3R9gr33EaFgqwVhQVqyjhUoHQX6U36PccQ/exec";
 
 const AREAS = ["자율활동", "동아리활동", "진로활동"];
+const SOLO = "개인별 세특";                 // 개인별 세부능력 및 특기사항 — 학생당 한 덩이
+const AREA_ORDER = [...AREAS, SOLO];        // 작성 현황 표에서 세울 차례
 const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(v).trim());
 
+/* 제목줄로 어느 출력물인지 가린다. '개인별'을 먼저 보는 것이 중요한데,
+   개인별 세특 출력물의 열 머리글에도 '세부능력'이 들어 있어 뒤에 두면
+   과목별 세특으로 잘못 읽힌다. */
 function detectDocType(grid) {
-  for (let i = 1; i < Math.min(grid.length, 8); i++) {
+  const lines = [];
+  for (let i = 1; i < Math.min(grid.length, 8); i++)
+    for (const v of Object.values(grid[i] || {})) if (typeof v === "string") lines.push(v);
+  if (lines.some(v => v.includes("개인별"))) return "개인별세특";
+  if (lines.some(v => v.includes("창의적체험활동"))) return "창체";
+  if (lines.some(v => v.includes("세부능력") || v.includes("세부사항"))) return "세특";
+  if (lines.some(v => v.includes("행동특성"))) return "행특";
+  return null;
+}
+
+/* 개인별 세부능력 및 특기사항 ----------------------------------------
+   앞의 두 출력물과 짜임이 다르다. 학년이 열에 없고 표 위 안내줄
+   ("2026학년도 주간 3학년 1 강의실")에 들어 있으며, 식별자는 번호가
+   아니라 "반/번호" 꼴의 글자다. 쪽이 넘어가면 머리글 다음 줄에 본문만
+   있는 행이 오는데, 그것은 앞 쪽 마지막 학생의 이어지는 대목이다. */
+function parseSolo(grid) {
+  let grade = null, klass = "", school = "", room = "";
+  for (let i = 1; i < Math.min(grid.length, 6); i++) {
     for (const v of Object.values(grid[i] || {})) {
       if (typeof v !== "string") continue;
-      if (v.includes("창의적체험활동")) return "창체";
-      if (v.includes("세부능력")) return "세특";
-      if (v.includes("행동특성")) return "행특";
+      // "2026학년도 주간 3학년 1 강의실" — 앞의 '2026학년도'에서 6을 집지 않도록
+      // 숫자에 잇대인 것과 '학년도'를 함께 걸러낸다
+      const m = v.match(/(?:^|[^0-9])([1-9])\s*학년(?!도)/);
+      if (m && !grade) { grade = parseInt(m[1], 10); room = v.trim(); }
     }
   }
-  return null;
+  const recs = {};
+  let cur = null, band = null;
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i]; if (!c) continue;
+    const vals = Object.values(c);
+    if (vals.includes("/")) {                       // 쪽번호 행
+      const sch = vals.find(v => typeof v === "string" && /학교$/.test(v.trim()));
+      if (sch) school = sch.trim();
+      continue;
+    }
+    const A = typeof c.A === "string" ? c.A.trim() : c.A;
+    const B = typeof c.B === "string" ? c.B.trim() : c.B;
+    const body = typeof c.C === "string" ? c.C : "";
+    if (A === "반/번호" || A === "반/번호 " || (typeof A === "string" && /^반\s*\/\s*번호$/.test(A))) continue;
+    if (typeof A === "string" && /학년/.test(A)) continue;        // 안내줄
+    if (typeof A === "string" && /^\d{4}\.\d{2}\.\d{2}/.test(A)) continue;
+    const m = typeof A === "string" ? A.match(/^(\d+)\s*\/\s*(\d+)$/) : null;
+    if (m && B) {
+      band = parseInt(m[1], 10);
+      const no = parseInt(m[2], 10);
+      const k = [no, B, grade, SOLO].join("|");
+      if (!recs[k]) recs[k] = { no, name: B, grade, area: SOLO, text: "", hope: "" };
+      cur = recs[k];
+    }
+    if (body && cur) cur.text += body;               // 본문만 있는 행 = 앞 학생의 이어지는 대목
+  }
+  if (!grade) throw new Error("학년을 찾지 못했습니다. 표 위 안내줄이 지워진 파일일 수 있습니다.");
+  klass = band ? `${grade}학년 ${band}반` : (room || "");
+  return { doctype: "개인별세특", school, klass, recs: Object.values(recs) };
 }
 
 function parseNeis(grid) {
   const doctype = detectDocType(grid);
   if (!doctype) throw new Error("창의적체험활동/세부능력 출력물이 아닙니다.");
-  if (doctype === "행특") throw new Error("행동특성 파일은 아직 지원하지 않습니다. (창체·세특만 가능)");
+  if (doctype === "개인별세특") return parseSolo(grid);
+  if (doctype === "행특") throw new Error("행동특성 파일은 아직 지원하지 않습니다. (창체·세특·개인별 세특만 가능)");
   const recs = {};   // "no|name|grade|area" → { no, name, grade, area, text, hope }
   let school = "", klass = "";
   let cur = null, grade = null, area = null;
@@ -752,7 +804,10 @@ function neisBytes(t) {
   for (const ch of t) total += ch === "\n" ? 2 : ONE_BYTE.test(ch) ? 1 : 3;
   return total;
 }
-const LIMITS = { "자율활동": 1500, "동아리활동": 1500, "진로활동": 1500, "세특": 1500 }; // 2026학년도, 세특은 과목당
+/* 2026학년도 기준. 세특은 과목당.
+   개인별 세특을 1,500으로 둔 근거: 실제 출력물의 19명이 1,393~1,484B에
+   고르게 몰려 있어 1,500을 천장으로 삼아 쓴 흔적이 분명했다. */
+const LIMITS = { "자율활동": 1500, "동아리활동": 1500, "진로활동": 1500, "세특": 1500, [SOLO]: 1500 };
 
 /* ---------- 4. 전역 상태 ---------- */
 const state = {
@@ -779,7 +834,7 @@ function rebuild() {
           label: s.subject, sem: s.sem, text: s.body.trim(), bytes: neisBytes(s.body.trim()) });
       }
     } else {
-      state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "area",
+      state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: r.area === SOLO ? "solo" : "area",
         label: r.area, sem: "", text: r.text.trim(), bytes: neisBytes(r.text.trim()), hope: r.hope });
     }
   }
@@ -827,7 +882,7 @@ async function handleFiles(files) {
 }
 function renderFiles() {
   $("#filelist").innerHTML = state.files.map(f =>
-    `<span class="filechip">${f.doctype === "창체" ? "🎯" : "📚"} ${esc(f.name)} · ${f.doctype}
+    `<span class="filechip">${f.doctype === "창체" ? "🎯" : f.doctype === "개인별세특" ? "📝" : "📚"} ${esc(f.name)} · ${f.doctype}
       · ${f.grades.join("·")}학년 · ${f.students}명</span>`).join("");
   const students = new Set([...state.recs.values()].map(r => r.no + "|" + r.name));
   $("#scanNote").innerHTML = state.files.length
@@ -872,7 +927,7 @@ function matchScope(c, scope) {
 function scopeLabel(scope) {
   if (!scope) return "전체";
   const [kind, label] = scope.split(":");
-  const head = kind === "subj" ? "세특" : "창체";
+  const head = kind === "subj" ? "세특" : kind === "solo" ? SOLO : "창체";
   return label ? `${head} ${label}` : `${head} 전체`;
 }
 /* 지금 올라온 자료에 실제로 있는 것만 골라 담는다 — 없는 과목이 뜨면 헷갈린다 */
@@ -882,6 +937,7 @@ function fillScopeSelect(elId, grade, cur, onPick) {
   const areas = [...new Set(pool.filter(c => c.kind === "area").map(c => c.label))];
   const subjs = [...new Set(pool.filter(c => c.kind === "subj").map(c => c.label))]
     .sort((a, b) => a.localeCompare(b, "ko"));
+  const solos = [...new Set(pool.filter(c => c.kind === "solo").map(c => c.label))];
   let html = `<option value="">전체 (${pool.length}개 기록)</option>`;
   if (subjs.length) {
     html += `<option value="subj">세특 전체 — ${subjs.length}과목</option>`;
@@ -891,6 +947,7 @@ function fillScopeSelect(elId, grade, cur, onPick) {
     html += `<option value="area">창체 전체 — ${areas.length}영역</option>`;
     html += areas.map(a => `<option value="area:${esc(a)}">　창체 · ${esc(a)}</option>`).join("");
   }
+  if (solos.length) html += `<option value="solo">${esc(SOLO)}</option>`;
   el.innerHTML = html;
   el.value = [...el.options].some(o => o.value === cur) ? cur : "";
   el.onchange = () => onPick(el.value);
@@ -913,26 +970,35 @@ function renderDash() {
   const students = [...new Set(state.chunks.map(c => c.no + "|" + c.name))]
     .map(s => { const [no, name] = s.split("|"); return { no: parseInt(no, 10), name }; })
     .sort((a, b) => a.no - b.no);
+  // 열은 실제로 올라온 항목만 세운다 — 없는 항목을 '미작성'으로 세우면 오해를 부른다
+  const present = new Set(state.chunks
+    .filter(c => (c.kind === "area" || c.kind === "solo") && c.grade === g).map(c => c.label));
+  const cols = AREA_ORDER.filter(a => present.has(a));
+  [...present].forEach(a => { if (!cols.includes(a)) cols.push(a); });
   const rows = students.map(st => {
     const mine = state.chunks.filter(c => c.no === st.no && c.grade === g);
-    const areas = AREAS.map(a => {
-      const c = mine.find(x => x.kind === "area" && x.label === a);
-      return byteBadge(c ? c.bytes : 0, LIMITS[a]);
+    const areas = cols.map(a => {
+      const c = mine.find(x => (x.kind === "area" || x.kind === "solo") && x.label === a);
+      return byteBadge(c ? c.bytes : 0, LIMITS[a] || 1500);
     });
     const subjs = mine.filter(c => c.kind === "subj");
     const subjSum = subjs.reduce((s, c) => s + c.bytes, 0);
     const over = subjs.filter(c => c.bytes > LIMITS["세특"]).length;
     const hope = mine.find(c => c.hope)?.hope || "";
+    const hasSubj = state.chunks.some(c => c.kind === "subj" && c.grade === g);
     return `<tr class="clickable" data-no="${st.no}">
       <td class="num">${st.no}</td><td>${esc(st.name)}</td>
-      <td>${areas[0]}</td><td>${areas[1]}</td><td>${areas[2]}</td>
-      <td>${esc(hope) || "<span class='hint'>—</span>"}</td>
-      <td class="num">${subjs.length ? `${subjs.length}과목 · ${subjSum.toLocaleString()}B` : "<span class='badge none'>미작성</span>"}
-        ${over ? `<span class="badge over">한도초과 ${over}</span>` : ""}</td>
+      ${areas.map(a => `<td>${a}</td>`).join("")}
+      ${present.size ? `<td>${esc(hope) || "<span class='hint'>—</span>"}</td>` : ""}
+      ${hasSubj ? `<td class="num">${subjs.length ? `${subjs.length}과목 · ${subjSum.toLocaleString()}B` : "<span class='badge none'>미작성</span>"}
+        ${over ? `<span class="badge over">한도초과 ${over}</span>` : ""}</td>` : ""}
     </tr>`;
   }).join("");
+  const anySubj = state.chunks.some(c => c.kind === "subj" && c.grade === g);
   table.innerHTML = `<thead><tr><th class="num">번호</th><th>성명</th>
-    <th>자율활동</th><th>동아리활동</th><th>진로활동</th><th>진로희망</th><th class="num">세특</th></tr></thead>
+    ${cols.map(a => `<th>${esc(a)}</th>`).join("")}
+    ${present.size ? "<th>진로희망</th>" : ""}
+    ${anySubj ? '<th class="num">세특</th>' : ""}</tr></thead>
     <tbody>${rows}</tbody>`;
   table.querySelectorAll("tr.clickable").forEach(tr => tr.onclick = () => renderDashDetail(parseInt(tr.dataset.no, 10)));
 }
@@ -953,7 +1019,7 @@ function renderDashDetail(no) {
       <div class="hint">${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B</div>
       <div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`;
   };
-  const areas = mine.filter(c => c.kind === "area" && c.bytes);
+  const areas = mine.filter(c => (c.kind === "area" || c.kind === "solo") && c.bytes);
   const subjs = mine.filter(c => c.kind === "subj").sort((a, b) => b.bytes - a.bytes);
   $("#dashDetail").style.display = "";
   $("#dashDetail").innerHTML = `<div class="sect-title tint-0">${no}번 ${esc(name)} · ${g}학년 상세
@@ -1477,10 +1543,12 @@ function renderCls() {
   const labels = [...new Set(state.chunks.filter(c => c.grade === g).map(c => c.kind + "|" + c.label))];
   const areas = labels.filter(l => l.startsWith("area|")).map(l => l.slice(5));
   const subjs = labels.filter(l => l.startsWith("subj|")).map(l => l.slice(5)).sort((a, b) => a.localeCompare(b, "ko"));
+  const solos = labels.filter(l => l.startsWith("solo|")).map(l => l.slice(5));
   const cur = sel.value;
   sel.innerHTML = [
     ...subjs.map(s => `<option value="subj|${esc(s)}">세특 · ${esc(s)}</option>`),
     ...areas.map(a => `<option value="area|${esc(a)}">창체 · ${esc(a)}</option>`),
+    ...solos.map(a => `<option value="solo|${esc(a)}">${esc(a)}</option>`),
   ].join("");
   if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
 }
