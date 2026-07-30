@@ -1364,6 +1364,9 @@ async function relayOnce(step, messages, maxTokens, timeoutMs) {
     let j;
     try { j = JSON.parse(text); }
     catch {
+      // 앱스 스크립트는 5분쯤 지나면 스스로 끊고 빈 본문을 돌려준다.
+      // 이건 중계의 천장이라 같은 모델로 다시 물어도 마찬가지다.
+      if (!text.trim()) throw new Error("중계가 5분 안에 답을 받지 못했습니다 (모델이 너무 느립니다)");
       throw new Error(text.trimStart().startsWith("<")
         ? "중계가 JSON 대신 웹페이지를 돌려줬습니다 — 배포 설정(액세스: 모든 사용자)을 확인해 주세요."
         : "중계 응답을 읽을 수 없습니다.");
@@ -1735,7 +1738,10 @@ ${blob}`;
       <span class="hint">(${esc(trying)} 응답 대기 · 한 번에 최대 ${Math.round(timeoutMs / 1000)}초)</span></span>`;
   }, 1000);
   try {
-    const out = await aiCall([{ role: "user", content: prompt }], CHAIN_CLS, 4000, timeoutMs,
+    // 큰 과목에서 gpt-oss는 실측 304초 — 앱스 스크립트가 5분에 스스로 끊는 지점을
+    // 넘어서므로 아무리 기다려도 답이 오지 않는다. 헛되이 5분을 태우지 않게 빼 둔다.
+    const chain = blob.length > 8000 ? CHAIN_CLS.filter(s => !/gpt-oss/.test(s.model)) : CHAIN_CLS;
+    const out = await aiCall([{ role: "user", content: prompt }], chain, 4000, timeoutMs,
       (model, n) => { trying = n > 1 ? `${model} ${n}번째 시도` : model; });
     clearInterval(tick);
     const j = pluckJson(out);
