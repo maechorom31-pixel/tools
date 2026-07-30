@@ -1391,11 +1391,17 @@ function whyFailed(err, timeoutMs) {
   if (/Failed to fetch|NetworkError/i.test(err.message)) return "중계에 닿지 못했습니다 (인터넷·주소 확인)";
   return err.message;
 }
-const TRIES = 2;   // 같은 모델에 몇 번까지 물어볼지 (일시적 빈 응답 대비)
+/* 같은 모델에 몇 번까지 물어볼지. 되돌아온 것이 '빈 응답'처럼 몇 초 만에 끝난
+   일시적 실패일 때만 한 번 더 묻는다 — 시간 초과를 또 기다리는 것은 낭비다.
+   전체 기다림에도 천장을 둔다. 모델을 차례로 다 기다리면 10분이 넘을 수 있는데,
+   그때는 이미 "지금은 안 되는 시간"이라 알려 드리는 편이 낫다. */
+const TRIES = 2;
 async function aiCall(messages, chain, maxTokens, timeoutMs = 150000, onTry) {
   if (!state.relay) throw new Error("AI 중계가 연결되지 않았습니다. 우측 상단 🤖 버튼에서 설정해 주세요.");
   const log = [];
+  const giveUpAt = performance.now() + timeoutMs * 1.6;
   for (const step of chain) {
+    if (performance.now() > giveUpAt) { log.push("남은 모델은 기다림이 너무 길어져 건너뛰었습니다"); break; }
     for (let n = 1; n <= TRIES; n++) {
       if (onTry) onTry(shortModel(step.model), n);
       try {
@@ -1705,8 +1711,9 @@ $("#clsRun").onclick = async () => {
 ${blob}`;
   state.aiBusy = true; $("#clsRun").disabled = true;
   $("#clsResults").innerHTML = "";
-  // 분량에 맞춰 기다리는 시간을 늘린다. 큰 과목(2만 자 넘음)은 1분 가까이 걸린다.
-  const timeoutMs = Math.min(300000, 90000 + Math.round(blob.length / 1000) * 6000);
+  // 분량에 맞춰 기다리는 시간을 늘린다. 실측(2만 자 과목)으로 glm 47~93초,
+  // gpt-oss 287초까지 벌어졌다 — 예전의 120초 고정은 너무 짧았다.
+  const timeoutMs = Math.min(300000, 120000 + Math.round(blob.length / 1000) * 9000);
   // 먼저 연결이 살아 있는지 확인해 둔다 — 큰 요청을 몇 분 기다린 끝에
   // "연결 안 됨"을 알게 되는 일을 막는다
   if (aiStatus.state !== "ok") {
