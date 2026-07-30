@@ -335,6 +335,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
         <button class="btn primary" id="fixRun">검사 시작</button>
       </div>
       <p class="hint">학생별로 과목·영역 단위로 나눠 AI에 보냅니다. <b>학생 이름·학교명은 자동 마스킹</b>되고 본문 텍스트만 전송됩니다. 문체(개조식)는 유지하고 맞춤법·띄어쓰기 오류만 찾습니다.</p>
+      <div class="ai-state row" style="margin-top:10px"></div>
       <div id="fixStatus" style="margin-top:10px"></div>
       <div id="fixResults" style="margin-top:6px"></div>
     </div>
@@ -350,6 +351,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
         <button class="btn primary" id="clsRun">일괄 분석</button>
       </div>
       <p class="hint">학급 전체 학생의 같은 과목(영역) 기록을 <b>한 번에</b> AI로 보내 — 서로 비슷한 서술 묶음, 반복되는 정형 문구, 눈에 띄는 문제를 종합 진단합니다. 이름·학교명은 마스킹되고 번호로만 식별합니다.</p>
+      <div class="ai-state row" style="margin-top:10px"></div>
       <div id="clsStatus" style="margin-top:10px"></div>
       <div id="clsResults" style="margin-top:6px"></div>
     </div>
@@ -366,9 +368,9 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
   <div class="mcard">
     <button class="icon-btn mclose" data-close="aiModal" aria-label="닫기">✕</button>
     <h3>🤖 AI 연결 설정</h3>
-    <div class="box ok" style="margin-top:0">
-      <b>이미 연결되어 있습니다.</b> AI 맞춤법 검사와 학급 총평 분석을 바로 쓰실 수 있으니,
-      아래 내용은 <b>중계를 직접 만들어 바꾸고 싶을 때만</b> 보시면 됩니다.
+    <div class="box info" style="margin-top:0">
+      <b>중계는 이미 설정되어 있습니다</b> — 직접 만들지 않아도 됩니다.
+      실제로 응답하는지는 아래 <b>상태 표시</b>에서 확인하세요. 아래 설명은 중계를 직접 만들어 바꾸고 싶을 때만 보시면 됩니다.
     </div>
     <p class="hint" style="margin-bottom:8px">
       NVIDIA 무료 API는 브라우저에서 직접 호출할 수 없어(CORS) <b>구글 앱스 스크립트 중계</b>를 거칩니다.
@@ -393,6 +395,12 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
       <button class="btn" id="relayClear">기본값으로</button>
     </div>
     <div id="relayStat" class="hint" style="margin-top:8px"></div>
+    <div class="ai-state row" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn small" id="probeAll">모델 하나씩 점검</button>
+      <span class="hint">어느 모델이 살아 있는지 확인합니다. 학생 기록은 보내지 않습니다.</span>
+    </div>
+    <div id="probeResult" class="hint" style="margin-top:8px"></div>
     <div class="box info" style="margin-top:10px">
       쓰는 모델(무료): 맞춤법 검사 <b>DeepSeek V4 Flash</b> → 학급 분석 <b>GLM-5.2</b>.
       한 모델이 응답하지 않으면 자동으로 다음 모델로 넘어갑니다.
@@ -1340,29 +1348,127 @@ function pluckJson(raw) {
   }
   return null;
 }
-async function aiCall(messages, chain, maxTokens) {
+const shortModel = id => id.split("/")[1] || id;
+/* 중계에 한 번 다녀온다. 실패 원인을 뭉개지 않고 그대로 올려 보낸다 —
+   시간 초과인지, 모델이 내려간 것인지, 배포 권한 문제인지에 따라
+   선생님이 할 일이 다르기 때문이다. */
+async function relayOnce(step, messages, maxTokens, timeoutMs) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(state.relay, {
+      method: "POST", redirect: "follow", signal: ctrl.signal,
+      body: JSON.stringify({ messages, temperature: 0, max_tokens: maxTokens, stream: false, model: step.model, ...step.opts }),
+    });
+    const text = await res.text();
+    let j;
+    try { j = JSON.parse(text); }
+    catch {
+      throw new Error(text.trimStart().startsWith("<")
+        ? "중계가 JSON 대신 웹페이지를 돌려줬습니다 — 배포 설정(액세스: 모든 사용자)을 확인해 주세요."
+        : "중계 응답을 읽을 수 없습니다.");
+    }
+    if (j.error) {
+      const msg = j.error.message || "API 오류";
+      const e = new Error(msg);
+      e.retryable = /rate|limit|overload|capacity|unavailable|timeout|50[0234]/i.test(msg);
+      throw e;
+    }
+    const content = j.choices?.[0]?.message?.content;
+    if (!content) {
+      // 무료 엔드포인트는 이따금 1~2초 만에 빈 응답을 돌려준다. 설정 문제가 아니라
+      // 그때그때 다른 일시적 현상이라 같은 모델로 한 번 더 물어보면 대개 답한다.
+      const e = new Error("모델이 빈 응답을 보냈습니다");
+      e.retryable = true;
+      throw e;
+    }
+    return content;
+  } finally { clearTimeout(timer); }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function whyFailed(err, timeoutMs) {
+  if (err.name === "AbortError") return `${Math.round(timeoutMs / 1000)}초 안에 응답이 없었습니다`;
+  if (/Failed to fetch|NetworkError/i.test(err.message)) return "중계에 닿지 못했습니다 (인터넷·주소 확인)";
+  return err.message;
+}
+const TRIES = 2;   // 같은 모델에 몇 번까지 물어볼지 (일시적 빈 응답 대비)
+async function aiCall(messages, chain, maxTokens, timeoutMs = 150000, onTry) {
   if (!state.relay) throw new Error("AI 중계가 연결되지 않았습니다. 우측 상단 🤖 버튼에서 설정해 주세요.");
-  let lastErr = "";
+  const log = [];
   for (const step of chain) {
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 120000);
-      const res = await fetch(state.relay, {
-        method: "POST", redirect: "follow", signal: ctrl.signal,
-        body: JSON.stringify({ messages, temperature: 0, max_tokens: maxTokens, stream: false, model: step.model, ...step.opts }),
-      });
-      clearTimeout(timer);
-      const text = await res.text();
-      let j; try { j = JSON.parse(text); } catch { throw new Error("중계 응답이 JSON이 아닙니다 — 배포 설정(액세스: 모든 사용자)을 확인해 주세요."); }
-      if (j.error) throw new Error(j.error.message || "API 오류");
-      const content = j.choices?.[0]?.message?.content;
-      if (!content) throw new Error("빈 응답");
-      return content;
-    } catch (err) {
-      lastErr = `${step.model.split("/")[1]}: ${err.message}`;
+    for (let n = 1; n <= TRIES; n++) {
+      if (onTry) onTry(shortModel(step.model), n);
+      try {
+        const out = await relayOnce(step, messages, maxTokens, timeoutMs);
+        aiStatus.set("ok", shortModel(step.model), "");   // 방금 됐다는 사실을 배지에 남긴다
+        return out;
+      } catch (err) {
+        const again = err.retryable && n < TRIES;
+        log.push(`${shortModel(step.model)}${n > 1 ? `(${n}번째)` : ""} — ${whyFailed(err, timeoutMs)}`);
+        if (!again) break;
+        await sleep(1500);
+      }
     }
   }
-  throw new Error("모든 모델이 응답하지 않았습니다 — " + lastErr);
+  aiStatus.set("fail", "", log.join(" / "));
+  throw new Error(`모델 ${chain.length}개를 ${log.length}번 두드렸지만 답이 없었습니다 · ` + log.join(" / "));
+}
+
+/* ---------- AI 연결 점검 ----------
+   "모두 응답하지 않았습니다"만 뜨면 키 문제인지, 모델이 내려간 것인지,
+   요청이 커서 시간이 넘은 것인지 가릴 수 없다. 그래서 들어오는 즉시
+   아주 가벼운 요청으로 살아 있는 모델을 확인해 둔다 (학생 기록은 보내지 않는다). */
+const aiStatus = window.aiStatus = {
+  state: "unknown", model: "", detail: "", ms: 0,
+  set(st, model, detail, ms) {
+    this.state = st; this.model = model || ""; this.detail = detail || "";
+    if (ms !== undefined) this.ms = ms;
+    paintAiStatus();
+  },
+};
+const AI_BADGE = { unknown: "🤖", checking: "⏳", ok: "🤖", fail: "⚠️" };
+function paintAiStatus() {
+  const btn = $("#aiSetupBtn");
+  if (btn) {
+    btn.textContent = AI_BADGE[aiStatus.state] || "🤖";
+    btn.style.borderColor = aiStatus.state === "ok" ? "var(--ok)"
+      : aiStatus.state === "fail" ? "var(--danger)" : "";
+    btn.title = aiStatus.state === "ok" ? `AI 연결됨 · ${aiStatus.model} (${(aiStatus.ms / 1000).toFixed(1)}초)`
+      : aiStatus.state === "checking" ? "AI 연결 점검 중…"
+      : aiStatus.state === "fail" ? "AI 응답 없음 — 눌러서 확인" : "AI 연결 설정";
+  }
+  const line = aiStatus.state === "ok"
+    ? `<span class="badge ok">AI 연결됨</span> <span class="hint">${esc(aiStatus.model)} · 응답 ${(aiStatus.ms / 1000).toFixed(1)}초</span>`
+    : aiStatus.state === "checking" ? `<span class="spin"></span> <span class="hint">AI 연결 점검 중…</span>`
+    : aiStatus.state === "fail" ? `<span class="badge over">AI 응답 없음</span> <span class="hint">${esc(aiStatus.detail)}</span>
+        <button class="btn small" data-recheck="1">다시 점검</button>`
+    : `<span class="hint">AI 연결 상태를 아직 확인하지 않았습니다.</span> <button class="btn small" data-recheck="1">지금 점검</button>`;
+  $$(".ai-state").forEach(el => { el.innerHTML = line; });
+  $$("[data-recheck]").forEach(b => b.onclick = () => checkAi(true));
+}
+/* 살아 있는 모델을 찾을 때까지 체인을 훑는다. 되는 모델을 맨 앞으로 당겨 둔다. */
+async function checkAi(verbose) {
+  if (!state.relay) { aiStatus.set("fail", "", "중계 주소가 없습니다"); return false; }
+  aiStatus.set("checking", "", "");
+  const probe = [{ role: "user", content: "다음 물음에 숫자만 답하라. 1+1=?" }];
+  const log = [];
+  for (let i = 0; i < CHAIN_FIX.length; i++) {
+    const step = CHAIN_FIX[i];
+    const t0 = performance.now();
+    try {
+      try { await relayOnce(step, probe, 8, 45000); }
+      catch (e) { if (!e.retryable) throw e; await sleep(1200); await relayOnce(step, probe, 8, 45000); }
+      const ms = Math.round(performance.now() - t0);
+      if (i > 0) { CHAIN_FIX.unshift(...CHAIN_FIX.splice(i, 1)); }   // 되는 모델을 앞자리로
+      aiStatus.set("ok", shortModel(step.model), "", ms);
+      if (verbose) toast(`AI 연결 정상 — ${shortModel(step.model)} (${(ms / 1000).toFixed(1)}초)`);
+      return true;
+    } catch (err) {
+      log.push(`${shortModel(step.model)} — ${whyFailed(err, 45000)}`);
+    }
+  }
+  aiStatus.set("fail", "", log.join(" / "));
+  return false;
 }
 /* 마스킹: 학생 이름·학교명을 전송 전에 치환한다 */
 function maskText(t) {
@@ -1394,11 +1500,35 @@ $("#relayClear").onclick = () => {
 function updateRelayStat() {
   const own = state.relay && state.relay !== DEFAULT_RELAY;
   $("#relayStat").innerHTML = own
-    ? `✅ 직접 만드신 중계에 연결됨: <b>${esc(state.relay.slice(0, 60))}…</b>`
-    : `✅ <b>기본 중계에 연결되어 있습니다</b> — 따로 설정하지 않아도 AI 검사가 바로 동작합니다.`;
-  $("#aiSetupBtn").style.borderColor = state.relay ? "var(--ok)" : "";
+    ? `중계 주소: <b>${esc(state.relay.slice(0, 60))}…</b> (직접 만드신 것)`
+    : `중계 주소: <b>기본 중계</b> — 따로 설정하지 않아도 AI 검사가 바로 동작합니다.`;
+  paintAiStatus();   // 배지는 실제 응답 여부로만 칠한다 (주소가 있다고 되는 게 아니다)
 }
 updateRelayStat();
+/* 모델을 하나씩 두드려 어느 것이 살아 있는지 표로 보여 준다 */
+$("#probeAll").onclick = async () => {
+  const btn = $("#probeAll");
+  btn.disabled = true;
+  const rows = [];
+  const paint = () => { $("#probeResult").innerHTML = `<table><tbody>${rows.join("")}</tbody></table>`; };
+  for (const step of CHAIN_FIX) {
+    rows.push(`<tr><td>${esc(shortModel(step.model))}</td><td><span class="spin"></span></td></tr>`);
+    paint();
+    const t0 = performance.now();
+    let cell;
+    try {
+      await relayOnce(step, [{ role: "user", content: "다음 물음에 숫자만 답하라. 1+1=?" }], 8, 45000);
+      const ms = Math.round(performance.now() - t0);
+      cell = `<span class="badge ok">응답 ${(ms / 1000).toFixed(1)}초</span>`;
+      if (aiStatus.state !== "ok") aiStatus.set("ok", shortModel(step.model), "", ms);
+    } catch (err) {
+      cell = `<span class="badge over">실패</span> <span class="hint">${esc(whyFailed(err, 45000))}</span>`;
+    }
+    rows[rows.length - 1] = `<tr><td>${esc(shortModel(step.model))}</td><td>${cell}</td></tr>`;
+    paint();
+  }
+  btn.disabled = false;
+};
 $$(".mclose").forEach(b => b.onclick = () => $("#" + b.dataset.close).classList.remove("on"));
 $$(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("on"); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") $$(".modal.on").forEach(m => m.classList.remove("on")); });
@@ -1574,10 +1704,33 @@ $("#clsRun").onclick = async () => {
 
 ${blob}`;
   state.aiBusy = true; $("#clsRun").disabled = true;
-  $("#clsStatus").innerHTML = `<span class="spin"></span> <span class="progress">학생 ${byNo.size}명 · 약 ${Math.round(blob.length / 1000)}천 자를 한 번에 분석 중… (30초~1분)</span>`;
   $("#clsResults").innerHTML = "";
+  // 분량에 맞춰 기다리는 시간을 늘린다. 큰 과목(2만 자 넘음)은 1분 가까이 걸린다.
+  const timeoutMs = Math.min(300000, 90000 + Math.round(blob.length / 1000) * 6000);
+  // 먼저 연결이 살아 있는지 확인해 둔다 — 큰 요청을 몇 분 기다린 끝에
+  // "연결 안 됨"을 알게 되는 일을 막는다
+  if (aiStatus.state !== "ok") {
+    $("#clsStatus").innerHTML = `<span class="spin"></span> <span class="progress">AI 연결 점검 중…</span>`;
+    if (!(await checkAi(false))) {
+      $("#clsStatus").innerHTML = "";
+      $("#clsResults").innerHTML = `<div class="box warn"><b>AI에 닿지 못했습니다.</b> ${esc(aiStatus.detail)}<br>
+        우측 상단 🤖 버튼에서 <b>모델 하나씩 점검</b>을 눌러 어느 모델이 살아 있는지 확인해 보세요.
+        무료 모델은 제공사 사정으로 잠시 멈추는 일이 있습니다.</div>`;
+      state.aiBusy = false; $("#clsRun").disabled = false;
+      return;
+    }
+  }
+  const t0 = performance.now();
+  let trying = "";
+  const tick = setInterval(() => {
+    const s = Math.round((performance.now() - t0) / 1000);
+    $("#clsStatus").innerHTML = `<span class="spin"></span> <span class="progress">학생 ${byNo.size}명 · ${blob.length.toLocaleString()}자를 한 번에 분석 중… ${s}초 경과
+      <span class="hint">(${esc(trying)} 응답 대기 · 한 번에 최대 ${Math.round(timeoutMs / 1000)}초)</span></span>`;
+  }, 1000);
   try {
-    const out = await aiCall([{ role: "user", content: prompt }], CHAIN_CLS, 4000);
+    const out = await aiCall([{ role: "user", content: prompt }], CHAIN_CLS, 4000, timeoutMs,
+      (model, n) => { trying = n > 1 ? `${model} ${n}번째 시도` : model; });
+    clearInterval(tick);
     const j = pluckJson(out);
     if (!j) throw new Error("응답 해석 실패");
     const sevCls = s => s === "high" ? "over" : s === "mid" ? "warn" : "ok";
@@ -1594,10 +1747,16 @@ ${blob}`;
         ${j.quality_flags.map(f => `<div class="fix"><b>${esc(stuName(f.student))}</b>
           <div class="why">${esc(f.issue || "")}</div></div>`).join("")}</div>` : ""}
       <div class="box warn">AI 진단은 참고용입니다. 표현이 비슷하다는 것이 곧 잘못은 아니니, 맞대어 보기(겹침 탭)로 원문을 확인해 주세요.</div>`;
-    $("#clsStatus").innerHTML = `<span class="progress">✅ 분석 완료 — ${byNo.size}명 일괄 진단</span>`;
+    const took = Math.round((performance.now() - t0) / 1000);
+    $("#clsStatus").innerHTML = `<span class="progress">✅ 분석 완료 — ${byNo.size}명 일괄 진단 (${took}초)</span>`;
   } catch (err) {
+    clearInterval(tick);
+    const took = Math.round((performance.now() - t0) / 1000);
     $("#clsStatus").innerHTML = "";
-    $("#clsResults").innerHTML = `<div class="box warn">분석 실패: ${esc(err.message)}</div>`;
+    $("#clsResults").innerHTML = `<div class="box warn"><b>분석에 실패했습니다</b> (${took}초 시도)<br>${esc(err.message)}
+      <br><br>무료 모델은 제공사 사정으로 잠시 멈추거나 아주 느려지는 일이 있습니다.
+      ${blob.length > 15000 ? `이 과목은 <b>${blob.length.toLocaleString()}자</b>로 큰 편이라 더 자주 걸립니다 — 잠시 뒤 다시 시도하거나, 분량이 작은 과목으로 먼저 확인해 보세요.` : "잠시 뒤 다시 눌러 보세요."}
+      <br>우측 상단 🤖 버튼의 <b>모델 하나씩 점검</b>으로 어느 모델이 살아 있는지 확인할 수 있습니다.</div>`;
   }
   state.aiBusy = false; $("#clsRun").disabled = false;
 };
@@ -1605,6 +1764,12 @@ ${blob}`;
 /* ---------- 12. 전체 렌더 ---------- */
 function renderAll() { renderDash(); renderSim(); renderFix(); renderCls(); }
 renderAll();
+
+/* 들어오는 즉시 AI가 살아 있는지 확인해 둔다. 보내는 것은 "1+1=?" 한 줄뿐이고
+   학생 기록은 전혀 나가지 않는다. 큰 분석을 한참 기다린 끝에 연결 문제를
+   알게 되는 일을 막으려는 것이다. */
+if (state.relay) setTimeout(() => checkAi(false), 300);
+else paintAiStatus();
 </script>
 </body>
 </html>
