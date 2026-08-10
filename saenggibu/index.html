@@ -264,9 +264,9 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
   <div class="card">
     <div class="upzone" id="uploadZone" role="button" tabindex="0" aria-label="엑셀 파일 업로드">
       <div class="t">NEIS 엑셀 파일을 여기로 끌어다 놓기 (여러 개 가능)</div>
-      <div class="s">클릭해서 선택 · 창의적체험활동상황 · 세부능력 및 특기사항 · 개인별 세부능력 및 특기사항 → 엑셀 저장 원본 그대로</div>
+      <div class="s">엑셀(.xlsx) 또는 <b>생기부 PDF</b> · 창의적체험활동상황 · 세부능력 및 특기사항 · 개인별 세특 · 행동특성</div>
     </div>
-    <input type="file" id="filePick" accept=".xlsx" multiple hidden>
+    <input type="file" id="filePick" accept=".xlsx,.pdf" multiple hidden>
     <div class="filelist" id="filelist"></div>
     <div class="scan-note" id="scanNote">파일을 올리면 인식 결과가 여기에 표시됩니다. 올린 파일은 <b>이 컴퓨터 안에서만</b> 읽습니다.</div>
   </div>
@@ -278,6 +278,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
     <button class="tab" data-tab="fix" role="tab">✏️ AI 맞춤법 검사</button>
     <button class="tab" data-tab="cls" role="tab">🧑‍🏫 학급 총평 분석</button>
     <button class="tab" data-tab="amend" role="tab">🧾 정정 점검</button>
+    <button class="tab" data-tab="find" role="tab">🔎 낱말 찾기</button>
   </div>
 
   <!-- ① 작성 현황 -->
@@ -388,6 +389,23 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
       <div id="amendSummary" style="margin-top:10px"></div>
       <div id="amendResults" style="margin-top:6px"></div>
       <div id="amendEmpty" class="empty">파일을 올리면 점검 결과가 표시됩니다.</div>
+    </div>
+  </section>
+
+  <!-- ⑥ 낱말 찾기 -->
+  <section id="tab-find" style="display:none">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <span class="sect-title tint-5" style="margin-bottom:0">낱말 찾기</span>
+        <input type="text" id="findQ" placeholder="찾을 낱말 (여러 개는 띄어쓰기로, 따옴표로 묶으면 통째로)" style="flex:1; min-width:240px">
+        <div class="pills" id="findGrade"></div>
+        <select id="findKind" aria-label="찾을 범위"></select>
+      </div>
+      <p class="hint">올린 기록 전체에서 낱말을 찾습니다. <b>여러 낱말을 띄어 쓰면 그 중 하나라도</b> 든 기록을 찾고,
+        <b>"큰따옴표로 묶으면"</b> 붙어 있는 그대로 찾습니다. 모두 이 컴퓨터 안에서 처리합니다.</p>
+      <div id="findSummary" style="margin-top:10px"></div>
+      <div id="findResults" style="margin-top:6px"></div>
+      <div id="findEmpty" class="empty">찾을 낱말을 넣어 보세요.</div>
     </div>
   </section>
 
@@ -699,6 +717,465 @@ async function readXlsx(buf) {
   return grid;
 }
 
+/* ---------- PDF 판독기 (외부 라이브러리 없음) ----------
+   생기부 PDF에서 글자와 그 위치를 꺼낸다. xref를 믿지 않고 파일 전체에서
+   "N G obj … endobj"를 훑는다 — 인쇄 드라이버가 만든 xref가 어긋난 파일도
+   열리고, 코드도 훨씬 짧아진다. */
+
+const PDF_WS = " \t\r\n\f\0";
+const PDF_DELIM = "()<>[]{}/%";
+
+function latin(u8, a, b) {
+  const hi = Math.min(b === undefined ? u8.length : b, u8.length);   // 길이를 넘겨 달라면 잘라 준다
+  let s = "";
+  for (let i = Math.max(0, a); i < hi; i += 8192) {
+    s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + 8192, hi)));
+  }
+  return s;
+}
+
+/* --- 아주 작은 객체 파서: 사전·배열·이름·수·문자열·참조 --- */
+function makeLexer(u8, pos) {
+  const st = { u8, i: pos };
+  const peek = () => st.u8[st.i];
+  const skipWs = () => {
+    for (;;) {
+      while (st.i < st.u8.length && PDF_WS.includes(String.fromCharCode(st.u8[st.i]))) st.i++;
+      if (st.u8[st.i] === 0x25) { while (st.i < st.u8.length && st.u8[st.i] !== 10) st.i++; }  // % 주석
+      else return;
+    }
+  };
+  function readName() {
+    st.i++;                                   // '/'
+    let s = "";
+    while (st.i < st.u8.length) {
+      const c = String.fromCharCode(st.u8[st.i]);
+      if (PDF_WS.includes(c) || PDF_DELIM.includes(c)) break;
+      if (c === "#") { s += String.fromCharCode(parseInt(latin(st.u8, st.i + 1, st.i + 3), 16)); st.i += 3; }
+      else { s += c; st.i++; }
+    }
+    return { name: s };
+  }
+  function readString() {
+    st.i++;                                   // '('
+    let depth = 1, out = [];
+    while (st.i < st.u8.length) {
+      let c = st.u8[st.i++];
+      if (c === 0x5c) {                       // 역슬래시
+        const n = st.u8[st.i++];
+        const map = { 110: 10, 114: 13, 116: 9, 98: 8, 102: 12 };
+        if (map[n] !== undefined) out.push(map[n]);
+        else if (n >= 0x30 && n <= 0x37) {    // 8진수
+          let oct = String.fromCharCode(n);
+          for (let k = 0; k < 2 && st.u8[st.i] >= 0x30 && st.u8[st.i] <= 0x37; k++) oct += String.fromCharCode(st.u8[st.i++]);
+          out.push(parseInt(oct, 8) & 0xff);
+        } else if (n === 10) { /* 줄 이음 */ }
+        else out.push(n);
+      } else if (c === 0x28) { depth++; out.push(c); }
+      else if (c === 0x29) { if (--depth === 0) break; out.push(c); }
+      else out.push(c);
+    }
+    return { str: Uint8Array.from(out) };
+  }
+  function readHexString() {
+    st.i++;                                   // '<'
+    let hex = "";
+    while (st.i < st.u8.length && st.u8[st.i] !== 0x3e) {
+      const c = String.fromCharCode(st.u8[st.i++]);
+      if (/[0-9a-fA-F]/.test(c)) hex += c;
+    }
+    st.i++;
+    if (hex.length & 1) hex += "0";
+    const out = new Uint8Array(hex.length / 2);
+    for (let k = 0; k < out.length; k++) out[k] = parseInt(hex.substr(k * 2, 2), 16);
+    return { str: out };
+  }
+  function readObj() {
+    skipWs();
+    const c = String.fromCharCode(peek());
+    if (c === "/") return readName();
+    if (c === "(") return readString();
+    if (c === "<") {
+      if (String.fromCharCode(st.u8[st.i + 1]) === "<") {   // 사전
+        st.i += 2;
+        const d = {};
+        for (;;) {
+          skipWs();
+          if (String.fromCharCode(st.u8[st.i]) === ">") { st.i += 2; break; }
+          if (st.i >= st.u8.length) break;
+          const k = readObj();
+          if (!k || k.name === undefined) break;
+          d[k.name] = readObj();
+        }
+        return { dict: d };
+      }
+      return readHexString();
+    }
+    if (c === "[") {
+      st.i++;
+      const arr = [];
+      for (;;) {
+        skipWs();
+        if (String.fromCharCode(st.u8[st.i]) === "]") { st.i++; break; }
+        if (st.i >= st.u8.length) break;
+        arr.push(readObj());
+      }
+      return { arr };
+    }
+    // 낱말: 수, 참조, true/false/null, 연산자
+    let s = "";
+    while (st.i < st.u8.length) {
+      const ch = String.fromCharCode(st.u8[st.i]);
+      if (PDF_WS.includes(ch) || PDF_DELIM.includes(ch)) break;
+      s += ch; st.i++;
+    }
+    if (/^[+-]?[\d.]+$/.test(s)) {
+      // "12 0 R" 꼴이면 참조
+      const save = st.i;
+      skipWs();
+      let s2 = "";
+      while (st.i < st.u8.length && /\d/.test(String.fromCharCode(st.u8[st.i]))) s2 += String.fromCharCode(st.u8[st.i++]);
+      skipWs();
+      if (s2 && String.fromCharCode(st.u8[st.i]) === "R") { st.i++; return { ref: parseInt(s, 10) }; }
+      st.i = save;
+      return { num: parseFloat(s) };
+    }
+    if (s === "true") return { bool: true };
+    if (s === "false") return { bool: false };
+    if (s === "null" || s === "") return { nul: true };
+    return { op: s };
+  }
+  return { st, readObj, skipWs };
+}
+
+/* --- zlib(FlateDecode) 풀기 ---
+   PDF의 Flate는 zlib 껍데기(앞 2바이트 + 끝 adler32 4바이트)를 두른 꼴이다.
+   껍데기째 'deflate'로 풀어야 한다 — 앞만 벗기고 'deflate-raw'로 넘기면
+   끝에 남은 검사값을 군더더기로 보고 브라우저가 통째로 거부한다. */
+async function pdfInflate(bytes, rawFallback) {
+  const zlibLike = bytes.length > 2 && (bytes[0] & 0x0f) === 8;
+  if (typeof DecompressionStream === "function") {
+    for (const fmt of zlibLike ? ["deflate", "deflate-raw"] : ["deflate-raw", "deflate"]) {
+      try {
+        const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(fmt));
+        return new Uint8Array(await new Response(s).arrayBuffer());
+      } catch { /* 다음 형식으로 */ }
+    }
+  }
+  // 자체 해제기는 마지막 블록에서 멈추므로 뒤에 붙은 검사값을 신경 쓰지 않는다
+  return rawFallback(zlibLike ? bytes.subarray(2) : bytes);
+}
+
+/* --- PNG 예측기 되돌리기 (xref/객체 스트림이 쓰는 경우) --- */
+function undoPredictor(data, pred, colors, bpc, columns) {
+  if (pred < 10) return data;
+  const bpp = Math.ceil(colors * bpc / 8);
+  const rowLen = Math.ceil(colors * bpc * columns / 8);
+  const rows = Math.floor(data.length / (rowLen + 1));
+  const out = new Uint8Array(rows * rowLen);
+  let prev = new Uint8Array(rowLen);
+  for (let r = 0; r < rows; r++) {
+    const ft = data[r * (rowLen + 1)];
+    const src = data.subarray(r * (rowLen + 1) + 1, (r + 1) * (rowLen + 1));
+    const cur = out.subarray(r * rowLen, (r + 1) * rowLen);
+    for (let i = 0; i < rowLen; i++) {
+      const a = i >= bpp ? cur[i - bpp] : 0, b = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
+      let v = src[i];
+      if (ft === 1) v += a;
+      else if (ft === 2) v += b;
+      else if (ft === 3) v += (a + b) >> 1;
+      else if (ft === 4) {
+        const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+        v += (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
+      }
+      cur[i] = v & 0xff;
+    }
+    prev = cur;
+  }
+  return out;
+}
+
+/* --- 파일 전체에서 객체를 훑는다 --- */
+async function collectObjects(u8, inflateRaw) {
+  const objs = new Map();
+  const re = /(\d+)\s+(\d+)\s+obj\b/g;
+  const text = latin(u8, 0, u8.length);
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const num = parseInt(m[1], 10);
+    const lx = makeLexer(u8, m.index + m[0].length);
+    let val;
+    try { val = lx.readObj(); } catch { continue; }
+    let stream = null;
+    lx.skipWs();
+    if (latin(u8, lx.st.i, lx.st.i + 6) === "stream") {
+      let p = lx.st.i + 6;
+      if (u8[p] === 13) p++;
+      if (u8[p] === 10) p++;
+      let len = val?.dict?.Length?.num;
+      if (len === undefined) {
+        const end = text.indexOf("endstream", p);
+        len = (end < 0 ? u8.length : end) - p;
+      }
+      stream = { raw: u8.subarray(p, p + len), dict: val.dict || {} };
+    }
+    objs.set(num, { val, stream });
+  }
+  // 참조로만 길이가 적힌 스트림 바로잡기
+  for (const [, o] of objs) {
+    if (!o.stream) continue;
+    const L = o.val?.dict?.Length;
+    if (L && L.ref !== undefined) {
+      const n = objs.get(L.ref)?.val?.num;
+      if (n !== undefined) o.stream.raw = o.stream.raw.subarray(0, n);
+    }
+  }
+  // 객체 스트림(ObjStm) 펼치기
+  for (const [, o] of [...objs]) {
+    if (o.stream?.dict?.Type?.name !== "ObjStm") continue;
+    let data;
+    try { data = await decodeStream(o.stream, inflateRaw); } catch { continue; }
+    const n = o.stream.dict.N?.num || 0;
+    const first = o.stream.dict.First?.num || 0;
+    const head = latin(data, 0, first).trim().split(/\s+/).map(Number);
+    for (let k = 0; k < n; k++) {
+      const onum = head[k * 2], off = head[k * 2 + 1];
+      if (onum === undefined) break;
+      try { objs.set(onum, { val: makeLexer(data, first + off).readObj(), stream: null }); }
+      catch { /* 건너뜀 */ }
+    }
+  }
+  return objs;
+}
+
+async function decodeStream(stream, inflateRaw) {
+  let data = stream.raw;
+  const f = stream.dict.Filter;
+  const names = f?.name ? [f.name] : (f?.arr || []).map(x => x.name);
+  for (const nm of names) {
+    if (nm === "FlateDecode") data = await pdfInflate(data, inflateRaw);
+    else if (nm === "ASCIIHexDecode") {
+      const hex = latin(data, 0, data.length).replace(/[^0-9a-fA-F]/g, "");
+      const out = new Uint8Array(hex.length >> 1);
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+      data = out;
+    } else throw new Error("지원하지 않는 필터: " + nm);
+  }
+  const dp = stream.dict.DecodeParms?.dict || stream.dict.DP?.dict;
+  if (dp?.Predictor?.num > 1) {
+    data = undoPredictor(data, dp.Predictor.num, dp.Colors?.num || 1,
+      dp.BitsPerComponent?.num || 8, dp.Columns?.num || 1);
+  }
+  return data;
+}
+
+/* --- ToUnicode CMap → 코드→글자 --- */
+function parseToUnicode(text) {
+  const map = new Map();
+  const hx = s => s.replace(/[<>\s]/g, "");
+  const uni = h => {
+    let s = "";
+    for (let i = 0; i + 3 < h.length + 1; i += 4) {
+      const v = parseInt(h.substr(i, 4), 16);
+      if (!isNaN(v)) s += String.fromCharCode(v);
+    }
+    return s;
+  };
+  for (const blk of text.match(/beginbfchar([\s\S]*?)endbfchar/g) || []) {
+    const re = /<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]*)>/g;
+    let m;
+    while ((m = re.exec(blk)) !== null) map.set(parseInt(m[1], 16), uni(hx(m[2])));
+  }
+  for (const blk of text.match(/beginbfrange([\s\S]*?)endbfrange/g) || []) {
+    const re = /<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*(?:<([0-9a-fA-F]*)>|\[([\s\S]*?)\])/g;
+    let m;
+    while ((m = re.exec(blk)) !== null) {
+      const lo = parseInt(m[1], 16), hi = parseInt(m[2], 16);
+      if (m[3] !== undefined) {
+        const base = parseInt(m[3].slice(-4), 16);
+        const pre = m[3].length > 4 ? uni(m[3].slice(0, -4)) : "";
+        for (let c = lo; c <= hi && c - lo < 65536; c++) map.set(c, pre + String.fromCharCode(base + (c - lo)));
+      } else {
+        const items = m[4].match(/<([0-9a-fA-F]*)>/g) || [];
+        items.forEach((it, k) => map.set(lo + k, uni(hx(it))));
+      }
+    }
+  }
+  return map;
+}
+
+/* --- 내용 스트림에서 글자와 위치 뽑기 --- */
+function extractText(content, fonts, out) {
+  const lx = makeLexer(content, 0);
+  let stack = [], ctm = [1, 0, 0, 1, 0, 0];
+  let tm = null, tlm = null, font = null, size = 0, leading = 0, charSp = 0, wordSp = 0, hscale = 1;
+  const operands = [];
+  const mul = (a, b) => [
+    a[0] * b[0] + a[1] * b[2], a[0] * b[1] + a[1] * b[3],
+    a[2] * b[0] + a[3] * b[2], a[2] * b[1] + a[3] * b[3],
+    a[4] * b[0] + a[5] * b[2] + b[4], a[4] * b[1] + a[5] * b[3] + b[5]];
+  const nums = k => operands.slice(-k).map(o => o.num || 0);
+
+  const show = bytes => {
+    if (!font || !tm) return;
+    const m = mul(tm, ctm);
+    let s = "";
+    if (font.two) {
+      for (let i = 0; i + 1 < bytes.length; i += 2) {
+        const code = (bytes[i] << 8) | bytes[i + 1];
+        s += font.map.get(code) ?? "";
+      }
+    } else {
+      for (const b of bytes) s += font.map.get(b) ?? String.fromCharCode(b);
+    }
+    if (s) out.push({ x: m[4], y: m[5], size: Math.abs(size * Math.hypot(m[0], m[1]) || size), text: s });
+    // 다음 글자 위치는 대략치로 밀어 둔다 (정확한 폭 계산은 생략)
+    const adv = s.length * size * 0.5 * hscale;
+    tm = mul([1, 0, 0, 1, adv, 0], tm);
+  };
+
+  let guard = 0;
+  for (;;) {
+    lx.skipWs();
+    if (lx.st.i >= content.length) break;
+    const before = lx.st.i;
+    let o;
+    try { o = lx.readObj(); } catch { break; }
+    if (!o) break;
+    if (lx.st.i === before) { lx.st.i++; if (++guard > 5000) break; continue; }   // 제자리걸음 방지
+    if (o.op === undefined) { operands.push(o); if (operands.length > 40) operands.shift(); continue; }
+    const op = o.op;
+    if (op === "q") stack.push(ctm.slice());
+    else if (op === "Q") ctm = stack.pop() || ctm;
+    else if (op === "cm") ctm = mul(nums(6), ctm);
+    else if (op === "BT") { tm = [1, 0, 0, 1, 0, 0]; tlm = tm.slice(); }
+    else if (op === "ET") tm = tlm = null;
+    else if (op === "Tf") {
+      const nm = operands[operands.length - 2]?.name;
+      size = operands[operands.length - 1]?.num || 0;
+      font = fonts[nm] || null;
+    }
+    else if (op === "Td") { tlm = mul([1, 0, 0, 1, ...nums(2)], tlm || [1, 0, 0, 1, 0, 0]); tm = tlm.slice(); }
+    else if (op === "TD") { const [a, b] = nums(2); leading = -b; tlm = mul([1, 0, 0, 1, a, b], tlm || [1, 0, 0, 1, 0, 0]); tm = tlm.slice(); }
+    else if (op === "Tm") { tlm = nums(6); tm = tlm.slice(); }
+    else if (op === "T*") { tlm = mul([1, 0, 0, 1, 0, -leading], tlm || [1, 0, 0, 1, 0, 0]); tm = tlm.slice(); }
+    else if (op === "TL") leading = nums(1)[0];
+    else if (op === "Tc") charSp = nums(1)[0];
+    else if (op === "Tw") wordSp = nums(1)[0];
+    else if (op === "Tz") hscale = nums(1)[0] / 100;
+    else if (op === "Tj" || op === "'" || op === '"') {
+      if (op !== "Tj") { tlm = mul([1, 0, 0, 1, 0, -leading], tlm || [1, 0, 0, 1, 0, 0]); tm = tlm.slice(); }
+      const s = operands[operands.length - 1]?.str;
+      if (s) show(s);
+    }
+    else if (op === "TJ") {
+      const arr = operands[operands.length - 1]?.arr || [];
+      for (const el of arr) {
+        if (el.str) show(el.str);
+        else if (el.num !== undefined && tm) tm = mul([1, 0, 0, 1, -el.num / 1000 * size * hscale, 0], tm);
+      }
+    }
+    operands.length = 0;
+  }
+}
+
+/* --- 페이지 목록 --- */
+function pageList(objs) {
+  let rootRef = null;
+  for (const [, o] of objs) if (o.val?.dict?.Type?.name === "Catalog") { rootRef = o.val.dict; break; }
+  const deref = v => (v?.ref !== undefined ? objs.get(v.ref)?.val : v);
+  const pages = [];
+  const walk = (node, inherited, depth) => {
+    const d = deref(node)?.dict;
+    if (!d || depth > 50) return;
+    const inh = {
+      Resources: d.Resources || inherited.Resources,
+      MediaBox: d.MediaBox || inherited.MediaBox,
+    };
+    if (d.Type?.name === "Page") { pages.push({ dict: d, inh }); return; }
+    for (const kid of (deref(d.Kids)?.arr || d.Kids?.arr || [])) walk(kid, inh, depth + 1);
+  };
+  if (rootRef) walk(rootRef.Pages, {}, 0);
+  if (!pages.length) for (const [, o] of objs) if (o.val?.dict?.Type?.name === "Page") pages.push({ dict: o.val.dict, inh: {} });
+  return { pages, deref };
+}
+
+async function readPdfPages(buf, inflateRaw) {
+  const u8 = new Uint8Array(buf);
+  if (latin(u8, 0, 5) !== "%PDF-") throw new Error("PDF 파일이 아닙니다.");
+  const objs = await collectObjects(u8, inflateRaw);
+  const { pages, deref } = pageList(objs);
+  const fontCache = new Map();
+  const out = [];
+  for (const pg of pages) {
+    const res = deref(pg.dict.Resources || pg.inh.Resources)?.dict || {};
+    const fdict = deref(res.Font)?.dict || {};
+    const fonts = {};
+    for (const [nm, ref] of Object.entries(fdict)) {
+      const key = ref.ref ?? nm;
+      if (!fontCache.has(key)) {
+        const fo = deref(ref)?.dict || {};
+        let map = new Map();
+        const tu = fo.ToUnicode?.ref !== undefined ? objs.get(fo.ToUnicode.ref) : null;
+        if (tu?.stream) {
+          try { map = parseToUnicode(latin(await decodeStream(tu.stream, inflateRaw), 0)); } catch {}
+        }
+        const enc = fo.Encoding?.name || "";
+        const two = /Identity-[HV]|UCS2|UTF16/.test(enc) || fo.Subtype?.name === "Type0";
+        fontCache.set(key, { map, two });
+      }
+      fonts[nm] = fontCache.get(key);
+    }
+    // 내용 스트림 이어붙이기
+    const cs = pg.dict.Contents;
+    const parts = [];
+    for (const ref of (cs?.arr || [cs]).filter(Boolean)) {
+      const o = ref.ref !== undefined ? objs.get(ref.ref) : null;
+      if (o?.stream) { try { parts.push(await decodeStream(o.stream, inflateRaw)); } catch {} }
+    }
+    let content = new Uint8Array(parts.reduce((n, p) => n + p.length + 1, 0));
+    let at = 0;
+    for (const p of parts) { content.set(p, at); at += p.length; content[at++] = 10; }
+    const runs = [];
+    try { extractText(content, fonts, runs); } catch {}
+    const box = (deref(pg.dict.MediaBox || pg.inh.MediaBox)?.arr || []).map(v => v.num ?? 0);
+    out.push({ runs, height: box.length === 4 ? box[3] - box[1] : 842 });
+  }
+  return out;
+}
+
+
+/* --- 글자 조각을 줄로 묶는다 (y가 비슷하면 같은 줄, x 순으로 이어 붙임) --- */
+function groupLines(runs, tol) {
+  const t = tol || 2.5;
+  const sorted = runs.slice().sort((a, b) => b.y - a.y || a.x - b.x);
+  const lines = [];
+  for (const r of sorted) {
+    const ln = lines.find(l => Math.abs(l.y - r.y) <= t);
+    if (ln) { ln.parts.push(r); if (r.x < ln.x0) ln.x0 = r.x; }
+    else lines.push({ y: r.y, x0: r.x, parts: [r] });
+  }
+  for (const l of lines) {
+    l.parts.sort((a, b) => a.x - b.x);
+    // 사이가 벌어지면 칸이 나뉜 것으로 보고 공백 하나를 넣는다
+    const widthOf = (str, size) => {
+      let w = 0;
+      for (const ch of str) w += size * (ch.charCodeAt(0) > 0x2000 ? 1 : 0.5);   // 한글·전각은 한 칸
+      return w;
+    };
+    let text = "", prevEnd = null;
+    for (const p of l.parts) {
+      const size = p.size || 10;
+      if (prevEnd !== null && p.x - prevEnd > size * 0.45 && !/\s$/.test(text) && !/^[\s.,)\]}·]/.test(p.text)) text += " ";
+      text += p.text;
+      prevEnd = p.x + widthOf(p.text, size);
+    }
+    l.text = text.replace(/\s+/g, " ").trim();
+    l.x1 = l.parts[l.parts.length - 1].x;
+  }
+  return lines.sort((a, b) => b.y - a.y);
+}
+
 /* ---------- 2. NEIS 출력물 해석 ----------
    NEIS 엑셀은 인쇄 지면을 그대로 옮긴 구조라 쪽마다 머리글이 반복되고
    본문이 행·쪽 경계에서 끊긴다. 행을 위에서 아래로 읽으며
@@ -720,7 +1197,7 @@ function areaLabel(v) {
   return AREA_PAT.test(s) ? s : null;
 }
 const SOLO = "개인별 세특";                 // 개인별 세부능력 및 특기사항 — 학생당 한 덩이
-const AREA_ORDER = ["자율·자치활동", "자율활동", "자치활동", "동아리활동", "진로활동", "봉사활동", SOLO];
+const AREA_ORDER = ["자율·자치활동", "자율활동", "자치활동", "동아리활동", "진로활동", "봉사활동", SOLO, "행동특성 및 종합의견"];
 const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(v).trim());
 
 /* 제목줄로 어느 출력물인지 가린다. '개인별'을 먼저 보는 것이 중요한데,
@@ -847,6 +1324,108 @@ function splitSubjects(text) {
   return out;
 }
 
+/* ---------- PDF 생기부 → 기록 ----------
+   NEIS PDF는 학생 한 명의 전 항목을 이어서 찍는다. 쪽 아래 "반 N 번호 N 성명 X"로
+   학생을 가르고, "6. 창의적 체험활동상황"·"7. 교과학습발달상황"·"9. 행동특성 및 종합의견"
+   머리글로 항목을 가른다. 표 좌표 대신 줄의 생김새로 읽으므로 서식이 조금 달라도 버틴다.
+   ※ 실물 NEIS PDF로 맞춰 보지 못한 시험판이다. 배정하지 못한 줄은 따로 세어 알린다. */
+const PDF_FOOTER = /반\s*(\d{1,2})\s*번\s*호\s*(\d{1,2})\s*성\s*명\s*([^\s\d]{2,10})/;
+const PDF_SECTION = /^([1-9])\.\s*(창의적|교과학습|행동특성|독서활동|수상|자격증|출결|인적|학교폭력)/;
+const PDF_GRADE_BLOCK = /^\[\s*([1-3])\s*학년\s*\]/;
+const PDF_CC_ROW = new RegExp("^([1-3])\\s+(" +
+  "자율\\s*[·･ㆍ‧․]?\\s*자치활동|자율활동|자치활동|동아리활동|진로활동|봉사활동" +
+  ")\\s+(\\d+)\\s*(.*)$");
+const PDF_HT_ROW = /^([1-3])\s+(.+)$/;
+
+function pdfToRecords(pages, report) {
+  const recs = {};
+  let cur = null, section = null, grade = null, subj = null, sem = "";
+  let school = "", klass = "";
+  const ensure = (g, kind, label) => {
+    if (!cur || !g || !label) return null;
+    const k = [cur.no, cur.name, g, label].join("|");
+    if (!recs[k]) recs[k] = { no: cur.no, name: cur.name, grade: g, area: label, text: "", hope: "", _kind: kind };
+    return recs[k];
+  };
+  const isScoreRow = t => /^\d\s+\S+\s+\S+\s+\d+\s/.test(t) || /\d+\/\d+(\.\d+)?/.test(t);
+
+  for (const pg of pages) {
+    const lines = groupLines(pg.runs);
+    for (const ln of lines) {
+      const m = ln.text.match(PDF_FOOTER);
+      if (m) { cur = { ban: +m[1], no: +m[2], name: m[3] }; klass = `${m[1]}반`; break; }
+    }
+    /* 표 칸은 세로 가운데로 놓이는 탓에, 여러 줄짜리 특기사항의 첫 줄이
+       정작 그 행을 가리키는 "1 자율·자치활동 40"보다 위에 찍힌다.
+       그래서 본문 줄은 '가장 가까운 행 표시'에 붙인다 — 괘선을 읽지 않고도
+       같은 결과를 낸다. */
+    const marks = [];
+    for (const ln of lines) {
+      const mm = ln.text.trim().match(PDF_CC_ROW);
+      if (mm) marks.push({ y: ln.y, grade: +mm[1], area: mm[2].replace(/\s+/g, "").replace(MIDDOT, "·") });
+    }
+    const nearest = y => {
+      let best = null, gap = Infinity;
+      for (const mk of marks) { const d = Math.abs(mk.y - y); if (d < gap) { gap = d; best = mk; } }
+      return gap <= 90 ? best : null;
+    };
+
+    for (const ln of lines) {
+      const t = ln.text.trim();
+      if (!t || PDF_FOOTER.test(t)) continue;
+      const sec = t.match(PDF_SECTION);
+      if (sec) { section = +sec[1]; grade = null; subj = null; continue; }
+      if (/^(학년\s+영역|과\s*목\s+세부능력|학년\s+행동특성|학기\s+교과|번\s*호\s+성)/.test(t)) continue;
+      const gb = t.match(PDF_GRADE_BLOCK);
+      if (gb) { grade = +gb[1]; subj = null; continue; }
+      if (/(고등학교|중학교)$/.test(t) && t.length < 20) { school = t.split(/\s+/).pop(); continue; }
+
+      if (section === 6) {
+        const m = t.match(PDF_CC_ROW);
+        if (m) {
+          const rec = ensure(+m[1], "area", m[2].replace(/\s+/g, "").replace(MIDDOT, "·"));
+          if (rec && m[4]) rec.text += (rec.text ? " " : "") + m[4].trim();
+          continue;
+        }
+        const mk = nearest(ln.y);
+        if (mk) {
+          const rec = ensure(mk.grade, "area", mk.area);
+          if (rec) {
+            if (/^희망분야\s*[:：]/.test(t)) rec.hope = t.replace(/^희망분야\s*[:：]\s*/, "").trim();
+            else rec.text += (rec.text ? " " : "") + t;
+            continue;
+          }
+        }
+      } else if (section === 7) {
+        const m = t.match(/^(?:(\S{1,20})\s+)?(?:\((\d)학기\)\s*)?([^:：]{1,20})\s*[:：]\s*(.*)$/);
+        if (m && grade && (!m[1] || m[1] === m[3])) {
+          subj = m[3].trim(); sem = m[2] || "";
+          const rec = ensure(grade, "subj", subj);
+          if (rec) { rec._sem = sem; if (m[4]) rec.text += (rec.text ? " " : "") + m[4].trim(); }
+          continue;
+        }
+        if (isScoreRow(t)) continue;                 // 성적표 행 — 세특이 아니다
+        if (subj && grade) {
+          const rec = ensure(grade, "subj", subj);
+          if (rec) { rec.text += (rec.text ? " " : "") + t; continue; }
+        }
+      } else if (section === 9) {
+        const m = t.match(PDF_HT_ROW);
+        if (m) {
+          grade = +m[1];
+          const rec = ensure(grade, "solo", "행동특성 및 종합의견");
+          if (rec && m[2]) rec.text += (rec.text ? " " : "") + m[2].trim();
+          continue;
+        }
+        const rec = ensure(grade, "solo", "행동특성 및 종합의견");
+        if (rec) { rec.text += (rec.text ? " " : "") + t; continue; }
+      }
+      if (report && [6, 7, 9].includes(section)) report.push(t.slice(0, 50));
+    }
+  }
+  return { school, klass, recs: Object.values(recs) };
+}
+
 /* ---------- 3. 나이스 바이트 계산 ----------
    나이스 입력기 기준: 한글·한자 등 전각 3바이트, 줄바꿈 2바이트,
    ASCII(영문·숫자·공백·문장부호)와 세특에 흔한 가운뎃점·곡선따옴표 1바이트 */
@@ -861,7 +1440,7 @@ function neisBytes(t) {
 /* 2026학년도 기준. 세특은 과목당.
    개인별 세특을 1,500으로 둔 근거: 실제 출력물의 19명이 1,393~1,484B에
    고르게 몰려 있어 1,500을 천장으로 삼아 쓴 흔적이 분명했다. */
-const LIMITS = { "자율·자치활동": 1500, "자율활동": 1500, "자치활동": 1500, "동아리활동": 1500,
+const LIMITS = { "행동특성 및 종합의견": 900, "자율·자치활동": 1500, "자율활동": 1500, "자치활동": 1500, "동아리활동": 1500,
   "진로활동": 1500, "봉사활동": 1500, "세특": 1500, [SOLO]: 1500 };
 
 /* ---------- 4. 전역 상태 ---------- */
@@ -875,6 +1454,7 @@ const state = {
   simMode: "peer", simThr: 0.12, simPairs: [], dupeGroups: [],
   simGrade: null, simKind: "", simSort: "score", fixScope: "",
   amendGrade: null, amendSev: "",
+  findQ: "", findGrade: null, findKind: "",
   relay: localStorage.getItem("sgb-relay") || DEFAULT_RELAY,
   aiBusy: false,
 };
@@ -883,6 +1463,12 @@ function rebuild() {
   const recs = [...state.recs.values()];
   state.chunks = [];
   for (const r of recs) {
+    if (r._kind === "subj") {          // PDF는 과목이 이미 갈려 있다
+      const t = (r.text || "").trim();
+      if (t) state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "subj",
+        label: r.area, sem: r._sem || "", text: t, bytes: neisBytes(t) });
+      continue;
+    }
     if (r.area === "세특") {
       for (const s of splitSubjects(r.text)) {
         if (s.body.trim().length < 2) continue;
@@ -908,8 +1494,18 @@ function rebuild() {
 async function handleFiles(files) {
   for (const f of files) {
     try {
-      const grid = await readXlsx(await f.arrayBuffer());
-      const { doctype, school, klass, recs } = parseNeis(grid);
+      const buf = await f.arrayBuffer();
+      let doctype, school, klass, recs, leftover = [];
+      if (/\.pdf$/i.test(f.name) || new Uint8Array(buf, 0, 5).every((b, i) => b === "%PDF-".charCodeAt(i))) {
+        const pages = await readPdfPages(buf, inflateFallback);
+        ({ school, klass, recs } = pdfToRecords(pages, leftover));
+        doctype = "PDF 생기부";
+        if (!recs.length) throw new Error("생기부 PDF에서 학생 기록을 찾지 못했습니다. (쪽 아래 '반 N 번호 N 성명'을 읽지 못함)");
+        if (leftover.length) toast(`${f.name}: ${leftover.length}줄을 어느 항목에도 넣지 못했습니다 — 결과를 확인해 주세요.`);
+      } else {
+        const grid = await readXlsx(buf);
+        ({ doctype, school, klass, recs } = parseNeis(grid));
+      }
       if (school) state.school = school;
       if (klass) state.klass = klass;
       for (const r of recs) {
@@ -953,13 +1549,13 @@ upzone.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDef
 $("#filePick").onchange = e => { handleFiles([...e.target.files]); e.target.value = ""; };
 ["dragover","dragenter"].forEach(ev => upzone.addEventListener(ev, e => { e.preventDefault(); upzone.classList.add("over"); }));
 ["dragleave","drop"].forEach(ev => upzone.addEventListener(ev, e => { e.preventDefault(); upzone.classList.remove("over"); }));
-upzone.addEventListener("drop", e => handleFiles([...e.dataTransfer.files].filter(f => f.name.endsWith(".xlsx"))));
+upzone.addEventListener("drop", e => handleFiles([...e.dataTransfer.files].filter(f => /\.(xlsx|pdf)$/i.test(f.name))));
 
 /* ---------- 6. 탭 전환 ---------- */
 $$(".tab").forEach(b => b.onclick = () => {
   state.tab = b.dataset.tab;
   $$(".tab").forEach(x => x.classList.toggle("on", x === b));
-  ["dash","sim","fix","cls","amend"].forEach(t => $("#tab-" + t).style.display = t === state.tab ? "" : "none");
+  ["dash","sim","fix","cls","amend","find"].forEach(t => $("#tab-" + t).style.display = t === state.tab ? "" : "none");
 });
 
 /* 학년 알약 공통. withAll을 켜면 맨 앞에 '전체'가 붙고 그때 값은 null이다. */
@@ -2097,8 +2693,115 @@ $("#amendCsv").onclick = () => {
   toast(`${amendHits.length}건을 내보냈습니다`);
 };
 
-/* ---------- 13. 전체 렌더 ---------- */
-function renderAll() { renderDash(); renderSim(); renderFix(); renderCls(); renderAmend(); }
+/* ---------- 14. 낱말 찾기 ----------
+   "이 표현을 몇 명이 썼지?"를 바로 답하려는 기능. 정규식이 아니라 낱말로 찾되,
+   따옴표로 묶으면 붙은 그대로 찾는다. 찾은 자리는 원문 팝업에서 형광펜으로 보여준다. */
+function parseQuery(q) {
+  const terms = [];
+  const re = /"([^"]+)"|“([^”]+)”|(\S+)/g;
+  let m;
+  while ((m = re.exec(q)) !== null) {
+    const t = (m[1] || m[2] || m[3] || "").trim();
+    if (t) terms.push(t);
+  }
+  return terms;
+}
+function findSpans(text, terms) {
+  const spans = [];
+  for (const t of terms) {
+    if (!t) continue;
+    let at = 0;
+    for (;;) {
+      const i = text.indexOf(t, at);
+      if (i < 0) break;
+      spans.push({ start: i, end: i + t.length, text: t });
+      at = i + t.length;
+      if (spans.length > 200) return spans.sort((a, b) => a.start - b.start);
+    }
+  }
+  return spans.sort((a, b) => a.start - b.start || b.end - a.end);
+}
+let findHits = [];
+function renderFind() {
+  renderGradePills("#findGrade", state.findGrade, g => { state.findGrade = g; renderFind(); }, true);
+  state.findKind = fillScopeSelect("#findKind", state.findGrade, state.findKind, v => { state.findKind = v; renderFind(); });
+  const sum = $("#findSummary"), out = $("#findResults"), empty = $("#findEmpty");
+  const terms = parseQuery(state.findQ || "");
+  if (!state.chunks.length || !terms.length) {
+    sum.innerHTML = ""; out.innerHTML = ""; empty.style.display = "";
+    empty.textContent = state.chunks.length ? "찾을 낱말을 넣어 보세요." : "파일을 먼저 올려 주세요.";
+    return;
+  }
+  findHits = [];
+  for (const c of state.chunks) {
+    if (!c.text) continue;
+    if (state.findGrade && c.grade !== state.findGrade) continue;
+    if (!matchScope(c, state.findKind)) continue;
+    const spans = findSpans(c.text, terms);
+    if (spans.length) findHits.push({ chunk: c, spans });
+  }
+  findHits.sort((a, b) => b.spans.length - a.spans.length || a.chunk.no - b.chunk.no);
+  const students = new Set(findHits.map(h => h.chunk.no));
+  const total = findHits.reduce((n, h) => n + h.spans.length, 0);
+  sum.innerHTML = findHits.length
+    ? `<div class="row"><span class="badge ok">${total.toLocaleString()}번 나옴</span>
+        <span class="badge warn">기록 ${findHits.length}건</span>
+        <span class="badge none">학생 ${students.size}명</span>
+        <span class="hint">찾는 말: ${terms.map(t => `<mark>${esc(t)}</mark>`).join(" ")}</span></div>`
+    : "";
+  if (!findHits.length) {
+    out.innerHTML = ""; empty.style.display = "";
+    empty.textContent = "이 범위에서는 찾지 못했습니다.";
+    return;
+  }
+  empty.style.display = "none";
+  out.innerHTML = findHits.slice(0, 200).map((h, i) => {
+    const c = h.chunk, s = h.spans[0];
+    const a = Math.max(0, s.start - 45), b = Math.min(c.text.length, s.end + 45);
+    const snip = (a > 0 ? "…" : "") + esc(c.text.slice(a, s.start)) +
+      `<mark>${esc(c.text.slice(s.start, s.end))}</mark>` +
+      esc(c.text.slice(s.end, b)) + (b < c.text.length ? "…" : "");
+    return `<div class="ai-item amend-item" data-i="${i}" role="button" tabindex="0" aria-label="원문 보기">
+      <div class="head">${c.no}번 ${esc(c.name)}
+        <span class="hint">${c.grade}학년 ${esc(c.label)}${c.sem ? ` ${c.sem}학기` : ""}</span>
+        <span class="badge ok">${h.spans.length}번</span></div>
+      <div class="fix">${snip}<div class="peek">눌러서 원문 맥락 보기 →</div></div></div>`;
+  }).join("") + (findHits.length > 200 ? `<div class="hint">앞의 200건만 표시했습니다 (해당 ${findHits.length}건).</div>` : "");
+  out.querySelectorAll(".amend-item").forEach(el => {
+    const open = () => openFind(findHits[parseInt(el.dataset.i, 10)]);
+    el.onclick = open;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
+}
+function openFind(h) {
+  const c = h.chunk;
+  const paint = seg => {
+    if (seg !== c) return esc(seg.text);
+    let html = "", cur = 0;
+    for (const s of h.spans) {
+      if (s.start < cur) continue;
+      html += esc(seg.text.slice(cur, s.start)) + `<mark class="hot">${esc(seg.text.slice(s.start, s.end))}</mark>`;
+      cur = s.end;
+    }
+    return html + esc(seg.text.slice(cur));
+  };
+  const r = renderRecord(c, paint);
+  $("#cmpCard").classList.remove("wide");
+  $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label} — ${h.spans.length}번 나옴`;
+  $("#cmpBody").className = "compare single";
+  $("#cmpBody").innerHTML = `<div class="pane plain">
+    <h4>기록 전체 · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B</h4>${r.segs}</div>`;
+  $("#cmpModal").classList.add("on");
+}
+let findTimer = null;
+$("#findQ").oninput = e => {
+  state.findQ = e.target.value;
+  clearTimeout(findTimer);
+  findTimer = setTimeout(renderFind, 180);
+};
+
+/* ---------- 15. 전체 렌더 ---------- */
+function renderAll() { renderDash(); renderSim(); renderFix(); renderCls(); renderAmend(); renderFind(); }
 renderAll();
 
 /* 들어오는 즉시 AI가 살아 있는지 확인해 둔다. 보내는 것은 "1+1=?" 한 줄뿐이고
