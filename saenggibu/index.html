@@ -253,7 +253,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
   <header>
     <div>
       <h1>🔍 생기부 점검실</h1>
-      <div class="sub">NEIS 엑셀 원본 그대로 — 작성 현황 · 겹침 점검 · AI 교정 · 학급 분석</div>
+      <div class="sub">NEIS 엑셀·PDF 원본 그대로 — 작성 현황 · 겹침 점검 · AI 교정 · 학급 분석</div>
     </div>
     <div class="spacer"></div>
     <button class="icon-btn" id="aiSetupBtn" title="AI 연결 설정" aria-label="AI 연결 설정">🤖</button>
@@ -262,8 +262,8 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
 
   <!-- 파일 입력 -->
   <div class="card">
-    <div class="upzone" id="uploadZone" role="button" tabindex="0" aria-label="엑셀 파일 업로드">
-      <div class="t">NEIS 엑셀 파일을 여기로 끌어다 놓기 (여러 개 가능)</div>
+    <div class="upzone" id="uploadZone" role="button" tabindex="0" aria-label="엑셀 또는 PDF 파일 업로드">
+      <div class="t">NEIS 파일을 여기로 끌어다 놓기 (여러 개 가능)</div>
       <div class="s">엑셀(.xlsx) 또는 <b>생기부 PDF</b> · 창의적체험활동상황 · 세부능력 및 특기사항 · 개인별 세특 · 행동특성</div>
     </div>
     <input type="file" id="filePick" accept=".xlsx,.pdf" multiple hidden>
@@ -288,7 +288,7 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
         <span class="sect-title tint-0" style="margin-bottom:0">작성 현황</span>
         <div class="pills" id="dashGrade"></div>
         <div class="spacer" style="flex:1"></div>
-        <span class="hint">바이트: 나이스 계산 방식(한글 3 · 영문/공백 1 · 줄바꿈 2) · 한도: 2026학년도 기준</span>
+        <span class="hint">바이트: 나이스 계산 방식(한글 3 · 영문/공백 1 · 줄바꿈 2) · 한도: 학년마다 그해 기준</span>
       </div>
       <div class="table-scroll"><table id="dashTable"></table></div>
       <div id="dashEmpty" class="empty">파일을 올리면 학생별 작성 현황이 표시됩니다.</div>
@@ -384,7 +384,9 @@ footer { margin-top:28px; font-size:.74rem; color:var(--ink-soft); text-align:ce
         「학교생활기록 작성 및 관리지침」 제19조에 따라 <b>객관적 증빙자료</b>를 갖추어
         <b>학업성적관리위원회 심의</b>를 거친 뒤 <b>정정대장</b> 결재 절차로 처리해야 합니다.
         여기 걸린 것이 모두 잘못은 아니며(수업에서 특허 제도를 다룬 서술 등), 반대로 여기 없다고 문제가 없는 것도 아닙니다.
-        <br><b>분량 초과</b>는 해마다 훈령이 바뀌므로 <b>지금 작성 중인 학년</b>(가장 높은 학년)에만 적용합니다.
+        <br><b>분량 초과</b>는 학년마다 그해 기준으로 잽니다. 지금 작성 중인 학년(가장 높은 학년)은
+        2026학년도 기준(진로활동 500자·1,500B / 행동특성 300자·900B)으로, 이미 마감된 아랫 학년은
+        그때 기준(진로활동 700자·2,100B / 행동특성 500자·1,500B)으로 잽니다.
       </div>
       <div id="amendSummary" style="margin-top:10px"></div>
       <div id="amendResults" style="margin-top:6px"></div>
@@ -1332,7 +1334,51 @@ function parseNeis(grid) {
    숫자도 이름에 넣되, 첫 글자는 반드시 글자여야 한다(숫자만 있는 토막을 과목으로 보면 안 된다) */
 const SUBJ_BOUND = /(?=\(\d학기\)[^:\n]{1,20}:|(?<=[.함임됨움짐냄듦씀킴큼])\s*[가-힣A-Za-zⅠⅡⅢ][가-힣A-Za-zⅠⅡⅢ·\s0-9]{1,17}:)/;
 const SUBJ_LABEL = /^(?:\((\d)학기\))?\s*([가-힣A-Za-zⅠⅡⅢ][가-힣A-Za-zⅠⅡⅢ·\s0-9]{0,19}):\s*/;
-function splitSubjects(text) {
+/* 개인별 세부능력 및 특기사항은 나이스 세특 내려받기에서 이름표 없이 나온다.
+   학교 자율적 교육과정 기록이라 바로 앞 과목(1학년은 '진로와 직업', 2학년은 제2외국어인
+   일이 잦다)의 세특 뒤에 그대로 이어 붙어, 한 과목이 1,200자를 넘는 것처럼 보인다.
+   문장이 끝난 자리에서 '학교 자율적 교육과정'이 새로 시작하면 거기서 떼어 낸다.
+   실데이터 19명 × 2개 학년에서 한 학년에 두 과목이 걸린 사례는 하나도 없었다. */
+const SOLO_MARK = /(?:학교\s*)?자율적?\s*교육\s*과정|학교\s*자율\s*과정/g;
+const OPENERS = /[('‘"“[<《〈]/;
+function peelSolo(body) {
+  // 한도 안에 드는 조각은 건드리지 않는다 — 세특 본문이 자율적 교육과정을
+  // 한 문장으로 언급했을 뿐인데 잘라 버리는 일을 막는 안전장치다
+  if (neisBytes(body) <= LIMITS["세특"]) return { body, solo: "" };
+  SOLO_MARK.lastIndex = 0;
+  let m;
+  while ((m = SOLO_MARK.exec(body)) !== null) {
+    let cut = m.index;
+    // 여는 따옴표·괄호는 개인별 세특 쪽에 딸린 글자다
+    while (cut > 0 && (OPENERS.test(body[cut - 1]) || /\s/.test(body[cut - 1]))) cut--;
+    if (cut === 0) return { body: "", solo: body };            // 조각 전체가 개인별 세특
+    if (!/[.。]$/.test(body.slice(0, cut))) continue;           // 문장 중간이면 그 과목의 본문이다
+    return { body: body.slice(0, cut), solo: body.slice(cut) };
+  }
+  return { body, solo: "" };
+}
+/* 앞 과목의 글이 문장 중간에서 끊긴 채 다음 과목이 이어붙는 일이 있다
+   ("…수학 문제에 대영어Ⅰ: '정신질환에 대한…"). 마침표가 없어 위 규칙으로는 못 가른다.
+   같은 파일의 다른 학생에게서 이미 확인한 과목 이름을 사전 삼아 한 번 더 가른다.
+   한도(1,500B)를 넘긴 조각에만 적용해 멀쩡한 기록은 건드리지 않는다. */
+function reSplit(piece, lex) {
+  if (!lex || !lex.size || neisBytes(piece.body) <= LIMITS["세특"]) return [piece];
+  const out = [];
+  let cur = piece;
+  for (let guard = 0; guard < 12; guard++) {
+    let at = -1, name = "";
+    for (const n of lex) {
+      const i = cur.body.indexOf(n + ":");
+      if (i > 0 && (at < 0 || i < at)) { at = i; name = n; }
+    }
+    if (at < 0) break;
+    out.push({ ...cur, body: cur.body.slice(0, at) });
+    cur = { subject: name, sem: "", body: cur.body.slice(at + name.length + 1).replace(/^\s+/, "") };
+  }
+  out.push(cur);
+  return out;
+}
+function splitSubjects(text, lex) {
   const out = [];
   for (const raw of text.split(SUBJ_BOUND)) {
     const p = raw.trim();
@@ -1342,7 +1388,21 @@ function splitSubjects(text) {
     else if (out.length) out[out.length-1].body += p;
     else out.push({ subject: "(미분류)", sem: "", body: p });
   }
-  return out;
+  const res = [];
+  for (const s0 of out) for (const s of reSplit(s0, lex)) {
+    const { body, solo } = peelSolo(s.body);
+    if (body.trim()) res.push({ ...s, body });
+    if (solo.trim()) res.push({ subject: SOLO, sem: "", body: solo.trim(), solo: true });
+  }
+  return res;
+}
+/* 파일 전체를 한 번 훑어 과목 이름 사전을 만든다 */
+function subjectLexicon(texts) {
+  const lex = new Set();
+  for (const t of texts) for (const s of splitSubjects(t)) {
+    if (!s.solo && s.subject !== "(미분류)" && s.subject.length >= 2) lex.add(s.subject);
+  }
+  return lex;
 }
 
 /* ---------- PDF 생기부 → 기록 ----------
@@ -1363,12 +1423,24 @@ const PDF_SETUK_HDR = /^과\s*목\s+세부능력/;
 const PDF_HOPE = /^희\s*망\s*분\s*야\s*[:：]?\s*/;
 /* 쪽마다 아래에 찍히는 발급 정보 — 표 밖이라 칸으로는 못 거른다 */
 const PDF_FOOTER = /반\s*\d+\s*번\s*호\s*\d+\s*성\s*명|\d{4}\s*\.\s*\d{2}\s*\.\s*\d{2}\s*\d{1,2}\s*:\s*\d{2}|\*\*\*/;
+/* 그 발급 정보 줄에 반·번호·성명이 함께 들어 있어 쪽 주인을 알려 준다 */
+const PDF_FOOTER_ID = /반\s*(\d{1,2})\s*번\s*호\s*(\d{1,3})\s*성\s*명\s*([가-힣]{2,6})/;
 const PDF_BONGSA = /^봉\s*사\s*활\s*동\s*실\s*적/;
 const PDF_SKIP = /^(창의적\s*체험활동상황|학년|영역\s*시간\s*특기사항|학년\s+행동특성|학년\s+과목|해당\s*사항\s*없음|해당\s*학년의\s*자료가\s*없습니다|학기\s+교과)/;
 
 function pdfToRecords(pages, report) {
   const name = { v: "" }, roster = {};       // roster[학년] = {ban, no}
-  const bucket = {};                          // "학년|영역" → 글자
+  /* 한 파일에 학생이 여럿일 수 있다(학급 전체를 한 번에 인쇄한 경우).
+     쪽마다 아래에 "반 1 번호 3 성명 기가영"이 찍히므로 그것으로 쪽 주인을 가른다.
+     그 줄이 없는 판형이면 1번 항목의 성명·학적표 하나로만 본다. */
+  const byStudent = {};                       // 학생칸 → {who, bucket, hopes, setuk}
+  let cur = null;
+  const forWho = (w) => {
+    const k = w.no + "|" + w.name;
+    if (!byStudent[k]) byStudent[k] = { who: w, bucket: {}, hopes: {}, setuk: {} };
+    return byStudent[k];
+  };
+  const bucket = {};                          // "학년|영역" → 글자 (쪽 주인을 모를 때)
   const hopes = {};                           // 학년 → 진로 희망분야
   const setuk = {};                           // 학년 → 세특 본문 통짜
   /* 학교 이름은 전학 온 학생이면 학적사항·봉사활동에 前 학교가 먼저 나온다.
@@ -1376,10 +1448,21 @@ function pdfToRecords(pages, report) {
   const schools = {};
   let section = null, grade = null, inSetuk = false;
 
-  const put = (g, label, t) => { if (!g || !label || !t) return; const k = g + "|" + label; bucket[k] = (bucket[k] || "") + t; };
+  const put = (g, label, t) => {
+    if (!g || !label || !t) return;
+    const b = cur ? cur.bucket : bucket, k = g + "|" + label;
+    b[k] = (b[k] || "") + t;
+  };
+  const putSetuk = (g, t) => { const s = cur ? cur.setuk : setuk; s[g] = (s[g] || "") + t; };
+  const putHope = (g, v) => { const h = cur ? cur.hopes : hopes; if (!h[g]) h[g] = v; };
 
   for (const pg of pages) {
     const lines = groupLines(pg.runs);
+    // 이 쪽의 주인을 먼저 가려낸다
+    for (const ln of lines) {
+      const id = ln.text.match(PDF_FOOTER_ID);
+      if (id) { cur = forWho({ ban: +id[1], no: +id[2], name: id[3] }); break; }
+    }
     /* 점을 품는 가장 작은 칸을 찾는다 — 그 칸이 곧 그 글자가 놓인 표의 자리다 */
     const cells = pg.cells || [];
     const cellAt = (x, y) => {
@@ -1469,7 +1552,7 @@ function pdfToRecords(pages, report) {
         if (PDF_HOPE.test(t)) {
           const gm = pick(gradeMarks, ln.y);
           const v = t.replace(PDF_HOPE, "").replace(/\s+/g, " ").trim();
-          if (gm && v && !hopes[gm.grade]) hopes[gm.grade] = v;
+          if (gm && v) putHope(gm.grade, v);
           continue;
         }
         const body = ln.parts.filter(p => p.x >= bodyX0);
@@ -1486,7 +1569,7 @@ function pdfToRecords(pages, report) {
         const c0 = ln.parts.length ? cellAt(ln.parts[0].x + 2, ln.y + 2) : null;
         if (c0 && c0.x1 - c0.x0 < 400) continue;
         if (/\d+\/\d+(\.\d+)?\(/.test(t)) continue;        // 원점수/평균(표준편차) 행
-        setuk[grade] = (setuk[grade] || "") + ln.parts.map(p => p.text).join("");
+        putSetuk(grade, ln.parts.map(p => p.text).join(""));
       } else if (section === 9) {
         const body = ln.parts.filter(p => p.x >= 70);
         if (!body.length) continue;
@@ -1499,23 +1582,28 @@ function pdfToRecords(pages, report) {
   }
 
   const top = Math.max(...Object.keys(roster).map(Number), 0);
-  const who = roster[top] || { ban: 0, no: 0 };
+  // 쪽 아래에 학생이 안 적혀 있던 파일이면 학적표·성명으로 한 명만 잡는다
+  const loose = { who: { ...(roster[top] || { ban: 0, no: 0 }), name: name.v || "이름미상" }, bucket, hopes, setuk };
+  const sheets = Object.values(byStudent);
+  if (Object.keys(bucket).length || Object.keys(setuk).length) sheets.push(loose);
+
   const recs = [];
-  const push = (g, label, kind, text, sem) => {
-    const t = (text || "").trim();
-    if (!t) return;
-    recs.push({ no: who.no, name: name.v || "이름미상", grade: g, area: label, text: t,
-      hope: label === "진로활동" ? (hopes[g] || "") : "", _kind: kind, _sem: sem || "" });
-  };
-  for (const [k, t] of Object.entries(bucket)) {
-    const [g, label] = k.split("|");
-    push(+g, label, label === "행동특성 및 종합의견" ? "solo" : "area", t);
-  }
-  for (const [g, t] of Object.entries(setuk)) {
-    for (const s of splitSubjects(t)) push(+g, s.subject, "subj", s.body, s.sem);
+  let ban = 0;
+  for (const sh of sheets) {
+    if (sh.who.ban) ban = sh.who.ban;
+    const push = (g, label, text) => {
+      const t = (text || "").trim();
+      if (!t) return;
+      recs.push({ no: sh.who.no, name: sh.who.name || "이름미상", grade: g, area: label, text: t,
+        hope: label === "진로활동" ? (sh.hopes[g] || "") : "" });
+    };
+    for (const [k, t] of Object.entries(sh.bucket)) push(+k.split("|")[0], k.split("|")[1], t);
+    /* 세특은 통짜로 넘긴다. 과목 가르기는 rebuild()가 올린 파일 전체의
+       과목 이름 사전을 들고 한 번에 해야 엑셀 경로와 결과가 같아진다. */
+    for (const [g, t] of Object.entries(sh.setuk)) push(+g, "세특", t);
   }
   const school = Object.entries(schools).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
-  return { school, klass: who.ban ? `${top}학년 ${who.ban}반` : "", recs };
+  return { school, klass: ban ? `${top || Math.max(...recs.map(r => r.grade), 0)}학년 ${ban}반` : "", recs };
 }
 
 /* ---------- 3. 나이스 바이트 계산 ----------
@@ -1534,6 +1622,11 @@ function neisBytes(t) {
    고르게 몰려 있어 1,500을 천장으로 삼아 쓴 흔적이 분명했다. */
 const LIMITS = { "행동특성 및 종합의견": 900, "자율·자치활동": 1500, "자율활동": 1500, "자치활동": 1500, "동아리활동": 1500,
   "진로활동": 1500, "봉사활동": 1500, "세특": 1500, [SOLO]: 1500 };
+/* 2025학년도까지의 한도. 이미 마감된 아랫 학년 기록은 이 기준으로 쓰였으므로
+   지금 잣대로 재면 멀쩡한 기록이 온통 초과로 잡힌다.
+   달라진 곳은 두 군데다 — 진로활동 700자(2,100B) → 500자(1,500B),
+   행동특성 및 종합의견 500자(1,500B) → 300자(900B). 나머지는 그대로다. */
+const LIMITS_PREV = { "진로활동": 2100, "행동특성 및 종합의견": 1500 };
 
 /* ---------- 4. 전역 상태 ---------- */
 const state = {
@@ -1554,18 +1647,17 @@ const state = {
 function rebuild() {
   const recs = [...state.recs.values()];
   state.chunks = [];
+  const soloKeys = new Set(recs.filter(r => r.area === SOLO).map(r => r.no + "|" + r.grade));
+  const lex = subjectLexicon(recs.filter(r => r.area === "세특").map(r => r.text));
   for (const r of recs) {
-    if (r._kind === "subj") {          // PDF는 과목이 이미 갈려 있다
-      const t = (r.text || "").trim();
-      if (t) state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "subj",
-        label: r.area, sem: r._sem || "", text: t, bytes: neisBytes(t) });
-      continue;
-    }
     if (r.area === "세특") {
-      for (const s of splitSubjects(r.text)) {
-        if (s.body.trim().length < 2) continue;
-        state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "subj",
-          label: s.subject, sem: s.sem, text: s.body.trim(), bytes: neisBytes(s.body.trim()) });
+      for (const s of splitSubjects(r.text, lex)) {
+        const t = s.body.trim();
+        if (t.length < 2) continue;
+        // 개인별 세특 파일을 따로 올렸으면 그쪽이 정본이다 — 떼어 낸 조각은 버린다
+        if (s.solo && soloKeys.has(r.no + "|" + r.grade)) continue;
+        state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: s.solo ? "solo" : "subj",
+          label: s.solo ? SOLO : s.subject, sem: s.solo ? "" : s.sem, text: t, bytes: neisBytes(t) });
       }
     } else {
       state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: r.area === SOLO ? "solo" : "area",
@@ -1894,13 +1986,24 @@ function renderRecord(c, paint) {
    과목명이 '공통국어1'로도, 2015 개정의 '국어'로도 나오므로 둘 다 받는다. */
 const COMMON_SUBJECT = /^(공통)?(국어|수학|영어)[12]?$|^(통합사회|통합과학|한국사|과학탐구실험)[12]?$/;
 const isCommonSubject = window.isCommonSubject = label => COMMON_SUBJECT.test(String(label).replace(/\s+/g, ""));
+/* 지금 쓰고 있는 학년만 올해 기준이고, 그 아래 학년은 이미 마감된 지난해 기록이라
+   그때 기준으로 잰다. '지금 학년'은 학급 표시(3학년 1반)에서 읽는다 —
+   1·2학년 자료만 올린 3학년 담임도 있어서, 올린 자료 중 가장 높은 학년으로 잡으면
+   지난해 기록에 올해 잣대를 들이대게 된다. */
+function currentGrade() {
+  const m = /^([1-9])\s*학년/.exec(state.klass || "");
+  return m ? +m[1] : (state.grades[state.grades.length - 1] || 0);
+}
+function isWritingGrade(g) { return g === currentGrade(); }
 window.limitOf = function limitOf(c) {
-  const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+  const key = c.kind === "subj" ? "세특" : c.label;
+  const prev = !isWritingGrade(c.grade);
+  const limit = (prev && LIMITS_PREV[key]) || LIMITS[key] || 1500;
   if (c.kind === "subj" && isCommonSubject(c.label)) {
     const sibs = siblingsOf(c);
-    return { limit, basis: "sum", bytes: sibs.reduce((s, x) => s + x.bytes, 0), parts: sibs.length };
+    return { limit, prev, basis: "sum", bytes: sibs.reduce((s, x) => s + x.bytes, 0), parts: sibs.length };
   }
-  return { limit, basis: "each", bytes: c.bytes, parts: 1 };
+  return { limit, prev, basis: "each", bytes: c.bytes, parts: 1 };
 }
 function recordHead(c, r) {
   return `<h4>${recordTag(c)} · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B` +
@@ -2648,9 +2751,9 @@ const maskQuoted = t => t.replace(QUOTED, m => "·".repeat(m.length));
 function scanAmend() {
   const rules = [...AMEND_RULES, ...dynamicRules()];
   const hits = [];
-  // 분량 한도는 해마다 훈령이 바뀌므로 '지금 쓰고 있는 학년'에만 적용한다.
-  // 지난 학년 기록은 그때의 기준으로 쓰인 것이라 지금 잣대로 재면 온통 초과로 나온다.
-  const writingGrade = state.grades[state.grades.length - 1];
+  // 한도는 해마다 훈령이 바뀐다. limitOf가 학년에 맞는 기준을 골라 주므로
+  // 여기서는 '지금 쓰고 있는 학년인가'로 급한 정도만 가른다.
+  const writingGrade = currentGrade();
   const overSeen = new Set();
   for (const c of state.chunks) {
     if (!c.text) continue;
@@ -2675,9 +2778,10 @@ function scanAmend() {
       const now = c.grade === writingGrade;
       const how = L.basis === "sum" && L.parts > 1 ? "1·2학기를 합산한 " : "";
       hits.push({ chunk: c, spans: [], over: L.bytes - L.limit,
-        rule: { id: "분량 초과", sev: now ? "high" : "low", cite: "영역별 입력 가능 최대 글자수",
+        rule: { id: "분량 초과", sev: now ? "high" : "mid", cite: "영역별 입력 가능 최대 글자수",
           why: `${how}${L.bytes.toLocaleString()}B로 한도 ${L.limit.toLocaleString()}B를 ${(L.bytes - L.limit).toLocaleString()}B 넘었습니다.`
-            + (now ? " 나이스에 그대로 넣을 수 없습니다." : " 지난 학년 기록이라 그때의 훈령 기준을 따랐을 수 있습니다 — 참고만 하세요.") } });
+            + (now ? " 나이스에 그대로 넣을 수 없습니다."
+                   : ` 지난 학년 기록이라 그때 기준(${L.limit.toLocaleString()}B)으로 쟀는데도 넘었습니다 — 정정 대상일 수 있습니다.`) } });
     }
   }
   hits.sort((a, b) => SEV_RANK[b.rule.sev] - SEV_RANK[a.rule.sev]
