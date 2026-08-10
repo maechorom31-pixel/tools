@@ -709,9 +709,18 @@ async function readXlsx(buf) {
    다른 중계를 쓰고 싶으면 🤖 버튼에서 바꿀 수 있고, 그 값은 이 브라우저에만 저장된다. */
 const DEFAULT_RELAY = "https://script.google.com/macros/s/AKfycbxMqZ__mwxQ3lDypIUNvTRM0C35osm2Ms3R9gr33EaFgqwVhQVqyjhUoHQX6U36PccQ/exec";
 
-const AREAS = ["자율활동", "동아리활동", "진로활동"];
+/* 2026 훈령부터 1·2학년 영역명이 '자율·자치활동'이다(3학년은 '자율활동').
+   출력물마다 가운뎃점 글자가 제각각(·, ･, ㆍ, ‧, ․)이라 하나로 맞춘 뒤 견준다.
+   이걸 놓치면 해당 영역 본문이 통째로 버려진다. */
+const MIDDOT = /[·･ㆍ‧․∙⋅]/g;
+const AREA_PAT = /^(자율·자치활동|자율활동|자치활동|동아리활동|진로활동|봉사활동)$/;
+function areaLabel(v) {
+  if (typeof v !== "string") return null;
+  const s = v.replace(/\s+/g, "").replace(MIDDOT, "·");
+  return AREA_PAT.test(s) ? s : null;
+}
 const SOLO = "개인별 세특";                 // 개인별 세부능력 및 특기사항 — 학생당 한 덩이
-const AREA_ORDER = [...AREAS, SOLO];        // 작성 현황 표에서 세울 차례
+const AREA_ORDER = ["자율·자치활동", "자율활동", "자치활동", "동아리활동", "진로활동", "봉사활동", SOLO];
 const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(v).trim());
 
 /* 제목줄로 어느 출력물인지 가린다. '개인별'을 먼저 보는 것이 중요한데,
@@ -810,7 +819,8 @@ function parseNeis(grid) {
     if (isNum(c.C)) { grade = parseInt(c.C, 10); area = null; }
     if (!grade) continue;
     if (doctype === "창체") {
-      if (typeof c.D === "string" && AREAS.includes(c.D.trim())) area = c.D.trim();
+      const label = areaLabel(c.D);
+      if (label) area = label;
       if (c.F === "희망분야") { if (area) ensure(area).hope = String(c.G || "").trim(); continue; }
       if (typeof c.F === "string" && c.F && area) ensure(area).text += c.F;
       else if (area) ensure(area); // 텍스트 없는 영역도 0자 기록으로 남긴다
@@ -851,7 +861,8 @@ function neisBytes(t) {
 /* 2026학년도 기준. 세특은 과목당.
    개인별 세특을 1,500으로 둔 근거: 실제 출력물의 19명이 1,393~1,484B에
    고르게 몰려 있어 1,500을 천장으로 삼아 쓴 흔적이 분명했다. */
-const LIMITS = { "자율활동": 1500, "동아리활동": 1500, "진로활동": 1500, "세특": 1500, [SOLO]: 1500 };
+const LIMITS = { "자율·자치활동": 1500, "자율활동": 1500, "자치활동": 1500, "동아리활동": 1500,
+  "진로활동": 1500, "봉사활동": 1500, "세특": 1500, [SOLO]: 1500 };
 
 /* ---------- 4. 전역 상태 ---------- */
 const state = {
@@ -910,6 +921,7 @@ async function handleFiles(files) {
         keep.hope = keep.hope || old.hope || r.hope;
         state.recs.set(k, keep);
       }
+      if (!recs.length) toast(`${f.name}: 형식은 맞지만 학생 기록이 한 건도 없습니다.`);
       // 이 파일 하나가 무엇을 담고 있었는지 — 두 사람이 화면을 비교할 때의 근거
       state.files.push({
         name: f.name, doctype,
@@ -1054,18 +1066,25 @@ function renderDashDetail(no) {
   const name = mine[0].name;
   const shown = [];
   const cell = c => {
-    const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
-    const pct = Math.min(c.bytes / limit * 100, 100);
-    const cls = c.bytes > limit ? "over" : c.bytes > limit * 0.9 ? "warn" : "";
+    const L = limitOf(c);
+    const pct = Math.min(L.bytes / L.limit * 100, 100);
+    const cls = L.bytes > L.limit ? "over" : L.bytes > L.limit * 0.9 ? "warn" : "";
     const idx = shown.push(c) - 1;
+    const sumTag = L.basis === "sum" && L.parts > 1 ? ` <span class="hint">1·2학기 합산</span>` : "";
     return `<div class="subj-cell clickable" data-i="${idx}" role="button" tabindex="0"
       aria-label="${esc(c.label)} 원문 보기">
-      <b>${esc(c.label)}</b>${c.sem ? ` <span class="hint">${c.sem}학기</span>` : ""}
-      <div class="hint">${c.bytes.toLocaleString()} / ${limit.toLocaleString()}B</div>
+      <b>${esc(c.label)}</b>${c.sem && L.basis !== "sum" ? ` <span class="hint">${c.sem}학기</span>` : ""}${sumTag}
+      <div class="hint">${L.bytes.toLocaleString()} / ${L.limit.toLocaleString()}B</div>
       <div class="bar"><i class="${cls}" style="width:${pct}%"></i></div></div>`;
   };
   const areas = mine.filter(c => (c.kind === "area" || c.kind === "solo") && c.bytes);
-  const subjs = mine.filter(c => c.kind === "subj").sort((a, b) => b.bytes - a.bytes);
+  const seenSubj = new Set();
+  const subjs = mine.filter(c => {
+    if (c.kind !== "subj") return false;
+    if (!isCommonSubject(c.label)) return true;
+    if (seenSubj.has(c.label)) return false;   // 합산 과목은 대표 조각 하나만
+    seenSubj.add(c.label); return true;
+  }).sort((a, b) => limitOf(b).bytes - limitOf(a).bytes);
   $("#dashDetail").style.display = "";
   $("#dashDetail").innerHTML = `<div class="sect-title tint-0">${no}번 ${esc(name)} · ${g}학년 상세
       <span class="hint" style="font-weight:400">— 칸을 누르면 원문이 열립니다</span></div>
@@ -1180,6 +1199,21 @@ function renderRecord(c, paint) {
   }).join("");
   return { segs, chars, bytes, count: sibs.length };
 }
+/* ---------- 한도 계산 ----------
+   기재요령 '영역별 입력 가능 최대 글자수': 과목별 세특은 과목당 500자.
+   다만 2022 개정 교육과정 공통과목(공통국어·공통수학·공통영어·통합사회·
+   통합과학·한국사·과학탐구실험)은 1·2를 합산하여 500자다.
+   과목명이 '공통국어1'로도, 2015 개정의 '국어'로도 나오므로 둘 다 받는다. */
+const COMMON_SUBJECT = /^(공통)?(국어|수학|영어)[12]?$|^(통합사회|통합과학|한국사|과학탐구실험)[12]?$/;
+const isCommonSubject = window.isCommonSubject = label => COMMON_SUBJECT.test(String(label).replace(/\s+/g, ""));
+window.limitOf = function limitOf(c) {
+  const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+  if (c.kind === "subj" && isCommonSubject(c.label)) {
+    const sibs = siblingsOf(c);
+    return { limit, basis: "sum", bytes: sibs.reduce((s, x) => s + x.bytes, 0), parts: sibs.length };
+  }
+  return { limit, basis: "each", bytes: c.bytes, parts: 1 };
+}
 function recordHead(c, r) {
   return `<h4>${recordTag(c)} · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B` +
     (r.count > 1 ? ` <span class="hint">(${r.count}개 학기 전체)</span>` : "") + `</h4>`;
@@ -1289,16 +1323,17 @@ function openDupeGroup(arr) {
 }
 /* 작성 현황에서 칸 하나를 눌렀을 때 — 그 과목·영역 기록 전체를 펼친다 */
 function openRecord(c) {
-  const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+  const L = limitOf(c);
+  const limit = L.limit;
   const r = renderRecord(c, s => esc(s.text));
   $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label}`;
   $("#cmpCard").classList.remove("wide");
   $("#cmpBody").className = "compare single";
   $("#cmpBody").innerHTML = `<div class="pane plain">
     <h4>${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B
-      ${r.count > 1 ? `<span class="hint">(${r.count}개 학기 합계 · 학기별 ${siblingsOf(c).map(s => s.bytes.toLocaleString() + "B").join(" + ")})</span>`
-                    : `<span class="hint">/ 한도 ${limit.toLocaleString()}B</span>`}
-      ${r.count === 1 && c.bytes > limit ? '<span class="badge over">한도 초과</span>' : ""}
+      <span class="hint">/ 한도 ${limit.toLocaleString()}B${L.basis === "sum" && L.parts > 1 ? " (1·2학기 합산 기준)" : ""}</span>
+      ${r.count > 1 ? `<span class="hint">· 학기별 ${siblingsOf(c).map(s => s.bytes.toLocaleString() + "B").join(" + ")}</span>` : ""}
+      ${L.bytes > limit ? `<span class="badge over">한도 ${(L.bytes - limit).toLocaleString()}B 초과</span>` : ""}
       ${c.hope ? `· 진로희망 <b>${esc(c.hope)}</b>` : ""}</h4>
     ${r.chars ? r.segs : `<div class="snip">아직 작성되지 않았습니다.</div>`}</div>`;
   $("#cmpModal").classList.add("on");
@@ -1826,7 +1861,7 @@ const AMEND_RULES = window.AMEND_RULES = [
   { id: "대회·수상", sev: "high", cite: "유의사항 3-나·다",
     why: "교내·외 대회 참여 사실과 그 성적·수상 실적은 기재할 수 없습니다(교내대회는 '수상경력' 항목에만).",
     re: /(대회|공모전)[^.]{0,25}(수상|입상|출전|참가|나가|받)|최우수상|우수상|장려상|금상 수상|은상 수상|동상 수상|대상 수상|표창장|감사장|공로상/g },
-  { id: "모의고사 성적", sev: "high", cite: "유의사항 3-마",
+  { id: "모의고사 성적", sev: "high", family: "모의고사", cite: "유의사항 3-마",
     why: "모의고사·전국연합학력평가 성적(원점수·석차·등급·백분위 일체)은 기재할 수 없습니다.",
     re: /(모의고사|전국연합학력평가|모의평가)[^.]{0,25}(성적|등급|점수|백분위|석차|향상|올|상승)|(성적|등급|백분위|석차)[^.]{0,25}(모의고사|전국연합학력평가|모의평가)|백분위|석차\s*등급|원점수/g },
   { id: "논문·학회", sev: "high", cite: "유의사항 3-바",
@@ -1841,12 +1876,51 @@ const AMEND_RULES = window.AMEND_RULES = [
   { id: "어학연수", sev: "high", cite: "유의사항 3-자",
     why: "어학연수 사실은 기재할 수 없습니다.",
     re: /어학연수|해외\s*연수/g },
-  { id: "자격증", sev: "mid", cite: "유의사항 3-파",
+  { id: "자격증 취득", sev: "mid", family: "자격증", cite: "유의사항 3-파",
     why: "자격증 명칭과 취득 사실은 '자격증 및 인증 취득상황' 외의 항목에 기재할 수 없습니다. (제도를 다룬 수업 서술이면 해당하지 않습니다)",
     re: /자격증[^.]{0,10}(취득함|취득하였|취득했|취득해|따냄|땄|획득함|보유)|산업기사\s*자격증|기능사\s*자격증/g },
   { id: "대학·기관명", sev: "mid", cite: "유의사항 3-타",
     why: "구체적인 대학명·기관명·상호명·강사명은 기재할 수 없습니다(교육관련기관은 예외).",
     re: /[가-힣]{2,8}(대학교|대학원)|KAIST|POSTECH|UNIST|GIST|DGIST/g },
+  { id: "모의고사 언급", sev: "low", family: "모의고사", cite: "유의사항 3-마",
+    why: "모의고사·학력평가가 언급되어 있습니다. 성적이 드러나지 않는 서술인지 확인해 주세요.",
+    re: /모의고사|전국연합학력평가|모의평가/g },
+  { id: "자격증 언급", sev: "low", family: "자격증", cite: "유의사항 3-파",
+    why: "자격증·인증시험이 언급되어 있습니다. 취득 사실이나 명칭이 드러나지 않는지 확인해 주세요.",
+    re: /자격증|인증\s*시험|검정\s*시험/g },
+  { id: "K-MOOC·온라인강좌", sev: "high", cite: "세특 입력 불가 3)",
+    why: "K-MOOC·MOOC·KOCW 관련 사항은 세부능력 및 특기사항에 입력할 수 없습니다.",
+    re: /K-?MOOC|\bMOOC\b|KOCW|코세라|Coursera|edX/gi },
+  { id: "방과후학교", sev: "high", cite: "세특 입력 불가 4)",
+    why: "방과후학교 활동(수강) 내용은 기재하지 않습니다.",
+    re: /방과\s*후\s*학교|방과후\s*프로그램/g },
+  { id: "연구보고서", sev: "high", cite: "세특 입력 불가 5)",
+    why: "연구보고서(소논문) 관련 사항은 입력할 수 없습니다(수학과제 탐구 등 일부 과목의 특기사항 서술은 예외).",
+    re: /연구\s*보고서|소논문/g },
+  { id: "청소년단체", sev: "high", cite: "동아리활동 입력 방법(고등학교)",
+    why: "고등학교는 청소년단체 활동의 단체명과 특기사항을 모두 입력하지 않습니다.",
+    re: /청소년단체|스카우트|걸스카우트|아람단|RCY|청소년적십자|해양소년단|우주소년단|4-?H/gi },
+  { id: "자율동아리", sev: "mid", cite: "대입제도 공정성 강화 방안",
+    why: "자율동아리는 2024학년도 대입부터 미반영이며, 기재 여부를 확인해 주세요.",
+    re: /자율\s*동아리/g },
+  { id: "교외체험학습", sev: "mid", cite: "출결 관련 유의사항",
+    why: "교외체험학습 내용은 학교생활기록부 어느 항목에도 입력하지 않습니다.",
+    re: /교외\s*체험\s*학습|가족\s*여행|현장\s*체험\s*학습\s*신청/g },
+  { id: "민감정보", sev: "mid", skipQuoted: true, cite: "학교폭력·개인정보 관련 유의사항",
+    why: "특별교육 이수·심리치료 사실, 질병명, 학교폭력 조치사항 등은 해당 항목 외에 입력하지 않습니다. (수업에서 주제로 다룬 것이라면 해당하지 않습니다)",
+    re: /특별교육\s*이수|심리치료를?\s*(받|이수)|정신건강의학과|정신과\s*(진료|치료|상담|병원|의원)|학교폭력|(우울증|공황장애|조현병)[^.]{0,6}(진단|치료|앓|겪)/g },
+  { id: "연락처·주소", sev: "high", cite: "개인정보 보호",
+    why: "전화번호·이메일·주민등록번호 등 개인정보가 본문에 들어 있습니다.",
+    re: /01[016789][-\s]?\d{3,4}[-\s]?\d{4}|\d{6}\s?-\s?\d{7}|[\w.]+@[\w.]+\.[a-z]{2,}/gi },
+  { id: "보호자 정보", sev: "mid", cite: "유의사항 3-타·개인정보",
+    why: "부모·보호자의 직업이나 신상이 드러나는 서술은 기재하지 않습니다.",
+    re: /(아버지|어머니|부모님|아빠|엄마)[^.]{0,12}(직업|회사|근무|사업|의사|교수|변호사|공무원|운영)/g },
+  { id: "영재·발명교육", sev: "mid", cite: "영재교육 이수내용 입력 방식",
+    why: "영재교육 이수 내용은 '영재·발명교육 기록사항'에만 입력하며, 구체적 기관 명칭은 입력하지 않습니다.",
+    re: /영재\s*(학교|학급|교육원|교육)|발명\s*교육/g },
+  { id: "봉사활동 실적", sev: "mid", cite: "봉사활동 관련 유의사항",
+    why: "개인 봉사활동 실적·시간은 '봉사활동 실적' 항목에만 입력합니다(해외 봉사는 기재 불가).",
+    re: /해외\s*봉사|봉사활동[^.]{0,10}\d+\s*시간|봉사\s*시간\s*\d+/g },
   { id: "특수문자", sev: "low", cite: "서술형 항목 입력 유의사항",
     why: "서술형 항목에 특수문자·문단구분 기호(번호) 입력은 지양합니다.",
     re: /[①-⑳㉠-㉭※★☆▶▷◆◇■□▪▫→←↑↓§¶]/g },
@@ -1889,6 +1963,7 @@ function scanAmend() {
   // 분량 한도는 해마다 훈령이 바뀌므로 '지금 쓰고 있는 학년'에만 적용한다.
   // 지난 학년 기록은 그때의 기준으로 쓰인 것이라 지금 잣대로 재면 온통 초과로 나온다.
   const writingGrade = state.grades[state.grades.length - 1];
+  const overSeen = new Set();
   for (const c of state.chunks) {
     if (!c.text) continue;
     const quoteless = rules.some(r => r.skipQuoted) ? maskQuoted(c.text) : c.text;
@@ -1905,16 +1980,29 @@ function scanAmend() {
       if (spans.length) hits.push({ chunk: c, rule, spans });
     }
     // 분량 초과는 규칙이 아니라 계산으로 잡는다
-    const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
-    if (c.grade === writingGrade && c.bytes > limit) {
-      hits.push({ chunk: c, spans: [], over: c.bytes - limit,
-        rule: { id: "분량 초과", sev: "high", cite: "영역별 입력 가능 최대 글자수",
-          why: `한도 ${limit.toLocaleString()}B를 ${(c.bytes - limit).toLocaleString()}B 넘었습니다. 나이스에 그대로 넣을 수 없습니다.` } });
+    const L = limitOf(c);
+    const key = [c.no, c.grade, c.kind, c.label].join("|");
+    if (L.bytes > L.limit && !overSeen.has(key)) {
+      overSeen.add(key);
+      const now = c.grade === writingGrade;
+      const how = L.basis === "sum" && L.parts > 1 ? "1·2학기를 합산한 " : "";
+      hits.push({ chunk: c, spans: [], over: L.bytes - L.limit,
+        rule: { id: "분량 초과", sev: now ? "high" : "low", cite: "영역별 입력 가능 최대 글자수",
+          why: `${how}${L.bytes.toLocaleString()}B로 한도 ${L.limit.toLocaleString()}B를 ${(L.bytes - L.limit).toLocaleString()}B 넘었습니다.`
+            + (now ? " 나이스에 그대로 넣을 수 없습니다." : " 지난 학년 기록이라 그때의 훈령 기준을 따랐을 수 있습니다 — 참고만 하세요.") } });
     }
   }
   hits.sort((a, b) => SEV_RANK[b.rule.sev] - SEV_RANK[a.rule.sev]
     || a.chunk.no - b.chunk.no || a.rule.id.localeCompare(b.rule.id, "ko"));
-  return hits;
+  // 같은 기록에 같은 갈래(family)가 겹치면 심각한 쪽만 남긴다 —
+  // '모의고사 성적'이 이미 걸렸는데 '모의고사 언급'까지 또 세울 이유가 없다
+  const famSeen = new Set();
+  return hits.filter(h => {
+    if (!h.rule.family) return true;
+    const k = [h.chunk.no, h.chunk.grade, h.chunk.kind, h.chunk.label, h.chunk.sem, h.rule.family].join("|");
+    if (famSeen.has(k)) return false;
+    famSeen.add(k); return true;
+  });
 }
 let amendHits = window.amendHits = [];
 function renderAmend() {
@@ -1977,7 +2065,7 @@ function openAmend(h) {
     return html + esc(seg.text.slice(cur));
   };
   const r = renderRecord(c, paint);
-  const limit = LIMITS[c.kind === "subj" ? "세특" : c.label] || 1500;
+  const L = limitOf(c);
   $("#cmpCard").classList.remove("wide");
   $("#cmpTitle").textContent = `${c.no}번 ${c.name} · ${c.grade}학년 ${c.label} — ${h.rule.id}`;
   $("#cmpBody").className = "compare single";
@@ -1985,7 +2073,7 @@ function openAmend(h) {
     <div class="box ${h.rule.sev === "high" ? "warn" : "info"}" style="margin-top:0">
       <b>${SEV_KO[h.rule.sev]} · ${esc(h.rule.id)}</b><br>${esc(h.rule.why)}
       <br><span class="hint">근거: 2026학년도 학교생활기록부 기재요령(고등학교) ${esc(h.rule.cite)}</span></div>
-    <h4>기록 전체 · ${r.chars.toLocaleString()}자 · ${r.bytes.toLocaleString()}B <span class="hint">(한도 ${limit.toLocaleString()}B)</span></h4>
+    <h4>기록 전체 · ${r.chars.toLocaleString()}자 · ${L.bytes.toLocaleString()}B <span class="hint">(한도 ${L.limit.toLocaleString()}B${L.basis === "sum" && L.parts > 1 ? " · 1·2학기 합산" : ""})</span></h4>
     ${r.segs}</div>`;
   $("#cmpModal").classList.add("on");
 }
