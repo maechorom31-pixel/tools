@@ -411,6 +411,9 @@ const DEFAULT_DATA = {
 
 const STORE_KEY = "linkhub-data-v3";
 const THEME_KEY = "linkhub-theme";
+/* seenDefaults가 없는 예전 저장본은 이 목록만 새 링크로 보고, 나머지 기본 링크는
+   이미 본 것으로 친다 — 예전에 지운 링크가 되살아나지 않도록. */
+const NEW_DEFAULT_URLS = ["https://maechorom31-pixel.github.io/tools/topabogi/"];
 let data = loadData();
 saveData();   // 새로 채운 링크와 seenDefaults를 바로 굳혀 둔다
 let editMode = false;
@@ -434,7 +437,9 @@ function loadData() {
    한번 채운 주소는 seenDefaults에 남겨, 나중에 지운 링크가 되살아나지 않게 한다. */
 function mergeNewLinks(saved) {
   const have = new Set(saved.links.map(l => l.url));
-  const seen = new Set(Array.isArray(saved.seenDefaults) ? saved.seenDefaults : []);
+  const seen = new Set(Array.isArray(saved.seenDefaults)
+    ? saved.seenDefaults
+    : DEFAULT_DATA.links.map(l => l.url).filter(u => !NEW_DEFAULT_URLS.includes(u)));
   DEFAULT_DATA.links.forEach(l => {
     if (have.has(l.url) || seen.has(l.url)) return;
     saved.links.push(JSON.parse(JSON.stringify(l)));
@@ -444,7 +449,10 @@ function mergeNewLinks(saved) {
   return saved;
 }
 function saveData() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  // 사생활 보호 모드·저장 용량 초과처럼 저장이 막힌 브라우저에서도 화면은 계속 뜨게 둔다
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch (e) { /* 이번 방문에만 유지된다 */ }
 }
 
 /* ---------- 테마 (자동 → 라이트 → 다크 순환) ---------- */
@@ -848,6 +856,7 @@ document.getElementById("resetBtn").onclick = () => {
   if (confirm("모든 변경 사항을 지우고 기본 목록으로 되돌릴까요?")) {
     localStorage.removeItem(STORE_KEY);
     data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    data.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
     currentTab = data.links.some(l => l.fav) ? "즐겨찾기" : "전체";
     render();
   }

@@ -1076,7 +1076,8 @@ const S = {
   mode: 'read', notes: {}, dict: [], issues: [], hit: null, curGrade: 3,
 };
 const $ = id => document.getElementById(id);
-const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+/* 따옴표까지 바꾼다 — 생기부 본문에서 뽑은 책 이름·질문이 data-q="…" 같은 자리에 들어간다 */
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const KEY = 'sgb-topabogi-v1';
 
 /* ═══════ 기본 사전 — 실제 생기부 115명에서 확인된 빈발 오류 ═══════ */
@@ -1516,8 +1517,14 @@ async function readFiles(files) {
     res.pages.length = 0;
     done++;
   }
+  // 파일을 더 넣으면 순서가 다시 매겨진다 — 보고 있던 학생을 놓치지 않게 자리를 다시 잡는다
+  const wasOn = S.students[S.cur];
   S.students.sort((a, b) => a.ban - b.ban || a.num - b.num);
   if (!S.students.length) { $('progText').textContent = '학생을 찾지 못했습니다. 생기부 PDF가 맞는지 확인해 주세요.'; return; }
+  S.cur = Math.max(0, S.students.indexOf(wasOn));
+  S.item = Math.min(S.item, S.students[S.cur]._items.length - 1);
+  if (S.item < 0) S.item = 0;
+  S.hit = null;
   buildIndex();
   runCheck();
   $('start').classList.add('hide');
