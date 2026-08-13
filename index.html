@@ -399,6 +399,7 @@ const DEFAULT_DATA = {
     { icon: "📖", name: "문학 자율학습",               url: "https://maechorom31-pixel.github.io/literary-Texts/",           desc: "수능특강 문학 — 작품 급소(크럭스)·O/X 선지 판단 학습", cat: "국어", fav: false },
     { icon: "📚", name: "독서 자율학습",               url: "https://maechorom31-pixel.github.io/Non-literary-Texts/",       desc: "수능특강 독서 — 도식 기반 능동 회상·분산 반복 학습",   cat: "국어", fav: false },
     { icon: "🔍", name: "생기부 점검실",              url: "https://maechorom31-pixel.github.io/tools/saenggibu/",          desc: "NEIS 창체·세특 엑셀 원본 그대로 — 작성 현황·겹침 점검·AI 맞춤법·학급 총평 분석", cat: "도구", fav: false },
+    { icon: "📑", name: "생기부 톺아보기",            url: "https://maechorom31-pixel.github.io/tools/topabogi/",           desc: "생기부 PDF를 그대로 읽어 창체·행특·세특 훑기 — 바이트 게이지·하이라이트·정정 점검·면접 질문 뽑기", cat: "도구", fav: true },
     { icon: "🎨", name: "색감 노트",                  url: "https://maechorom31-pixel.github.io/tools/color/",              desc: "디자이너 추천 색을 계열별로 — 느낌·HEX·RGB·HSL·추천 조합, 클릭 복사", cat: "도구", fav: false },
     { icon: "🖼️", name: "이미지 도구",                url: "https://maechorom31-pixel.github.io/tools/image/",              desc: "모자이크·자르기(증명/여권)·AI 배경 지우기·크기 조절·용량 압축 — 브라우저 안에서만 처리", cat: "도구", fav: false },
     { icon: "📄", name: "공문서 도우미",              url: "https://maechorom31-pixel.github.io/tools/gongmun/",            desc: "기안문 편람 규칙 즉시 검사(키 불필요)·AI 초안·교정·가정통신문 — 2025 행정업무운영편람 기준", cat: "도구", fav: false },
@@ -410,7 +411,11 @@ const DEFAULT_DATA = {
 
 const STORE_KEY = "linkhub-data-v3";
 const THEME_KEY = "linkhub-theme";
+/* seenDefaults가 없는 예전 저장본은 이 목록만 새 링크로 보고, 나머지 기본 링크는
+   이미 본 것으로 친다 — 예전에 지운 링크가 되살아나지 않도록. */
+const NEW_DEFAULT_URLS = ["https://maechorom31-pixel.github.io/tools/topabogi/"];
 let data = loadData();
+saveData();   // 새로 채운 링크와 seenDefaults를 바로 굳혀 둔다
 let editMode = false;
 let editingIndex = null; // null = 새 링크
 // 첫 화면: 즐겨찾기가 있으면 즐겨찾기 탭, 없으면 전체 탭
@@ -421,13 +426,33 @@ function loadData() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.links) && Array.isArray(parsed.categories)) return parsed;
+      if (parsed && Array.isArray(parsed.links) && Array.isArray(parsed.categories)) return mergeNewLinks(parsed);
     }
   } catch (e) { /* 무시하고 기본값 사용 */ }
-  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  const fresh = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  fresh.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
+  return fresh;
+}
+/* 기본 목록에 새 도구가 생기면 이미 저장된 목록에도 한 번만 채워 넣는다.
+   한번 채운 주소는 seenDefaults에 남겨, 나중에 지운 링크가 되살아나지 않게 한다. */
+function mergeNewLinks(saved) {
+  const have = new Set(saved.links.map(l => l.url));
+  const seen = new Set(Array.isArray(saved.seenDefaults)
+    ? saved.seenDefaults
+    : DEFAULT_DATA.links.map(l => l.url).filter(u => !NEW_DEFAULT_URLS.includes(u)));
+  DEFAULT_DATA.links.forEach(l => {
+    if (have.has(l.url) || seen.has(l.url)) return;
+    saved.links.push(JSON.parse(JSON.stringify(l)));
+    if (!saved.categories.includes(l.cat)) saved.categories.push(l.cat);
+  });
+  saved.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
+  return saved;
 }
 function saveData() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  // 사생활 보호 모드·저장 용량 초과처럼 저장이 막힌 브라우저에서도 화면은 계속 뜨게 둔다
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch (e) { /* 이번 방문에만 유지된다 */ }
 }
 
 /* ---------- 테마 (자동 → 라이트 → 다크 순환) ---------- */
@@ -784,6 +809,8 @@ function importData(file) {
       }
       if (!confirm("현재 목록을 백업 파일의 내용(" + parsed.links.length + "개 링크)으로 교체할까요?")) return;
       data = parsed;
+      // 백업 파일로 '교체'한 것이므로, 빠진 기본 링크를 다음 방문에 다시 채우지 않는다
+      data.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
       saveData();
       currentTab = data.links.some(l => l.fav) ? "즐겨찾기" : "전체";
       render();
@@ -829,6 +856,7 @@ document.getElementById("resetBtn").onclick = () => {
   if (confirm("모든 변경 사항을 지우고 기본 목록으로 되돌릴까요?")) {
     localStorage.removeItem(STORE_KEY);
     data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    data.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
     currentTab = data.links.some(l => l.fav) ? "즐겨찾기" : "전체";
     render();
   }
