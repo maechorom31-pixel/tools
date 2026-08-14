@@ -109,6 +109,9 @@ h2{font-size:25px;font-weight:700;letter-spacing:-.025em;line-height:1.3;word-br
 .chk{border:1px solid var(--line);background:var(--card)}
 .chk.on{background:#EAF3EC;border-color:#BCDAC4;color:var(--ok);font-weight:600}
 .body-text .hit{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;border-radius:2px}
+/* 숨은 문자가 있는 자리 표식 — 글자는 그대로 두고 옆에 세운다 */
+.body-text .ghost{display:inline-block;width:.42em;height:1.05em;vertical-align:-.22em;margin:0 .04em;
+  border-radius:2px;background:#FBE3DE;border:1px solid #E2A599}
 .item-foot{display:flex;gap:8px;margin-top:22px;align-items:center}
 .empty{color:var(--faint);padding:60px 0;text-align:center}
 .empty h3{font-size:16px;font-weight:600;color:var(--mid);margin-bottom:6px}
@@ -235,6 +238,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-kind.F{background:#F3EEE6;color:#7A5B2E}
 .issue-kind.G{background:#E8F0F7;color:#2A5F87}
 .issue-kind.H{background:#F6EEF3;color:#8A3E6B}
+.issue-kind.I{background:#FBE3DE;color:#A8412C}
 .pagewrap{position:relative;display:inline-block;margin-bottom:14px;box-shadow:0 2px 10px #0000001f}
 .pagewrap canvas{display:block;border-radius:2px}
 .hlbox{position:absolute;background:#FFD84D4d;border:1.5px solid #E0A800;border-radius:2px;pointer-events:none}
@@ -1243,7 +1247,33 @@ const RULES = [
   { k: 'F', name: '겹침', desc: '같은 학년·같은 과목끼리 서술이 얼마나 겹치는지' },
   { k: 'G', name: '날짜', desc: '끝나는 날이 시작보다 앞서거나, 없는 날짜' },
   { k: 'H', name: '그 밖에', desc: '본인 실명, 지나치게 긴 문장' },
+  { k: 'I', name: '숨은 문자', desc: '제로폭 문자·변형 선택자처럼 눈에 안 보이는 글자. 줄바꿈 없는 공백(NBSP) 같은 특수 공백은 PDF를 읽는 단계에서 보통 공백으로 바뀌어 여기에 잡히지 않습니다' },
 ];
+
+/* 눈에 보이지 않는 문자. 웹·워드에서 복사해 붙이면 딸려 들어오고,
+   화면에는 없는 것처럼 보이지만 NEIS 바이트 수에는 그대로 들어간다. */
+const HIDDEN_RE = new RegExp(
+  '[\\u00A0\\u00AD\\u034F\\u061C\\u115F\\u1160\\u17B4\\u17B5\\u180B-\\u180E'
+  + '\\u2000-\\u200F\\u202A-\\u202F\\u205F-\\u206F\\u3000\\u3164'
+  + '\\uFE00-\\uFE0F\\uFEFF\\uFFA0]|[\\u{E0000}-\\u{E007F}]', 'gu');
+function hiddenName(ch) {
+  const c = ch.codePointAt(0);
+  if (c === 0x00A0) return '줄바꿈 없는 공백';
+  if (c === 0x00AD) return '소프트 하이픈';
+  if (c === 0x200B) return '제로폭 공백';
+  if (c === 0x200C) return '제로폭 비접합 문자';
+  if (c === 0x200D) return '제로폭 접합 문자';
+  if (c === 0x2060 || c === 0xFEFF) return '제로폭 붙임 문자';
+  if (c === 0x115F || c === 0x1160 || c === 0x3164 || c === 0xFFA0) return '한글 채움 문자';
+  if ((c >= 0x200E && c <= 0x200F) || (c >= 0x202A && c <= 0x202E) || c === 0x061C
+    || (c >= 0x2066 && c <= 0x2069)) return '글자 방향 제어 문자';
+  if (c >= 0xFE00 && c <= 0xFE0F) return '변형 선택자';
+  if (c >= 0xE0000 && c <= 0xE007F) return '태그 문자';
+  if (c === 0x3000 || (c >= 0x2000 && c <= 0x200A) || c === 0x202F || c === 0x205F) return '보통과 다른 공백';
+  return '숨은 문자';
+}
+const hiddenLabel = ch =>
+  `${hiddenName(ch)} U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`;
 let sameMin = 5;      // 똑같은 문장을 몇 명이 쓰면 알릴지
 let overlapMin = 55;  // 겹침 비율(%) 기준
 const BAN_PAT = [
@@ -1379,6 +1409,21 @@ function checkItem(it) {
       if (len > 150) add('H', `한 문장이 ${len}자`, pos, pos + sn.length);
       pos += sn.length + 1;
     }
+  }
+
+  // I. 숨은 문자 — 본문에서는 안 보이니 앞뒤 글자와 함께 이름을 적어 준다.
+  // 한 항목에 같은 문자가 수백 번 박혀 있을 수 있어 종류별로 한 건씩만 세어 올린다.
+  {
+    const seen = new Map();
+    for (const m of t.matchAll(HIDDEN_RE)) {
+      const g = seen.get(m[0]);
+      if (g) g.n++;
+      else seen.set(m[0], { n: 1, s: m.index, e: m.index + m[0].length });
+    }
+    for (const [ch, g] of seen) out.push({
+      k: 'I', name: hiddenLabel(ch) + (g.n > 1 ? ` · ${g.n}곳` : ''), s: g.s, e: g.e,
+      ex: `${t.slice(Math.max(0, g.s - 14), g.s)}⟦${hiddenName(ch)}⟧${t.slice(g.e, g.e + 14)}`,
+    });
   }
 
   for (const d of S.dict) {
@@ -1672,7 +1717,8 @@ function paintText(it, n, issues) {
     const [a, b] = [pts[i], pts[i + 1]];
     if (brk.has(a)) html += '<i class="lb" title="원문에서 줄이 바뀌는 자리 — 띄어쓰기는 확인이 필요합니다"></i>';
     const m = marks.find(x => x.s <= a && x.e >= b);
-    const seg = esc(t.slice(a, b));
+    // 숨은 문자는 지우지 않고 그 자리에 표식만 덧붙인다 (글자가 밀리면 하이라이트 위치가 어긋난다)
+    const seg = esc(t.slice(a, b)).replace(HIDDEN_RE, c => `${c}<i class="ghost" title="${hiddenLabel(c)}"></i>`);
     html += m ? (m.cls === 'hit' ? `<mark class="hit">${seg}</mark>` : `<mark class="c${m.cls.slice(-1)}">${seg}</mark>`) : seg;
   }
   el.innerHTML = html || esc(t);
@@ -1803,7 +1849,7 @@ $('modalClose').onclick = () => $('modal').removeAttribute('open');
 $('modal').onclick = e => { if (e.target.id === 'modal') $('modal').removeAttribute('open'); };
 
 /* ═══════ 점검 모드 ═══════ */
-const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H']);   // F(공통 문장)는 켤 때만
+const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I']);   // F(공통 문장)는 켤 때만
 let banFilter = 0;   // 0 = 전체
 
 function drawCheck() {
