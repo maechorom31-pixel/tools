@@ -202,6 +202,33 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-x b{background:#FFE9A8;font-weight:600;padding:0 2px;border-radius:2px}
 .issue-loc{font-size:11.5px;color:var(--faint);margin-top:3px}
 
+/* ── 검색 모드 ── */
+.find-in{display:flex;gap:6px;margin-bottom:14px}
+.find-in input{flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r);
+  font:inherit;font-size:14px;background:var(--card)}
+.find-in input:focus{border-color:var(--amber)}
+.find-opt{display:flex;flex-direction:column;gap:7px;margin-bottom:22px}
+.find-opt label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mid);cursor:pointer}
+.find-opt input{accent-color:var(--amber);width:14px;height:14px;flex-shrink:0}
+.find-side-h{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin-bottom:9px}
+.find-side-sec{margin-bottom:22px}
+.find-hint{font-size:11.5px;color:var(--faint);line-height:1.65}
+.find-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:6px}
+.find-sum b{font-size:19px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.find-sum span{font-size:12.5px;color:var(--mid);font-variant-numeric:tabular-nums}
+.find-terms{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0 20px}
+.find-term{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 11px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);font-size:13px;color:var(--mid)}
+.find-term:hover{border-color:var(--amber);color:var(--ink)}
+.find-term[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.find-term .n{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.find-term[aria-pressed=true] .n{color:#ffffffa8}
+.find-word{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:4px;
+  background:var(--amber-soft);color:#7A5B14;white-space:nowrap;margin-top:1px}
+.find-snip{font-size:13px;color:var(--mid);line-height:1.6;word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere}
+.find-snip mark{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;border-radius:2px;padding:0 1px;font-weight:600;color:var(--ink)}
+.find-cut{font-size:12.5px;color:var(--warn);margin:14px 0 4px}
+
 /* 사전 */
 .dict-add{display:flex;gap:6px;margin:10px 0 12px}
 .dict-add input{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px;background:var(--card)}
@@ -305,8 +332,16 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   main{grid-template-columns:180px 1fr}
   .pane-r{display:none} footer{right:0}
 }
+/* 좁은 화면에서 머리줄 단추가 화면 밖으로 밀려나던 것을 접어 준다 */
+@media (max-width:820px){
+  header{flex-wrap:wrap;gap:10px 14px;padding:10px 16px}
+  .tools{margin-left:0;flex-wrap:wrap}
+}
 /* 좁은 화면에서는 책갈피를 접지 말고 옆으로 밀어서 본다 */
 @media (max-width:700px){
+  .check{grid-template-columns:150px 1fr}
+  .check-side{padding:14px 10px}
+  .check-main{padding:18px 16px 48px}
   .pane-c{padding:0 16px 90px}
   .marks{margin:0 -16px 16px;padding:14px 16px 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .marks::-webkit-scrollbar{display:none}
@@ -321,6 +356,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   <div class="modes" role="tablist">
     <button role="tab" id="tabRead" aria-selected="true">톺아보기</button>
     <button role="tab" id="tabCheck" aria-selected="false">점검</button>
+    <button role="tab" id="tabFind" aria-selected="false">검색</button>
     <button role="tab" id="tabIntv" aria-selected="false">면접</button>
   </div>
   <div class="tools">
@@ -367,6 +403,11 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 <div class="check hide" id="checkView">
   <div class="check-side" id="checkSide"></div>
   <div class="check-main" id="checkMain"></div>
+</div>
+
+<div class="check hide" id="findView">
+  <div class="check-side" id="findSide"></div>
+  <div class="check-main" id="findMain"></div>
 </div>
 
 <footer class="hide" id="foot">
@@ -1296,7 +1337,8 @@ function splitTerms(w) {
 }
 
 /** 줄바꿈 지점(breaks)에 걸친 매치는 띄어쓰기 확정 불가 → 오탐 제외 */
-const onBreak = (it, s, e) => (it.breaks || []).some(b => b > s && b < e + 1);
+/** 줄이 갈린 자리가 이 구간 '안'에 있는지. 구간이 끝나는 자리(b === e)는 갈린 것이 아니다 */
+const onBreak = (it, s, e) => (it.breaks || []).some(b => b > s && b < e);
 
 /** '2024.05.01.-12.31.' 처럼 끝 연도가 생략되기도 하고 구분자도 제각각이다 */
 const RE_RANGE = /(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})\.?\s*[~\-–]\s*(?:(\d{4})[.\-])?(\d{1,2})[.\-](\d{1,2})\.?/g;
@@ -1428,9 +1470,13 @@ function checkItem(it) {
 
   for (const d of S.dict) {
     if (!d.on || !d.w) continue;
+    // 띄어쓰기를 따지는 말만 줄 바뀌는 자리를 뺀다 — 줄이 갈리면 원문 띄어쓰기를 확정할 수 없고,
+    // '하는것'처럼 붙은 말은 줄이 갈린 자리에서 저절로 만들어지기 때문이다.
+    // 뜻을 찾는 낱말('나주', '논문')은 줄이 갈려도 그 말이 맞으므로 빼지 않는다.
+    const spaced = d.t === '띄어쓰기' || /\s/.test(d.w);
     let i = 0;
     while ((i = t.indexOf(d.w, i)) !== -1) {
-      if (!onBreak(it, i, i + d.w.length)) add('E', `${d.t} · ${d.w}`, i, i + d.w.length);
+      if (!(spaced && onBreak(it, i, i + d.w.length))) add('E', `${d.t} · ${d.w}`, i, i + d.w.length);
       i += d.w.length;
     }
   }
@@ -1885,7 +1931,8 @@ function drawCheck() {
     <div class="chips" id="chips"></div>
     <button class="btn" id="btnSuggest" style="width:100%;margin-top:9px;border:1px solid var(--line);background:var(--card)">단어 추천 받기</button>
     <p style="font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.6">
-      칩을 눌러 끄고 켭니다. 줄이 바뀌는 자리는 원문에서 띄어쓰기를 확정할 수 없어 검색에서 빠집니다.</p>`;
+      칩을 눌러 끄고 켭니다. 띄어 쓴 말('할 수있')만 줄이 바뀌는 자리를 뺍니다 — 원문에서 띄어쓰기를 확정할 수 없어서입니다.
+      한 낱말을 넓게 찾으려면 <b>검색</b> 모드를 쓰세요.</p>`;
   side.appendChild(dl);
   const chips = $('chips');
   S.dict.forEach((d, i) => {
@@ -1959,6 +2006,180 @@ function drawCheck() {
         S.cur = si; S.item = Math.max(0, x.ii);
         S.hit = x.e > x.s ? { s: x.s, e: x.e } : null;
         setMode('read'); drawAll();
+      };
+      g.appendChild(btn);
+    }
+    main.appendChild(g);
+  }
+}
+
+/* ═══════ 검색 모드 — 찾는 말만 따로 본다 ═══════ */
+/* 기본값은 '넓게 찾기'. 생기부 원문은 줄·문단이 갈리면서 낱말 사이가 벌어져 있어,
+   띄어쓰기를 그대로 맞추면 눈에 보이는 말도 못 찾는다. */
+const FIND = { q: '', terms: [], hits: [], term: '', grp: '', ban: 0, nospace: true };
+const FIND_MAX = 400;   // 화면에 그리는 최대 줄. 건수는 전부 센다
+
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** 찾을 말을 정규식으로. '붙여서 찾기'면 글자 사이에 공백·줄바꿈이 얼마든지 끼어도 맞는다 */
+function findRe(w) {
+  const body = FIND.nospace
+    ? [...w.replace(/\s+/g, '')].map(reEsc).join('\\s*')
+    : reEsc(w);
+  return new RegExp(body, 'gi');
+}
+
+function runFind() {
+  const keys = splitTerms(FIND.q)
+    .map(w => ({ w, k: FIND.nospace ? w.replace(/\s+/g, '') : w.trim() }))
+    .filter(x => x.k);
+  FIND.terms = keys.map(x => x.w);
+  FIND.hits = [];
+  if (!keys.length) return;
+  const res = keys.map(({ w }) => ({ w, rx: findRe(w) }));
+  S.students.forEach((r, si) => {
+    r._items.forEach((it, ii) => {
+      for (const { w, rx } of res) {
+        rx.lastIndex = 0;
+        for (const m of it.text.matchAll(rx)) {
+          const s = m.index, e = s + m[0].length;
+          // 줄·문단이 갈린 자리도 찾는다. 다만 그 자리는 띄어쓰기를 확정할 수 없어 표시를 남긴다
+          FIND.hits.push({ si, ii, it, w, s, e, brk: onBreak(it, s, e) });
+        }
+      }
+    });
+  });
+}
+/** 묶음·반까지만 걸러낸 것 — 낱말 칩의 건수는 이것을 기준으로 센다 */
+const findScoped = () => FIND.hits.filter(h =>
+  (!FIND.grp || h.it.grp === FIND.grp)
+  && (!FIND.ban || S.students[h.si].ban === FIND.ban));
+
+function drawFind() {
+  const side = $('findSide');
+  side.innerHTML = `<div class="find-in">
+      <input id="findIn" placeholder="찾을 말" value="${esc(FIND.q)}" aria-label="찾을 말">
+    </div>
+    <div class="find-opt">
+      <label title="띄어쓰기와 줄바꿈을 없앤 뒤 찾습니다"><input type="checkbox" id="fOptSp" ${FIND.nospace ? 'checked' : ''}>붙여서 찾기</label>
+    </div>`;
+
+  const sec = (title, node) => {
+    const d = document.createElement('div'); d.className = 'find-side-sec';
+    d.innerHTML = `<h3 class="find-side-h">${title}</h3>`;
+    d.appendChild(node); side.appendChild(d);
+  };
+  const chipRow = (items, isOn, pick) => {
+    const wrap = document.createElement('div'); wrap.className = 'chips';
+    for (const [label, val] of items) {
+      const c = document.createElement('button');
+      c.className = 'chip' + (isOn(val) ? '' : ' off');
+      c.textContent = label;
+      c.onclick = () => { pick(val); drawFind(); };
+      wrap.appendChild(c);
+    }
+    return wrap;
+  };
+
+  sec('묶음', chipRow([['전체', ''], ...GROUPS.map(g => [g, g])],
+    v => FIND.grp === v, v => { FIND.grp = v; }));
+
+  const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
+  if (bans.length > 1) {
+    sec('반', chipRow([['전체', 0], ...bans.map(b => [`${b}반`, b])],
+      v => FIND.ban === v, v => { FIND.ban = v; }));
+  }
+
+  if (S.dict.length) {
+    const wrap = document.createElement('div'); wrap.className = 'chips';
+    for (const d of S.dict) {
+      const c = document.createElement('button');
+      c.className = 'chip' + (FIND.terms.length === 1 && FIND.terms[0] === d.w ? '' : ' off');
+      c.textContent = d.w;
+      // 띄어 쓴 말은 따옴표로 묶어 넘겨야 낱말 둘로 쪼개지지 않는다
+      c.onclick = () => { FIND.q = /\s/.test(d.w) ? `"${d.w}"` : d.w; FIND.term = ''; runFind(); drawFind(); };
+      wrap.appendChild(c);
+    }
+    sec('점검 사전에서', wrap);
+  }
+
+  const tip = document.createElement('p');
+  tip.className = 'find-hint';
+  tip.innerHTML = '띄어 쓰면 여러 말을 한 번에 찾습니다. <b>붙여서 찾기</b>는 띄어쓰기와 줄바꿈을 없앤 뒤 맞춰 봅니다. '
+    + '원문에서 줄이나 문단이 갈린 자리도 함께 찾고, 그런 자리는 <b>줄 갈림</b>이라고 적어 둡니다.';
+  side.appendChild(tip);
+
+  const inp = $('findIn');
+  inp.oninput = e => { FIND.q = e.target.value; FIND.term = ''; runFind(); drawFindMain(); };
+  $('fOptSp').onchange = e => { FIND.nospace = e.target.checked; runFind(); drawFind(); };
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+  drawFindMain();
+}
+
+function drawFindMain() {
+  const main = $('findMain');
+  if (!FIND.terms.length) {
+    main.innerHTML = `<div class="empty"><h3>찾을 말을 적어 주세요</h3>
+      <p>지금 열어 둔 생기부 전체에서 그 말이 나온 자리만 모아 보여줍니다.<br>
+      점검 사전에 담아 둔 말은 왼쪽에서 눌러 바로 찾을 수 있습니다.</p></div>`;
+    return;
+  }
+  const scoped = findScoped();
+  const list = FIND.term ? scoped.filter(h => h.w === FIND.term) : scoped;
+  const stus = new Set(list.map(h => h.si)), items = new Set(list.map(h => `${h.si}:${h.ii}`));
+  const byTerm = FIND.terms.map(w => [w, scoped.filter(h => h.w === w).length]);
+  const byGrp = GROUPS.map(g => [g, list.filter(h => h.it.grp === g).length]).filter(x => x[1]);
+
+  main.innerHTML = `<div class="find-sum">
+      <b>${list.length}건</b>
+      <span>학생 ${stus.size}명 · 항목 ${items.size}개</span>
+      <span>${byGrp.map(([g, n]) => `${g} ${n}`).join(' · ')}</span>
+    </div>
+    <p class="find-hint" style="margin-bottom:4px">클릭하면 그 자리로 갑니다</p>
+    <div class="find-terms" id="findTerms"></div>`;
+
+  if (byTerm.length > 1 || FIND.term) {
+    const box = $('findTerms');
+    for (const [w, n] of [['전체', -1], ...byTerm]) {
+      const t = document.createElement('button');
+      t.className = 'find-term';
+      const val = n < 0 ? '' : w;
+      t.setAttribute('aria-pressed', FIND.term === val);
+      t.innerHTML = `${esc(w)}${n < 0 ? '' : `<span class="n">${n}</span>`}`;
+      t.onclick = () => { FIND.term = val; drawFindMain(); };
+      box.appendChild(t);
+    }
+  }
+
+  if (!list.length) {
+    main.insertAdjacentHTML('beforeend',
+      '<div class="empty"><h3>찾은 곳이 없습니다</h3><p>다른 말로 찾거나, 왼쪽에서 묶음·반 조건을 풀어 보세요.</p></div>');
+    return;
+  }
+
+  const shown = list.slice(0, FIND_MAX);
+  if (list.length > shown.length) {
+    main.insertAdjacentHTML('beforeend',
+      `<p class="find-cut">${list.length}건 가운데 앞 ${shown.length}건만 보이고 있습니다. 조건을 좁히면 나머지가 나옵니다.</p>`);
+  }
+  const bySt = new Map();
+  for (const h of shown) { if (!bySt.has(h.si)) bySt.set(h.si, []); bySt.get(h.si).push(h); }
+  for (const [si, arr] of bySt) {
+    const r = S.students[si];
+    const g = document.createElement('div'); g.className = 'issue-group';
+    g.innerHTML = `<div class="issue-head"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b><span>${arr.length}건</span></div>`;
+    for (const h of arr) {
+      const t = h.it.text;
+      const btn = document.createElement('button'); btn.className = 'issue';
+      // 찾는 말이 하나면 줄마다 같은 딱지가 붙어 방해만 된다
+      btn.innerHTML = `${FIND.terms.length > 1 ? `<span class="find-word">${esc(h.w)}</span>` : ''}
+        <span class="issue-body">
+          <span class="find-snip">${esc(t.slice(Math.max(0, h.s - 34), h.s))}<mark>${esc(t.slice(h.s, h.e))}</mark>${esc(t.slice(h.e, h.e + 34))}</span>
+          <span class="issue-loc">${h.it.grade}학년 ${h.it.grp} · ${esc(h.it.title)}${h.brk ? ' · 줄 갈림' : ''}</span>
+        </span>`;
+      btn.onclick = () => {
+        S.cur = si; S.item = h.ii; S.hit = { s: h.s, e: h.e };
+        setMode('read');
       };
       g.appendChild(btn);
     }
@@ -2231,14 +2452,17 @@ function setMode(m) {
   S.mode = m;
   $('tabRead').setAttribute('aria-selected', m === 'read');
   $('tabCheck').setAttribute('aria-selected', m === 'check');
+  $('tabFind').setAttribute('aria-selected', m === 'find');
   $('tabIntv').setAttribute('aria-selected', m === 'intv');
   $('app').classList.toggle('hide', m !== 'read');
   $('foot').classList.toggle('hide', m !== 'read');
   $('checkView').classList.toggle('hide', m !== 'check');
+  $('findView').classList.toggle('hide', m !== 'find');
   $('intvView').classList.toggle('hide', m !== 'intv');
   $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.length}건`;
   if (m === 'read') drawAll();
   else if (m === 'check') drawCheck();
+  else if (m === 'find') { runFind(); drawFind(); }
   else { intvCur = S.cur; drawIntv(); }
 }
 function move(d) {
@@ -2258,6 +2482,7 @@ $('prev').onclick = () => move(-1);
 $('next').onclick = () => move(1);
 $('tabRead').onclick = () => setMode('read');
 $('tabCheck').onclick = () => setMode('check');
+$('tabFind').onclick = () => setMode('find');
 $('tabIntv').onclick = () => setMode('intv');
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea')) return;
