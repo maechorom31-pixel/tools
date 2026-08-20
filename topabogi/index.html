@@ -10,6 +10,8 @@
   --line:#E8E6DF; --amber:#B8770B; --amber-soft:#FDF6E7;
   --hl1:#FFF0A8; --hl2:#CDE9FF; --hl3:#FFD5D0; --hl4:#D6F3D8;
   --warn:#C0492B; --ok:#3E7A4E;
+  /* 책갈피 묶음 색 — 창체·행특·개세특·과목세특 */
+  --grp1:#3B6FB5; --grp2:#7A4FB0; --grp3:#0E7A63; --grp4:#C25E1A;
   --r:7px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -44,7 +46,7 @@ header{
 main{flex:1;display:grid;grid-template-columns:212px 1fr 292px;min-height:0}
 .pane{min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .pane-l{background:#F7F6F2;padding:12px 8px}
-.pane-c{padding:26px 40px 90px}
+.pane-c{padding:0 40px 90px}
 .pane-r{background:#F7F6F2;padding:18px 16px}
 .pane::-webkit-scrollbar{width:9px}
 .pane::-webkit-scrollbar-thumb{background:#D5D3CA;border-radius:9px;border:3px solid transparent;background-clip:content-box}
@@ -63,6 +65,21 @@ main{flex:1;display:grid;grid-template-columns:212px 1fr 292px;min-height:0}
 .dot.memo{background:var(--amber)}
 .dot.warn{background:var(--warn)}
 .dot.done{background:var(--ok)}
+
+/* 책갈피 — 창체·행특·개세특·과목세특 */
+.marks{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:6px;
+  margin:0 -40px 20px;padding:22px 40px 12px;background:var(--paper);border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:center;gap:7px;min-height:32px;padding:5px 12px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:500;color:var(--mid)}
+.mark:hover{border-color:var(--g);color:var(--ink)}
+.mark i{width:7px;height:7px;border-radius:50%;background:var(--g);flex-shrink:0}
+.mark .mark-n{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.mark[aria-current=true]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.mark[aria-current=true] .mark-n{color:#ffffffa8}
+.mark.full .mark-n{color:var(--ok);font-weight:600}
+.mark[aria-current=true].full .mark-n{color:#A6E0B4}
+.mark[disabled]{opacity:.42;pointer-events:none}
+.mark.g1{--g:var(--grp1)} .mark.g2{--g:var(--grp2)} .mark.g3{--g:var(--grp3)} .mark.g4{--g:var(--grp4)}
 
 /* 항목 카드 */
 .crumb{font-size:12px;color:var(--faint);letter-spacing:.05em;margin-bottom:9px;overflow-wrap:anywhere}
@@ -91,8 +108,10 @@ h2{font-size:25px;font-weight:700;letter-spacing:-.025em;line-height:1.3;word-br
   border-left:1px dotted #D8D5C9;margin:0 .04em}
 .chk{border:1px solid var(--line);background:var(--card)}
 .chk.on{background:#EAF3EC;border-color:#BCDAC4;color:var(--ok);font-weight:600}
-.tick.ok::after{background:var(--ok);opacity:.9;height:12px;top:3px}
 .body-text .hit{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;border-radius:2px}
+/* 숨은 문자가 있는 자리 표식 — 글자는 그대로 두고 옆에 세운다 */
+.body-text .ghost{display:inline-block;width:.42em;height:1.05em;vertical-align:-.22em;margin:0 .04em;
+  border-radius:2px;background:#FBE3DE;border:1px solid #E2A599}
 .item-foot{display:flex;gap:8px;margin-top:22px;align-items:center}
 .empty{color:var(--faint);padding:60px 0;text-align:center}
 .empty h3{font-size:16px;font-weight:600;color:var(--mid);margin-bottom:6px}
@@ -125,9 +144,15 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .track{flex:1;height:2px;background:#E4E2DA;border-radius:2px;position:relative}
 .track-fill{position:absolute;inset:0;background:var(--ink);border-radius:2px;transition:width .2s}
 .track-ticks{position:absolute;inset:-4px 0;display:flex}
-.tick{flex:1;position:relative}
+/* 눈금 하나가 항목 하나 — 색은 묶음, 세운 눈금은 묶음이 바뀌는 자리, 초록은 확인한 항목 */
+.tick{flex:1;position:relative;cursor:pointer}
 .tick::after{content:'';position:absolute;left:0;top:4px;width:1px;height:10px;background:var(--faint);opacity:.4}
-.tick.sec::after{height:14px;top:1px;opacity:.85;background:var(--amber)}
+.tick.g1::after{background:var(--grp1);opacity:.5}
+.tick.g2::after{background:var(--grp2);opacity:.5}
+.tick.g3::after{background:var(--grp3);opacity:.5}
+.tick.g4::after{background:var(--grp4);opacity:.5}
+.tick.ok::after{background:var(--ok);opacity:.9;height:12px;top:3px}
+.tick.sec::after{width:1.5px;height:15px;top:1px;opacity:.9;background:var(--amber)}
 .pos{font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
 
 /* ── 점검 모드 ── */
@@ -177,6 +202,33 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-x b{background:#FFE9A8;font-weight:600;padding:0 2px;border-radius:2px}
 .issue-loc{font-size:11.5px;color:var(--faint);margin-top:3px}
 
+/* ── 검색 모드 ── */
+.find-in{display:flex;gap:6px;margin-bottom:14px}
+.find-in input{flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r);
+  font:inherit;font-size:14px;background:var(--card)}
+.find-in input:focus{border-color:var(--amber)}
+.find-opt{display:flex;flex-direction:column;gap:7px;margin-bottom:22px}
+.find-opt label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mid);cursor:pointer}
+.find-opt input{accent-color:var(--amber);width:14px;height:14px;flex-shrink:0}
+.find-side-h{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin-bottom:9px}
+.find-side-sec{margin-bottom:22px}
+.find-hint{font-size:11.5px;color:var(--faint);line-height:1.65}
+.find-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:6px}
+.find-sum b{font-size:19px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.find-sum span{font-size:12.5px;color:var(--mid);font-variant-numeric:tabular-nums}
+.find-terms{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0 20px}
+.find-term{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 11px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);font-size:13px;color:var(--mid)}
+.find-term:hover{border-color:var(--amber);color:var(--ink)}
+.find-term[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.find-term .n{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.find-term[aria-pressed=true] .n{color:#ffffffa8}
+.find-word{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:4px;
+  background:var(--amber-soft);color:#7A5B14;white-space:nowrap;margin-top:1px}
+.find-snip{font-size:13px;color:var(--mid);line-height:1.6;word-break:keep-all;overflow-wrap:break-word;overflow-wrap:anywhere}
+.find-snip mark{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;border-radius:2px;padding:0 1px;font-weight:600;color:var(--ink)}
+.find-cut{font-size:12.5px;color:var(--warn);margin:14px 0 4px}
+
 /* 사전 */
 .dict-add{display:flex;gap:6px;margin:10px 0 12px}
 .dict-add input{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px;background:var(--card)}
@@ -213,6 +265,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-kind.F{background:#F3EEE6;color:#7A5B2E}
 .issue-kind.G{background:#E8F0F7;color:#2A5F87}
 .issue-kind.H{background:#F6EEF3;color:#8A3E6B}
+.issue-kind.I{background:#FBE3DE;color:#A8412C}
 .pagewrap{position:relative;display:inline-block;margin-bottom:14px;box-shadow:0 2px 10px #0000001f}
 .pagewrap canvas{display:block;border-radius:2px}
 .hlbox{position:absolute;background:#FFD84D4d;border:1.5px solid #E0A800;border-radius:2px;pointer-events:none}
@@ -279,6 +332,21 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   main{grid-template-columns:180px 1fr}
   .pane-r{display:none} footer{right:0}
 }
+/* 좁은 화면에서 머리줄 단추가 화면 밖으로 밀려나던 것을 접어 준다 */
+@media (max-width:820px){
+  header{flex-wrap:wrap;gap:10px 14px;padding:10px 16px}
+  .tools{margin-left:0;flex-wrap:wrap}
+}
+/* 좁은 화면에서는 책갈피를 접지 말고 옆으로 밀어서 본다 */
+@media (max-width:700px){
+  .check{grid-template-columns:150px 1fr}
+  .check-side{padding:14px 10px}
+  .check-main{padding:18px 16px 48px}
+  .pane-c{padding:0 16px 90px}
+  .marks{margin:0 -16px 16px;padding:14px 16px 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .marks::-webkit-scrollbar{display:none}
+  .mark{min-height:38px;white-space:nowrap}
+}
 </style>
 </head>
 <body>
@@ -288,6 +356,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   <div class="modes" role="tablist">
     <button role="tab" id="tabRead" aria-selected="true">톺아보기</button>
     <button role="tab" id="tabCheck" aria-selected="false">점검</button>
+    <button role="tab" id="tabFind" aria-selected="false">검색</button>
     <button role="tab" id="tabIntv" aria-selected="false">면접</button>
   </div>
   <div class="tools">
@@ -334,6 +403,11 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 <div class="check hide" id="checkView">
   <div class="check-side" id="checkSide"></div>
   <div class="check-main" id="checkMain"></div>
+</div>
+
+<div class="check hide" id="findView">
+  <div class="check-side" id="findSide"></div>
+  <div class="check-main" id="findMain"></div>
 </div>
 
 <footer class="hide" id="foot">
@@ -1151,9 +1225,11 @@ const hasNote = s => Object.keys(S.notes).some(k =>
   k.startsWith(`${s.ban}-${s.num}::`) && (S.notes[k].memo || S.notes[k].hl.length));
 const doneCount = s => s._items.filter(it => (S.notes[`${s.ban}-${s.num}::${it.id}`] || {}).ok).length;
 
-/* ═══════ 항목 순서: 창체(3-2-1) → 행특(3-2-1) → 세특(3-2-1) ═══════ */
+/* ═══════ 항목 순서: 창체 → 행특 → 개세특 → 과목세특, 묶음 안에서는 3-2-1학년 ═══════ */
 const AREA_ORDER = ['자율활동', '자율·자치활동', '자율자치활동', '동아리활동', '진로활동'];
-const KIND_ORDER = ['일반', '진로선택', '체육예술', '개인별'];
+const SUBJ_KINDS = ['일반', '진로선택', '체육예술'];
+/** 책갈피로 삼는 네 묶음. 항목은 이 순서로 줄을 세운다 */
+const GROUPS = ['창체', '행특', '개세특', '과목세특'];
 
 function buildItems(r) {
   const out = [];
@@ -1163,28 +1239,43 @@ function buildItems(r) {
   for (const g of [3, 2, 1]) {
     for (const a of AREA_ORDER) {
       const v = r.changche.get(`${g}|${a}`);
-      if (v) out.push({ sec: '창체', id: `cc:${g}|${a}`, grade: g, title: a, limit: byteLimit(a, g, cur), ...v });
+      if (v) out.push({ sec: '창체', grp: '창체', id: `cc:${g}|${a}`, grade: g, title: a, limit: byteLimit(a, g, cur), ...v });
     }
   }
   for (const g of [3, 2, 1]) {
     const v = r.haengteuk.get(g);
-    if (v) out.push({ sec: '행특', id: `ht:${g}`, grade: g, title: '행동특성 및 종합의견', limit: byteLimit('행특', g, cur), ...v });
+    if (v) out.push({ sec: '행특', grp: '행특', id: `ht:${g}`, grade: g, title: '행동특성 및 종합의견', limit: byteLimit('행특', g, cur), ...v });
   }
+  // 개인별 세특은 과목 세특과 성격이 달라 따로 묶는다
   const st = [...r.setuk.entries()];
-  for (const g of [3, 2, 1]) {
-    for (const k of KIND_ORDER) {
-      for (const [key, v] of st) {
-        const p = key.split('|');
-        if (+p[0] !== g || p[1] !== k) continue;
-        const sem = p[2] === 'null' ? '' : `${p[2]}학기 `;
-        out.push({
-          sec: '세특', id: `st:${key}`, grade: g, kind: k, verified: v.verified,
-          title: `${sem}${p[3]}`, limit: byteLimit('세특', g, cur), ...v,
-        });
+  const pushSetuk = (grp, kinds) => {
+    for (const g of [3, 2, 1]) {
+      for (const k of kinds) {
+        for (const [key, v] of st) {
+          const p = key.split('|');
+          if (+p[0] !== g || p[1] !== k) continue;
+          const sem = p[2] === 'null' ? '' : `${p[2]}학기 `;
+          out.push({
+            sec: '세특', grp, id: `st:${key}`, grade: g, kind: k, verified: v.verified,
+            title: `${sem}${p[3]}`, limit: byteLimit('세특', g, cur), ...v,
+          });
+        }
       }
     }
-  }
+  };
+  pushSetuk('개세특', ['개인별']);
+  pushSetuk('과목세특', SUBJ_KINDS);
   return out;
+}
+
+/** 한 학생의 항목을 책갈피 단위로 갈라 놓는다 — 없는 묶음도 자리는 남긴다 */
+function groupsOf(r) {
+  return GROUPS.map(g => {
+    const idx = [];
+    r._items.forEach((it, i) => { if (it.grp === g) idx.push(i); });
+    const done = idx.filter(i => (S.notes[`${r.ban}-${r.num}::${r._items[i].id}`] || {}).ok).length;
+    return { name: g, idx, done, first: idx.length ? idx[0] : -1 };
+  });
 }
 
 /* ═══════ 규칙 엔진 ═══════ */
@@ -1197,7 +1288,33 @@ const RULES = [
   { k: 'F', name: '겹침', desc: '같은 학년·같은 과목끼리 서술이 얼마나 겹치는지' },
   { k: 'G', name: '날짜', desc: '끝나는 날이 시작보다 앞서거나, 없는 날짜' },
   { k: 'H', name: '그 밖에', desc: '본인 실명, 지나치게 긴 문장' },
+  { k: 'I', name: '숨은 문자', desc: '제로폭 문자·변형 선택자처럼 눈에 안 보이는 글자. 줄바꿈 없는 공백(NBSP) 같은 특수 공백은 PDF를 읽는 단계에서 보통 공백으로 바뀌어 여기에 잡히지 않습니다' },
 ];
+
+/* 눈에 보이지 않는 문자. 웹·워드에서 복사해 붙이면 딸려 들어오고,
+   화면에는 없는 것처럼 보이지만 NEIS 바이트 수에는 그대로 들어간다. */
+const HIDDEN_RE = new RegExp(
+  '[\\u00A0\\u00AD\\u034F\\u061C\\u115F\\u1160\\u17B4\\u17B5\\u180B-\\u180E'
+  + '\\u2000-\\u200F\\u202A-\\u202F\\u205F-\\u206F\\u3000\\u3164'
+  + '\\uFE00-\\uFE0F\\uFEFF\\uFFA0]|[\\u{E0000}-\\u{E007F}]', 'gu');
+function hiddenName(ch) {
+  const c = ch.codePointAt(0);
+  if (c === 0x00A0) return '줄바꿈 없는 공백';
+  if (c === 0x00AD) return '소프트 하이픈';
+  if (c === 0x200B) return '제로폭 공백';
+  if (c === 0x200C) return '제로폭 비접합 문자';
+  if (c === 0x200D) return '제로폭 접합 문자';
+  if (c === 0x2060 || c === 0xFEFF) return '제로폭 붙임 문자';
+  if (c === 0x115F || c === 0x1160 || c === 0x3164 || c === 0xFFA0) return '한글 채움 문자';
+  if ((c >= 0x200E && c <= 0x200F) || (c >= 0x202A && c <= 0x202E) || c === 0x061C
+    || (c >= 0x2066 && c <= 0x2069)) return '글자 방향 제어 문자';
+  if (c >= 0xFE00 && c <= 0xFE0F) return '변형 선택자';
+  if (c >= 0xE0000 && c <= 0xE007F) return '태그 문자';
+  if (c === 0x3000 || (c >= 0x2000 && c <= 0x200A) || c === 0x202F || c === 0x205F) return '보통과 다른 공백';
+  return '숨은 문자';
+}
+const hiddenLabel = ch =>
+  `${hiddenName(ch)} U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`;
 let sameMin = 5;      // 똑같은 문장을 몇 명이 쓰면 알릴지
 let overlapMin = 55;  // 겹침 비율(%) 기준
 const BAN_PAT = [
@@ -1220,7 +1337,8 @@ function splitTerms(w) {
 }
 
 /** 줄바꿈 지점(breaks)에 걸친 매치는 띄어쓰기 확정 불가 → 오탐 제외 */
-const onBreak = (it, s, e) => (it.breaks || []).some(b => b > s && b < e + 1);
+/** 줄이 갈린 자리가 이 구간 '안'에 있는지. 구간이 끝나는 자리(b === e)는 갈린 것이 아니다 */
+const onBreak = (it, s, e) => (it.breaks || []).some(b => b > s && b < e);
 
 /** '2024.05.01.-12.31.' 처럼 끝 연도가 생략되기도 하고 구분자도 제각각이다 */
 const RE_RANGE = /(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})\.?\s*[~\-–]\s*(?:(\d{4})[.\-])?(\d{1,2})[.\-](\d{1,2})\.?/g;
@@ -1335,11 +1453,30 @@ function checkItem(it) {
     }
   }
 
+  // I. 숨은 문자 — 본문에서는 안 보이니 앞뒤 글자와 함께 이름을 적어 준다.
+  // 한 항목에 같은 문자가 수백 번 박혀 있을 수 있어 종류별로 한 건씩만 세어 올린다.
+  {
+    const seen = new Map();
+    for (const m of t.matchAll(HIDDEN_RE)) {
+      const g = seen.get(m[0]);
+      if (g) g.n++;
+      else seen.set(m[0], { n: 1, s: m.index, e: m.index + m[0].length });
+    }
+    for (const [ch, g] of seen) out.push({
+      k: 'I', name: hiddenLabel(ch) + (g.n > 1 ? ` · ${g.n}곳` : ''), s: g.s, e: g.e,
+      ex: `${t.slice(Math.max(0, g.s - 14), g.s)}⟦${hiddenName(ch)}⟧${t.slice(g.e, g.e + 14)}`,
+    });
+  }
+
   for (const d of S.dict) {
     if (!d.on || !d.w) continue;
+    // 띄어쓰기를 따지는 말만 줄 바뀌는 자리를 뺀다 — 줄이 갈리면 원문 띄어쓰기를 확정할 수 없고,
+    // '하는것'처럼 붙은 말은 줄이 갈린 자리에서 저절로 만들어지기 때문이다.
+    // 뜻을 찾는 낱말('나주', '논문')은 줄이 갈려도 그 말이 맞으므로 빼지 않는다.
+    const spaced = d.t === '띄어쓰기' || /\s/.test(d.w);
     let i = 0;
     while ((i = t.indexOf(d.w, i)) !== -1) {
-      if (!onBreak(it, i, i + d.w.length)) add('E', `${d.t} · ${d.w}`, i, i + d.w.length);
+      if (!(spaced && onBreak(it, i, i + d.w.length))) add('E', `${d.t} · ${d.w}`, i, i + d.w.length);
       i += d.w.length;
     }
   }
@@ -1559,6 +1696,17 @@ function drawStudents() {
   if (cs) cs.scrollIntoView({ block: 'nearest' });
 }
 
+/** 책갈피 줄 — 지금 어느 묶음을 보고 있는지, 각 묶음을 얼마나 봤는지 */
+function marksHtml(r) {
+  return `<nav class="marks" aria-label="분야 책갈피">${groupsOf(r).map((g, i) => {
+    const on = g.idx.includes(S.item);
+    return `<button class="mark g${i + 1}${g.idx.length && g.done === g.idx.length ? ' full' : ''}"
+      data-go="${g.first}" aria-current="${on}" ${g.idx.length ? '' : 'disabled'}
+      title="${g.name} ${g.idx.length}개 — 확인 ${g.done}개"><i></i><b>${g.name}</b>
+      <span class="mark-n">${g.idx.length ? `${g.done}/${g.idx.length}` : '0'}</span></button>`;
+  }).join('')}</nav>`;
+}
+
 function drawItem() {
   const r = S.students[S.cur], items = r._items, it = items[S.item];
   const c = $('paneItem');
@@ -1570,7 +1718,8 @@ function drawItem() {
   const issues = S.issues.filter(x => x.si === S.cur && x.ii === S.item);
 
   c.innerHTML = `
-    <div class="crumb"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b> · ${it.grade}학년 ${it.sec}</div>
+    ${marksHtml(r)}
+    <div class="crumb"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b> · ${it.grade}학년 ${it.grp}</div>
     <div class="item-head">
       <h2>${esc(it.title)}</h2>
       ${it.verified === false ? '<span class="tag">미확인 과목</span>' : ''}
@@ -1588,13 +1737,14 @@ function drawItem() {
     <div class="item-foot">
       <button class="btn btn-solid" id="btnOrig">생기부 원문 보기</button>
       <button class="btn chk ${n.ok ? 'on' : ''}" id="btnOk">${n.ok ? '확인함' : '확인'}</button>
-      <span style="font-size:12.5px;color:var(--faint)">본문을 끌어서 선택하면 색을 칠할 수 있습니다 · 스페이스로 확인하고 다음</span>
+      <span style="font-size:12.5px;color:var(--faint)">본문을 끌어서 선택하면 색을 칠할 수 있습니다 · 스페이스로 확인하고 다음 · 1~4로 분야 이동</span>
     </div>`;
   paintText(it, n, issues);
   if (S.hit) {
     const m = $('bodyText').querySelector('mark.hit');
     if (m) requestAnimationFrame(() => m.scrollIntoView({ block: 'center' }));
   }
+  c.querySelectorAll('.mark').forEach(b => { b.onclick = () => goItem(+b.dataset.go); });
   $('btnOrig').onclick = () => showOriginal(r, it);
   $('btnOk').onclick = () => { n.ok = !n.ok; save(); drawItem(); drawStudents(); drawFoot(); };
 }
@@ -1613,7 +1763,8 @@ function paintText(it, n, issues) {
     const [a, b] = [pts[i], pts[i + 1]];
     if (brk.has(a)) html += '<i class="lb" title="원문에서 줄이 바뀌는 자리 — 띄어쓰기는 확인이 필요합니다"></i>';
     const m = marks.find(x => x.s <= a && x.e >= b);
-    const seg = esc(t.slice(a, b));
+    // 숨은 문자는 지우지 않고 그 자리에 표식만 덧붙인다 (글자가 밀리면 하이라이트 위치가 어긋난다)
+    const seg = esc(t.slice(a, b)).replace(HIDDEN_RE, c => `${c}<i class="ghost" title="${hiddenLabel(c)}"></i>`);
     html += m ? (m.cls === 'hit' ? `<mark class="hit">${seg}</mark>` : `<mark class="c${m.cls.slice(-1)}">${seg}</mark>`) : seg;
   }
   el.innerHTML = html || esc(t);
@@ -1681,19 +1832,33 @@ function drawNote() {
 }
 
 function drawFoot() {
-  const items = S.students[S.cur]._items;
+  const r = S.students[S.cur], items = r._items;
   $('trackFill').style.width = `${((S.item + 1) / items.length) * 100}%`;
-  $('pos').textContent = `${S.item + 1} / ${items.length}`;
+  const it = items[S.item];
+  if (it) {
+    const same = items.filter(x => x.grp === it.grp);
+    $('pos').textContent = `${it.grp} ${same.indexOf(it) + 1}/${same.length} · 전체 ${S.item + 1}/${items.length}`;
+  } else $('pos').textContent = `${S.item + 1} / ${items.length}`;
   $('prev').disabled = S.item === 0 && S.cur === 0;
   $('next').disabled = S.item === items.length - 1 && S.cur === S.students.length - 1;
   const T = $('ticks'); T.innerHTML = '';
-  const r = S.students[S.cur];
-  items.forEach((it, i) => {
+  items.forEach((x, i) => {
     const d = document.createElement('i');
-    const ok = (S.notes[`${r.ban}-${r.num}::${it.id}`] || {}).ok;
-    d.className = 'tick' + (i > 0 && items[i - 1].sec !== it.sec ? ' sec' : '') + (ok ? ' ok' : '');
+    const ok = (S.notes[`${r.ban}-${r.num}::${x.id}`] || {}).ok;
+    // 묶음이 바뀌는 자리는 눈금을 세워 책갈피처럼 보이게 한다
+    d.className = 'tick g' + (GROUPS.indexOf(x.grp) + 1)
+      + (i > 0 && items[i - 1].grp !== x.grp ? ' sec' : '') + (ok ? ' ok' : '');
+    d.title = `${x.grade}학년 ${x.grp} · ${x.title}`;
+    d.onclick = () => goItem(i);
     T.appendChild(d);
   });
+}
+/** 책갈피·눈금에서 곧장 그 자리로 */
+function goItem(i) {
+  if (i < 0 || i >= S.students[S.cur]._items.length) return;
+  S.item = i; S.hit = null;
+  drawAll();
+  $('paneItem').scrollTop = 0;
 }
 const drawAll = () => { drawStudents(); drawItem(); drawNote(); drawFoot(); };
 
@@ -1730,7 +1895,7 @@ $('modalClose').onclick = () => $('modal').removeAttribute('open');
 $('modal').onclick = e => { if (e.target.id === 'modal') $('modal').removeAttribute('open'); };
 
 /* ═══════ 점검 모드 ═══════ */
-const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H']);   // F(공통 문장)는 켤 때만
+const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I']);   // F(공통 문장)는 켤 때만
 let banFilter = 0;   // 0 = 전체
 
 function drawCheck() {
@@ -1766,7 +1931,8 @@ function drawCheck() {
     <div class="chips" id="chips"></div>
     <button class="btn" id="btnSuggest" style="width:100%;margin-top:9px;border:1px solid var(--line);background:var(--card)">단어 추천 받기</button>
     <p style="font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.6">
-      칩을 눌러 끄고 켭니다. 줄이 바뀌는 자리는 원문에서 띄어쓰기를 확정할 수 없어 검색에서 빠집니다.</p>`;
+      칩을 눌러 끄고 켭니다. 띄어 쓴 말('할 수있')만 줄이 바뀌는 자리를 뺍니다 — 원문에서 띄어쓰기를 확정할 수 없어서입니다.
+      한 낱말을 넓게 찾으려면 <b>검색</b> 모드를 쓰세요.</p>`;
   side.appendChild(dl);
   const chips = $('chips');
   S.dict.forEach((d, i) => {
@@ -1829,7 +1995,7 @@ function drawCheck() {
     g.innerHTML = `<div class="issue-head"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b><span>${arr.length}건</span></div>`;
     for (const x of arr) {
       const btn = document.createElement('button'); btn.className = 'issue';
-      let loc = x.ii >= 0 ? `${x.it.grade}학년 ${x.it.sec} · ${x.it.title}` : '';
+      let loc = x.ii >= 0 ? `${x.it.grade}학년 ${x.it.grp} · ${x.it.title}` : '';
       if (x.who) loc += ` · ${x.who.slice(0, 12).join(', ')}${x.who.length > 12 ? ` 외 ${x.who.length - 12}명` : ''}`;
       const ex = x.ex ? esc(x.ex).replace(esc(x.it ? x.it.text.slice(x.s, x.e) : ''), m => m ? `<b>${m}</b>` : m) : '';
       btn.innerHTML = `<span class="issue-kind ${x.k}">${x.k}</span>
@@ -1840,6 +2006,180 @@ function drawCheck() {
         S.cur = si; S.item = Math.max(0, x.ii);
         S.hit = x.e > x.s ? { s: x.s, e: x.e } : null;
         setMode('read'); drawAll();
+      };
+      g.appendChild(btn);
+    }
+    main.appendChild(g);
+  }
+}
+
+/* ═══════ 검색 모드 — 찾는 말만 따로 본다 ═══════ */
+/* 기본값은 '넓게 찾기'. 생기부 원문은 줄·문단이 갈리면서 낱말 사이가 벌어져 있어,
+   띄어쓰기를 그대로 맞추면 눈에 보이는 말도 못 찾는다. */
+const FIND = { q: '', terms: [], hits: [], term: '', grp: '', ban: 0, nospace: true };
+const FIND_MAX = 400;   // 화면에 그리는 최대 줄. 건수는 전부 센다
+
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** 찾을 말을 정규식으로. '붙여서 찾기'면 글자 사이에 공백·줄바꿈이 얼마든지 끼어도 맞는다 */
+function findRe(w) {
+  const body = FIND.nospace
+    ? [...w.replace(/\s+/g, '')].map(reEsc).join('\\s*')
+    : reEsc(w);
+  return new RegExp(body, 'gi');
+}
+
+function runFind() {
+  const keys = splitTerms(FIND.q)
+    .map(w => ({ w, k: FIND.nospace ? w.replace(/\s+/g, '') : w.trim() }))
+    .filter(x => x.k);
+  FIND.terms = keys.map(x => x.w);
+  FIND.hits = [];
+  if (!keys.length) return;
+  const res = keys.map(({ w }) => ({ w, rx: findRe(w) }));
+  S.students.forEach((r, si) => {
+    r._items.forEach((it, ii) => {
+      for (const { w, rx } of res) {
+        rx.lastIndex = 0;
+        for (const m of it.text.matchAll(rx)) {
+          const s = m.index, e = s + m[0].length;
+          // 줄·문단이 갈린 자리도 찾는다. 다만 그 자리는 띄어쓰기를 확정할 수 없어 표시를 남긴다
+          FIND.hits.push({ si, ii, it, w, s, e, brk: onBreak(it, s, e) });
+        }
+      }
+    });
+  });
+}
+/** 묶음·반까지만 걸러낸 것 — 낱말 칩의 건수는 이것을 기준으로 센다 */
+const findScoped = () => FIND.hits.filter(h =>
+  (!FIND.grp || h.it.grp === FIND.grp)
+  && (!FIND.ban || S.students[h.si].ban === FIND.ban));
+
+function drawFind() {
+  const side = $('findSide');
+  side.innerHTML = `<div class="find-in">
+      <input id="findIn" placeholder="찾을 말" value="${esc(FIND.q)}" aria-label="찾을 말">
+    </div>
+    <div class="find-opt">
+      <label title="띄어쓰기와 줄바꿈을 없앤 뒤 찾습니다"><input type="checkbox" id="fOptSp" ${FIND.nospace ? 'checked' : ''}>붙여서 찾기</label>
+    </div>`;
+
+  const sec = (title, node) => {
+    const d = document.createElement('div'); d.className = 'find-side-sec';
+    d.innerHTML = `<h3 class="find-side-h">${title}</h3>`;
+    d.appendChild(node); side.appendChild(d);
+  };
+  const chipRow = (items, isOn, pick) => {
+    const wrap = document.createElement('div'); wrap.className = 'chips';
+    for (const [label, val] of items) {
+      const c = document.createElement('button');
+      c.className = 'chip' + (isOn(val) ? '' : ' off');
+      c.textContent = label;
+      c.onclick = () => { pick(val); drawFind(); };
+      wrap.appendChild(c);
+    }
+    return wrap;
+  };
+
+  sec('묶음', chipRow([['전체', ''], ...GROUPS.map(g => [g, g])],
+    v => FIND.grp === v, v => { FIND.grp = v; }));
+
+  const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
+  if (bans.length > 1) {
+    sec('반', chipRow([['전체', 0], ...bans.map(b => [`${b}반`, b])],
+      v => FIND.ban === v, v => { FIND.ban = v; }));
+  }
+
+  if (S.dict.length) {
+    const wrap = document.createElement('div'); wrap.className = 'chips';
+    for (const d of S.dict) {
+      const c = document.createElement('button');
+      c.className = 'chip' + (FIND.terms.length === 1 && FIND.terms[0] === d.w ? '' : ' off');
+      c.textContent = d.w;
+      // 띄어 쓴 말은 따옴표로 묶어 넘겨야 낱말 둘로 쪼개지지 않는다
+      c.onclick = () => { FIND.q = /\s/.test(d.w) ? `"${d.w}"` : d.w; FIND.term = ''; runFind(); drawFind(); };
+      wrap.appendChild(c);
+    }
+    sec('점검 사전에서', wrap);
+  }
+
+  const tip = document.createElement('p');
+  tip.className = 'find-hint';
+  tip.innerHTML = '띄어 쓰면 여러 말을 한 번에 찾습니다. <b>붙여서 찾기</b>는 띄어쓰기와 줄바꿈을 없앤 뒤 맞춰 봅니다. '
+    + '원문에서 줄이나 문단이 갈린 자리도 함께 찾고, 그런 자리는 <b>줄 갈림</b>이라고 적어 둡니다.';
+  side.appendChild(tip);
+
+  const inp = $('findIn');
+  inp.oninput = e => { FIND.q = e.target.value; FIND.term = ''; runFind(); drawFindMain(); };
+  $('fOptSp').onchange = e => { FIND.nospace = e.target.checked; runFind(); drawFind(); };
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+  drawFindMain();
+}
+
+function drawFindMain() {
+  const main = $('findMain');
+  if (!FIND.terms.length) {
+    main.innerHTML = `<div class="empty"><h3>찾을 말을 적어 주세요</h3>
+      <p>지금 열어 둔 생기부 전체에서 그 말이 나온 자리만 모아 보여줍니다.<br>
+      점검 사전에 담아 둔 말은 왼쪽에서 눌러 바로 찾을 수 있습니다.</p></div>`;
+    return;
+  }
+  const scoped = findScoped();
+  const list = FIND.term ? scoped.filter(h => h.w === FIND.term) : scoped;
+  const stus = new Set(list.map(h => h.si)), items = new Set(list.map(h => `${h.si}:${h.ii}`));
+  const byTerm = FIND.terms.map(w => [w, scoped.filter(h => h.w === w).length]);
+  const byGrp = GROUPS.map(g => [g, list.filter(h => h.it.grp === g).length]).filter(x => x[1]);
+
+  main.innerHTML = `<div class="find-sum">
+      <b>${list.length}건</b>
+      <span>학생 ${stus.size}명 · 항목 ${items.size}개</span>
+      <span>${byGrp.map(([g, n]) => `${g} ${n}`).join(' · ')}</span>
+    </div>
+    <p class="find-hint" style="margin-bottom:4px">클릭하면 그 자리로 갑니다</p>
+    <div class="find-terms" id="findTerms"></div>`;
+
+  if (byTerm.length > 1 || FIND.term) {
+    const box = $('findTerms');
+    for (const [w, n] of [['전체', -1], ...byTerm]) {
+      const t = document.createElement('button');
+      t.className = 'find-term';
+      const val = n < 0 ? '' : w;
+      t.setAttribute('aria-pressed', FIND.term === val);
+      t.innerHTML = `${esc(w)}${n < 0 ? '' : `<span class="n">${n}</span>`}`;
+      t.onclick = () => { FIND.term = val; drawFindMain(); };
+      box.appendChild(t);
+    }
+  }
+
+  if (!list.length) {
+    main.insertAdjacentHTML('beforeend',
+      '<div class="empty"><h3>찾은 곳이 없습니다</h3><p>다른 말로 찾거나, 왼쪽에서 묶음·반 조건을 풀어 보세요.</p></div>');
+    return;
+  }
+
+  const shown = list.slice(0, FIND_MAX);
+  if (list.length > shown.length) {
+    main.insertAdjacentHTML('beforeend',
+      `<p class="find-cut">${list.length}건 가운데 앞 ${shown.length}건만 보이고 있습니다. 조건을 좁히면 나머지가 나옵니다.</p>`);
+  }
+  const bySt = new Map();
+  for (const h of shown) { if (!bySt.has(h.si)) bySt.set(h.si, []); bySt.get(h.si).push(h); }
+  for (const [si, arr] of bySt) {
+    const r = S.students[si];
+    const g = document.createElement('div'); g.className = 'issue-group';
+    g.innerHTML = `<div class="issue-head"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b><span>${arr.length}건</span></div>`;
+    for (const h of arr) {
+      const t = h.it.text;
+      const btn = document.createElement('button'); btn.className = 'issue';
+      // 찾는 말이 하나면 줄마다 같은 딱지가 붙어 방해만 된다
+      btn.innerHTML = `${FIND.terms.length > 1 ? `<span class="find-word">${esc(h.w)}</span>` : ''}
+        <span class="issue-body">
+          <span class="find-snip">${esc(t.slice(Math.max(0, h.s - 34), h.s))}<mark>${esc(t.slice(h.s, h.e))}</mark>${esc(t.slice(h.e, h.e + 34))}</span>
+          <span class="issue-loc">${h.it.grade}학년 ${h.it.grp} · ${esc(h.it.title)}${h.brk ? ' · 줄 갈림' : ''}</span>
+        </span>`;
+      btn.onclick = () => {
+        S.cur = si; S.item = h.ii; S.hit = { s: h.s, e: h.e };
+        setMode('read');
       };
       g.appendChild(btn);
     }
@@ -1950,7 +2290,7 @@ function collectBooks(r) {
       const key = `${m[1]}(${m[2]})`;
       if (!map.has(key)) map.set(key, { srcs: new Set(), its: [] });
       const e = map.get(key);
-      e.srcs.add(`${it.grade}학년 ${it.sec}${it.sec === '세특' ? ' ' + it.title : ''}`);
+      e.srcs.add(`${it.grade}학년 ${it.grp}${it.sec === '세특' ? ' ' + it.title : ''}`);
       if (!e.its.includes(it)) e.its.push(it);
     }
   }
@@ -2061,7 +2401,7 @@ function drawIntv() {
       body = body.split(esc(w)).join(`<mark class="bk">${esc(w)}</mark>`);
     for (const w of seeds.topics)
       body = body.split(esc(w)).join(`<mark class="p1">${esc(w)}</mark>`);
-    box.innerHTML = `<h4>${it.grade}학년 ${it.sec} · ${esc(it.title)}<small>${nbytes(it.text)}byte</small></h4>
+    box.innerHTML = `<h4>${it.grade}학년 ${it.grp} · ${esc(it.title)}<small>${nbytes(it.text)}byte</small></h4>
       ${chips.length ? `<div class="iq-seed">${chips.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
       <details class="iq-det"><summary>기록 본문 펼치기</summary>
         <div class="iq-body">${body}</div></details>
@@ -2087,7 +2427,7 @@ function printInterview(r) {
     .filter(x => x.n.iq);
   const cross = S.notes[`${r.ban}-${r.num}::__cross`];
   if (cross && cross.iq) rows.unshift({
-    it: { grade: '', sec: '공통', title: '기록 전체를 가로지르는 질문', text: '', limit: 0 },
+    it: { grade: '', sec: '공통', grp: '공통', title: '기록 전체를 가로지르는 질문', text: '', limit: 0 },
     n: cross, noSrc: true });
   if (!rows.length) { alert('적어 둔 질문이 없습니다. 항목마다 질문을 담아 주세요.'); return; }
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -2095,7 +2435,7 @@ function printInterview(r) {
       <h1>면접 준비 — ${r.ban}반 ${r.num}번 ${esc(r.name)}</h1>
       <p>${today} · ${rows.length}개 항목 · 회색 상자가 근거 기록, ☐ 뒤가 질문입니다. 밑줄 칸에 답변 메모를 적습니다.</p>
     </header>` + rows.map(({ it, n }) => `<article class="pr-item">
-      <h3>${it.grade ? it.grade + '학년 ' : ''}${it.sec} · ${esc(it.title)}
+      <h3>${it.grade ? it.grade + '학년 ' : ''}${it.grp} · ${esc(it.title)}
         ${it.text ? `<span class="pr-byte">${nbytes(it.text)}byte</span>` : ''}</h3>
       ${it.text ? `<div class="iv-src">${markedHtml(it, n.hl || [])}</div>` : ''}
       ${n.iq.split('\n').filter(q => q.trim()).map(q => `
@@ -2112,14 +2452,17 @@ function setMode(m) {
   S.mode = m;
   $('tabRead').setAttribute('aria-selected', m === 'read');
   $('tabCheck').setAttribute('aria-selected', m === 'check');
+  $('tabFind').setAttribute('aria-selected', m === 'find');
   $('tabIntv').setAttribute('aria-selected', m === 'intv');
   $('app').classList.toggle('hide', m !== 'read');
   $('foot').classList.toggle('hide', m !== 'read');
   $('checkView').classList.toggle('hide', m !== 'check');
+  $('findView').classList.toggle('hide', m !== 'find');
   $('intvView').classList.toggle('hide', m !== 'intv');
   $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.length}건`;
   if (m === 'read') drawAll();
   else if (m === 'check') drawCheck();
+  else if (m === 'find') { runFind(); drawFind(); }
   else { intvCur = S.cur; drawIntv(); }
 }
 function move(d) {
@@ -2139,14 +2482,20 @@ $('prev').onclick = () => move(-1);
 $('next').onclick = () => move(1);
 $('tabRead').onclick = () => setMode('read');
 $('tabCheck').onclick = () => setMode('check');
+$('tabFind').onclick = () => setMode('find');
 $('tabIntv').onclick = () => setMode('intv');
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea')) return;
   if ($('modal').hasAttribute('open')) { if (e.key === 'Escape') $('modal').removeAttribute('open'); return; }
   if ($('sugModal').hasAttribute('open')) { if (e.key === 'Escape') $('sugModal').removeAttribute('open'); return; }
-  if (S.mode !== 'read') return;
+  if (S.mode !== 'read' || !S.students.length) return;   // 파일을 아직 안 넣었으면 넘어간다
   if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
   if (e.key === 'ArrowRight') { e.preventDefault(); move(1); }
+  if (e.key >= '1' && e.key <= '4') {          // 1~4 = 창체·행특·개세특·과목세특
+    e.preventDefault();
+    const g = groupsOf(S.students[S.cur])[+e.key - 1];
+    if (g.first >= 0) goItem(g.first);
+  }
   if (e.key === ' ') {
     e.preventDefault();
     const r = S.students[S.cur], it = r._items[S.item];
@@ -2213,7 +2562,7 @@ function openPrint() {
     for (const { it, n, issues } of rows) {
       const b = nbytes(it.text);
       html += `<article class="pr-item">
-        <h3>${it.grade}학년 ${it.sec} · ${esc(it.title)}
+        <h3>${it.grade}학년 ${it.grp} · ${esc(it.title)}
           <span class="pr-byte">${b}/${it.limit}byte</span></h3>
         <div class="pr-body">${markedHtml(it, n.hl || [])}</div>`;
       if ((n.hl || []).length) {
@@ -2255,7 +2604,7 @@ function exportIssuesCsv() {
     const it = x.ii >= 0 ? r._items[x.ii] : null;
     rows.push([
       r.ban, r.num, r.name,
-      it ? it.grade : '', it ? `${it.sec} · ${it.title}` : '',
+      it ? it.grade : '', it ? `${it.grp} · ${it.title}` : '',
       RULES.find(R => R.k === x.k)?.name || x.k,
       x.name, x.ex || '',
     ].map(esc2).join(','));
@@ -2276,7 +2625,7 @@ function shareRows() {
       if (!n || !(n.memo || (n.hl && n.hl.length) || n.iq)) continue;
       const hl = (n.hl || []).map(h =>
         `${{1:'강점',2:'근거부족',3:'수정필요',4:'재확인'}[h.c]}:${it.text.slice(h.s, h.e).slice(0, 60)}`).join(' | ');
-      rows.push([r.ban, r.num, r.name, it.grade, it.sec, it.title,
+      rows.push([r.ban, r.num, r.name, it.grade, it.grp, it.title,
                  n.memo || '', hl, n.iq || '']);
     }
   }
