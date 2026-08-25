@@ -376,8 +376,8 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
     <h1>생기부 톺아보기</h1>
     <p>창의적 체험활동 → 행동특성 → 세부능력 순으로 훑어보며<br>하이라이트하고 메모하고, 정정 대상을 찾습니다.</p>
     <div class="drop" id="drop">
-      <button class="btn btn-solid" id="btnPick">생기부 PDF 고르기</button>
-      <p style="margin-top:12px;font-size:13px;color:var(--faint)">반별 모음 PDF를 한꺼번에 넣어도 됩니다</p>
+      <button class="btn btn-solid" id="btnPick">생기부 파일 고르기</button>
+      <p style="margin-top:12px;font-size:13px;color:var(--faint)">생기부 PDF와 NEIS 세특 엑셀(.xlsx)을 함께 넣어도 됩니다</p>
       <div class="prog hide" id="prog"><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
     </div>
     <div class="saved hide" id="saved"></div>
@@ -443,7 +443,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 
 <div id="printArea" class="print-only"></div>
 
-<input type="file" id="file" accept="application/pdf" multiple hidden>
+<input type="file" id="file" accept="application/pdf,.pdf,.xlsx" multiple hidden>
 <input type="file" id="fileJson" accept="application/json" hidden>
 
 <script id="pdfjs-src" type="text/plain">/**
@@ -1609,6 +1609,297 @@ function runCheck() {
   }
 }
 
+/* ═══════ NEIS 엑셀 읽기 ═══════
+   xlsx는 zip 컨테이너다. 외부 라이브러리 없이 목차(EOCD → 중앙 디렉터리)를 읽고
+   필요한 항목만 풀어 쓴다. 이 판독기는 '생기부 점검실'에 있던 것을 그대로 가져왔다. */
+/* 브라우저에 DecompressionStream이 없을 때 쓰는 자체 해제기 (RFC 1951 raw deflate).
+   학교 PC의 오래된 크롬·사파리·파이어폭스에서도 파일이 열리게 하려는 것이다.
+   이게 없으면 같은 파일을 넣고도 어떤 선생님은 열리고 어떤 선생님은 안 열린다. */
+const LEN_BASE  = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+const LEN_EXTRA = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+const DIST_BASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+const DIST_EXTRA= [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+const CLEN_ORDER= [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+function inflateFallback(src) {
+  let at = 0, buf = 0, have = 0, size = 0;
+  let out = new Uint8Array(Math.max(4096, src.length * 5));
+  const room = need => {
+    if (size + need <= out.length) return;
+    let cap = out.length;
+    while (cap < size + need) cap *= 2;
+    const bigger = new Uint8Array(cap);
+    bigger.set(out.subarray(0, size));
+    out = bigger;
+  };
+  const take = n => {
+    while (have < n) { buf |= src[at++] << have; have += 8; }
+    const v = buf & ((1 << n) - 1);
+    buf >>>= n; have -= n;
+    return v;
+  };
+  const alignToByte = () => {
+    take(have & 7);        // 남은 자투리 비트 버리기
+    at -= have >> 3;       // 미리 읽어 둔 온전한 바이트는 되돌린다
+    buf = 0; have = 0;
+  };
+  const buildTree = lens => {
+    let maxBits = 0;
+    for (const l of lens) if (l > maxBits) maxBits = l;
+    const perLen = new Array(maxBits + 1).fill(0);
+    for (const l of lens) if (l) perLen[l]++;
+    const nextCode = new Array(maxBits + 1).fill(0);
+    let code = 0;
+    for (let b = 1; b <= maxBits; b++) { code = (code + perLen[b - 1]) << 1; nextCode[b] = code; }
+    const table = new Map();
+    for (let i = 0; i < lens.length; i++) if (lens[i]) table.set((lens[i] << 16) | nextCode[lens[i]]++, i);
+    return { table, maxBits };
+  };
+  const readSym = tree => {
+    let code = 0;
+    for (let len = 1; len <= tree.maxBits; len++) {
+      code = (code << 1) | take(1);
+      const sym = tree.table.get((len << 16) | code);
+      if (sym !== undefined) return sym;
+    }
+    throw new Error("압축을 푸는 중 오류가 났습니다.");
+  };
+  let fixedLit = null, fixedDist = null;
+  for (;;) {
+    const last = take(1), kind = take(2);
+    if (kind === 0) {                       // 비압축 블록
+      alignToByte();
+      const len = src[at] | (src[at + 1] << 8);
+      at += 4;
+      room(len);
+      out.set(src.subarray(at, at + len), size);
+      size += len; at += len;
+    } else {
+      let litTree, distTree;
+      if (kind === 1) {                     // 고정 허프만
+        if (!fixedLit) {
+          const l = new Array(288);
+          for (let i = 0; i < 288; i++) l[i] = i < 144 ? 8 : i < 256 ? 9 : i < 280 ? 7 : 8;
+          fixedLit = buildTree(l);
+          fixedDist = buildTree(new Array(30).fill(5));
+        }
+        litTree = fixedLit; distTree = fixedDist;
+      } else if (kind === 2) {              // 동적 허프만
+        const nLit = take(5) + 257, nDist = take(5) + 1, nClen = take(4) + 4;
+        const clen = new Array(19).fill(0);
+        for (let i = 0; i < nClen; i++) clen[CLEN_ORDER[i]] = take(3);
+        const clTree = buildTree(clen);
+        const lens = [];
+        while (lens.length < nLit + nDist) {
+          const sym = readSym(clTree);
+          if (sym < 16) lens.push(sym);
+          else if (sym === 16) { const prev = lens[lens.length - 1]; let r = 3 + take(2); while (r--) lens.push(prev); }
+          else if (sym === 17) { let r = 3 + take(3); while (r--) lens.push(0); }
+          else { let r = 11 + take(7); while (r--) lens.push(0); }
+        }
+        litTree = buildTree(lens.slice(0, nLit));
+        distTree = buildTree(lens.slice(nLit));
+      } else throw new Error("알 수 없는 압축 형식입니다.");
+      for (;;) {
+        const sym = readSym(litTree);
+        if (sym === 256) break;
+        if (sym < 256) { room(1); out[size++] = sym; }
+        else {
+          const li = sym - 257;
+          const runLen = LEN_BASE[li] + take(LEN_EXTRA[li]);
+          const di = readSym(distTree);
+          const back = DIST_BASE[di] + take(DIST_EXTRA[di]);
+          room(runLen);
+          let from = size - back;
+          for (let k = 0; k < runLen; k++) out[size++] = out[from++];
+        }
+      }
+    }
+    if (last) break;
+  }
+  return out.subarray(0, size);
+}
+async function inflate(packed) {
+  if (typeof DecompressionStream === "function") {
+    const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  return inflateFallback(packed);
+}
+
+function makeByteReader(buf) {
+  const view = new DataView(buf);
+  return {
+    bytes: new Uint8Array(buf),
+    u16: p => view.getUint16(p, true),
+    u32: p => view.getUint32(p, true),
+    len: buf.byteLength,
+  };
+}
+function findEocd(r) {
+  // EOCD 시그니처(50 4b 05 06)를 파일 끝에서 역방향 탐색 (주석 최대 64KB)
+  const sig = [0x50, 0x4b, 0x05, 0x06];
+  const stop = Math.max(0, r.len - 22 - 65536);
+  for (let p = r.len - 22; p >= stop; p--) {
+    if (r.bytes[p] === sig[0] && r.bytes[p+1] === sig[1] && r.bytes[p+2] === sig[2] && r.bytes[p+3] === sig[3]) return p;
+  }
+  throw new Error("엑셀(xlsx) 파일이 아닙니다.");
+}
+function listZipEntries(r) {
+  const eocd = findEocd(r);
+  const total = r.u16(eocd + 10);
+  const entries = [];
+  let p = r.u32(eocd + 16); // 중앙 디렉터리 시작
+  const utf8 = new TextDecoder();
+  for (let n = 0; n < total && r.u32(p) === 0x02014b50; n++) {
+    const nameLen = r.u16(p + 28);
+    entries.push({
+      name: utf8.decode(r.bytes.subarray(p + 46, p + 46 + nameLen)),
+      deflated: r.u16(p + 10) === 8,
+      packedSize: r.u32(p + 20),
+      headerAt: r.u32(p + 42),
+    });
+    p += 46 + nameLen + r.u16(p + 30) + r.u16(p + 32);
+  }
+  return entries;
+}
+async function extractZipEntry(r, entry) {
+  // 로컬 헤더의 가변 길이(이름·extra)를 건너뛴 지점부터 압축 데이터
+  const h = entry.headerAt;
+  const dataAt = h + 30 + r.u16(h + 26) + r.u16(h + 28);
+  const packed = r.bytes.subarray(dataAt, dataAt + entry.packedSize);
+  if (!entry.deflated) return packed.slice();
+  return inflate(packed);
+}
+/* 네임스페이스 접두사 유무와 무관하게 localName으로 요소를 모은다 */
+function collectByLocal(doc, name) {
+  const out = [];
+  for (const el of doc.getElementsByTagName("*")) if (el.localName === name) out.push(el);
+  return out;
+}
+function cellText(el) {
+  let s = "";
+  for (const t of collectByLocal(el, "t")) s += t.textContent;
+  return s;
+}
+async function readXlsx(buf) {
+  const r = makeByteReader(buf);
+  const entries = listZipEntries(r);
+  const utf8 = new TextDecoder();
+  const xml = new DOMParser();
+  const pick = pred => entries.find(pred);
+  // 공유 문자열 사전 (없는 파일도 있다)
+  let sst = [];
+  const sstEntry = pick(e => e.name === "xl/sharedStrings.xml");
+  if (sstEntry) {
+    const doc = xml.parseFromString(utf8.decode(await extractZipEntry(r, sstEntry)), "text/xml");
+    sst = collectByLocal(doc, "si").map(cellText);
+  }
+  // 번호가 가장 작은 시트 하나만 (NEIS 출력물은 단일 시트)
+  const sheets = entries
+    .map(e => ({ e, m: e.name.match(/^xl\/worksheets\/sheet(\d+)\.xml$/) }))
+    .filter(x => x.m)
+    .sort((a, b) => +a.m[1] - +b.m[1]);
+  if (!sheets.length) throw new Error("시트를 찾지 못했습니다.");
+  const doc = xml.parseFromString(utf8.decode(await extractZipEntry(r, sheets[0].e)), "text/xml");
+  const grid = []; // grid[행번호] = { 열문자: 값 }
+  for (const rowEl of collectByLocal(doc, "row")) {
+    const line = {};
+    for (const c of collectByLocal(rowEl, "c")) {
+      const col = (c.getAttribute("r") || "").replace(/\d+/g, "");
+      const kind = c.getAttribute("t");
+      let v = null;
+      if (kind === "inlineStr") v = cellText(c);
+      else {
+        const vEl = collectByLocal(c, "v")[0];
+        if (vEl) v = kind === "s" ? sst[+vEl.textContent] : vEl.textContent;
+      }
+      if (v !== null && v !== "") line[col] = v;
+    }
+    grid[+rowEl.getAttribute("r")] = line;
+  }
+  return grid;
+}
+
+/* ── NEIS '세부능력 및 특기사항' 내려받기 표 읽기 ──
+   인쇄 쪽마다 같은 짜임이 되풀이된다.
+     "3학년 1반" → (선택) "<진로 선택 과목>" 같은 구분줄 → 열 머리글 → 자료 줄 → 쪽번호 줄
+   열은 과목·학년·학기·번호·성명·본문(A~F). 과목·학년·학기는 바뀔 때만 적히고 그 아래는 비운다.
+   쪽이 넘어가면 앞 쪽 마지막 학생의 본문이 다음 쪽 첫 줄로 이어지는데, 이때 과목 이름도
+   '윤리와 사' + '상'처럼 갈려서 나온다. 그래서 쪽 첫 줄의 번호·성명이 앞 쪽 마지막 줄과
+   같으면 이어지는 대목으로 보고 본문과 과목 이름을 붙인다. */
+const XL_KIND = [[/진로\s*선택/, '진로선택'], [/체육|예술/, '체육예술']];
+const XL_HEAD = /^(과\s*목|학\s*년|학기|번\s*호|성\s*명|세부능력)/;
+const xlStr = v => (v === undefined || v === null) ? '' : String(v).trim();
+const xlNum = v => { const m = /^(\d+)(\.0+)?$/.exec(xlStr(v)); return m ? +m[1] : null; };
+
+function parseNeisSetuk(grid) {
+  const rows = [];                      // { ban, grade, sem, kind, subject, num, name, text, page }
+  let ban = null, grade = null, sem = null, kind = '일반', subject = '', page = 0;
+  let pageStart = true;                 // 이 쪽에서 아직 자료 줄을 만나지 않았다
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i];
+    if (!c) continue;
+    const A = xlStr(c.A);
+    // 쪽번호 줄 — 여기서 쪽이 끝난다
+    if (Object.values(c).some(v => xlStr(v) === '/')) { page++; pageStart = true; continue; }
+    if (A) {
+      const m = /^(\d)\s*학년\s*(\d+)\s*반$/.exec(A);
+      // 반이 바뀌면 과목 구분도 처음(일반)으로 돌아간다. 같은 반이면 쪽마다 되풀이되는
+      // 머리줄일 뿐이라 <진로 선택 과목> 같은 구분을 그대로 이어 간다.
+      if (m) {
+        if (+m[1] !== grade || +m[2] !== ban) kind = '일반';
+        grade = +m[1]; ban = +m[2];
+        continue;
+      }
+      const k = XL_KIND.find(([re]) => A.startsWith('<') && re.test(A));
+      if (k) { kind = k[1]; continue; }
+      if (XL_HEAD.test(A)) continue;
+    }
+    const num = xlNum(c.D), name = xlStr(c.E), body = c.F === undefined ? '' : String(c.F);
+    if (num === null || !name) continue;             // 자료 줄이 아니다
+    if (xlNum(c.B) !== null) grade = xlNum(c.B);
+    if (xlNum(c.C) !== null) sem = xlNum(c.C);
+    const prev = rows[rows.length - 1];
+    // 쪽 첫 줄이면서 앞 쪽 마지막 학생과 같고, 그 본문이 문장 끝에서 멈추지 않았다면
+    // 끊긴 대목이 이어지는 것이다. 생기부 기록은 늘 마침표로 끝나므로, 마침표로 끝난
+    // 뒤에 같은 학생이 다시 나오면 그것은 다음 과목이다.
+    if (pageStart && prev && prev.num === num && prev.name === name && !/[.?!]['’"”)\]]?\s*$/.test(prev.text)) {
+      if (A && A !== prev.subject && !prev.subject.endsWith(A)) prev.subject += A;
+      prev.text += body;
+      subject = prev.subject;          // 갈렸던 과목 이름을 이어 붙였으면 그 뒤로도 온전한 이름을 쓴다
+    } else {
+      if (A) subject = A;
+      rows.push({ ban, grade, sem, kind, subject, num, name, text: body, page });
+    }
+    pageStart = false;
+  }
+  if (!rows.length) throw new Error("자료 줄을 찾지 못했습니다. 엑셀은 NEIS '세부능력 및 특기사항' 내려받기만 읽습니다.");
+  return rows;
+}
+
+/** 표에서 읽은 줄들을 학생별 기록으로 묶는다 — PDF에서 만든 것과 같은 모양으로 */
+function studentsFromRows(rows) {
+  const byStu = new Map();
+  for (const r of rows) {
+    if (r.ban === null || r.grade === null || !r.text.trim()) continue;
+    const sk = `${r.ban}-${r.num}-${r.name}`;
+    if (!byStu.has(sk)) {
+      byStu.set(sk, { ban: r.ban, num: r.num, name: r.name, pages: [], fromXlsx: true,
+                      changche: new Map(), subjects: new Map(), setuk: new Map(),
+                      haengteuk: new Map(), unassigned: [] });
+    }
+    const stu = byStu.get(sk);
+    // 키는 PDF에서 만드는 것과 똑같이 맞춘다 — 같은 학생을 PDF와 엑셀로 함께 넣어도
+    // 한 항목으로 합쳐지고, 적어 둔 메모·하이라이트가 그대로 붙는다
+    const key = `${r.grade}|${r.kind}|${r.sem === null ? 'null' : r.sem}|${r.subject}|0`;
+    const had = stu.setuk.get(key);
+    if (had) had.text += r.text;
+    else stu.setuk.set(key, { text: r.text, breaks: [], spans: [], page: null,
+                              y0: null, y1: null, paras: 1, verified: true });
+  }
+  return [...byStu.values()];
+}
+
 /* ═══════ 파일 읽기 ═══════ */
 async function initPdfjs() {
   if (S.pdfjs) return S.pdfjs;
@@ -1623,13 +1914,44 @@ async function initPdfjs() {
   return lib;
 }
 
+/** 같은 학생(반·번호·성명)이 이미 있으면 그 기록에 얹는다 — 창체는 PDF, 세특은 엑셀로 넣을 수 있게.
+    PDF끼리는 합치지 않는다. 원문 보기가 문서마다 다른 쪽을 가리키기 때문이다. */
+function mergeStudent(r) {
+  const same = S.students.find(x => x.ban === r.ban && x.num === r.num && x.name === r.name
+    && (x.fromXlsx || r.fromXlsx));
+  if (!same) { S.students.push(r); return r; }
+  for (const [k, v] of r.setuk) if (!same.setuk.has(k)) same.setuk.set(k, v);
+  for (const [k, v] of r.changche) if (!same.changche.has(k)) same.changche.set(k, v);
+  for (const [k, v] of r.haengteuk) if (!same.haengteuk.has(k)) same.haengteuk.set(k, v);
+  for (const [k, v] of (r.subjects || [])) if (!same.subjects.has(k)) same.subjects.set(k, v);
+  if (r._doc !== undefined) { same._doc = r._doc; same.pages = r.pages; }   // PDF가 나중이면 원문 보기가 살아난다
+  if (!r.fromXlsx) same.fromXlsx = false;
+  return same;
+}
+
 async function readFiles(files) {
   $('prog').classList.remove('hide');
-  const lib = await initPdfjs();
+  const pdfs = files.filter(f => !/\.xlsx$/i.test(f.name));
+  const lib = pdfs.length ? await initPdfjs() : null;
   let done = 0;
   for (const f of files) {
     $('progText').textContent = `${f.name} 읽는 중`;
     const buf = new Uint8Array(await f.arrayBuffer());
+    if (/\.xlsx$/i.test(f.name)) {
+      try {
+        const rows = parseNeisSetuk(await readXlsx(buf.buffer));
+        const touched = new Set();
+        for (const r of studentsFromRows(rows)) touched.add(mergeStudent(r));
+        for (const r of touched) {
+          r._items = buildItems(r);
+          for (const it of r._items) it._name = r.name;
+        }
+        $('progBar').style.width = `${(++done / files.length) * 100}%`;
+      } catch (e) {
+        $('progText').textContent = `${f.name} 읽기 실패: ${e.message}`;
+      }
+      continue;
+    }
     let res;
     try {
       res = await loadPdf(lib, buf, (p, n) => {
@@ -1645,9 +1967,10 @@ async function readFiles(files) {
     const di = S.docs.length - 1;
     for (const stu of splitStudents(res.pages)) {
       const r = parseStudent(stu);
-      r._doc = di; r._items = buildItems(r);
-      for (const it of r._items) it._name = r.name;
-      S.students.push(r);
+      r._doc = di;
+      const t = mergeStudent(r);
+      t._items = buildItems(t);
+      for (const it of t._items) it._name = t.name;
     }
     // 파싱이 끝나면 단어·괘선 원자료는 더 필요 없다 (원문 보기는 doc만 있으면 됨)
     for (const pg of res.pages) { pg.words = null; pg.lines = null; pg.h = null; pg.v = null; }
@@ -1657,7 +1980,7 @@ async function readFiles(files) {
   // 파일을 더 넣으면 순서가 다시 매겨진다 — 보고 있던 학생을 놓치지 않게 자리를 다시 잡는다
   const wasOn = S.students[S.cur];
   S.students.sort((a, b) => a.ban - b.ban || a.num - b.num);
-  if (!S.students.length) { $('progText').textContent = '학생을 찾지 못했습니다. 생기부 PDF가 맞는지 확인해 주세요.'; return; }
+  if (!S.students.length) { $('progText').textContent = '학생을 찾지 못했습니다. 생기부 PDF나 NEIS 세특 엑셀이 맞는지 확인해 주세요.'; return; }
   S.cur = Math.max(0, S.students.indexOf(wasOn));
   S.item = Math.min(S.item, S.students[S.cur]._items.length - 1);
   if (S.item < 0) S.item = 0;
@@ -1735,7 +2058,7 @@ function drawItem() {
     </div>
     <div class="body-text" id="bodyText"></div>
     <div class="item-foot">
-      <button class="btn btn-solid" id="btnOrig">생기부 원문 보기</button>
+      ${it.spans && it.spans.length && r._doc !== undefined ? '<button class="btn btn-solid" id="btnOrig">생기부 원문 보기</button>' : ''}
       <button class="btn chk ${n.ok ? 'on' : ''}" id="btnOk">${n.ok ? '확인함' : '확인'}</button>
       <span style="font-size:12.5px;color:var(--faint)">본문을 끌어서 선택하면 색을 칠할 수 있습니다 · 스페이스로 확인하고 다음 · 1~4로 분야 이동</span>
     </div>`;
@@ -1745,7 +2068,7 @@ function drawItem() {
     if (m) requestAnimationFrame(() => m.scrollIntoView({ block: 'center' }));
   }
   c.querySelectorAll('.mark').forEach(b => { b.onclick = () => goItem(+b.dataset.go); });
-  $('btnOrig').onclick = () => showOriginal(r, it);
+  if ($('btnOrig')) $('btnOrig').onclick = () => showOriginal(r, it);
   $('btnOk').onclick = () => { n.ok = !n.ok; save(); drawItem(); drawStudents(); drawFoot(); };
 }
 
@@ -1867,6 +2190,12 @@ async function showOriginal(r, it) {
   $('modalTitle').textContent = `${r.ban}반 ${r.num}번 ${r.name} · ${it.grade}학년 ${it.title}`;
   const body = $('modalBody'); body.innerHTML = '<p style="padding:30px;color:var(--faint)">원문을 불러오는 중…</p>';
   $('modal').setAttribute('open', '');
+  // 엑셀에서 읽은 기록은 원문 그림이 없다
+  if (!it.spans || !it.spans.length || r._doc === undefined || !S.docs[r._doc]) {
+    body.innerHTML = '<p style="padding:36px;color:var(--faint);font-size:13.5px">'
+      + '엑셀에서 읽은 기록이라 생기부 원문 그림이 없습니다. 같은 학생의 생기부 PDF를 함께 넣으면 볼 수 있습니다.</p>';
+    return;
+  }
   const byPage = new Map();
   for (const sp of it.spans) { if (!byPage.has(sp.page)) byPage.set(sp.page, []); byPage.get(sp.page).push(sp); }
   body.innerHTML = '';
@@ -2512,7 +2841,7 @@ const drop = $('drop');
 ['dragover', 'dragenter'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('on'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('on'); }));
 drop.addEventListener('drop', e => {
-  const fs = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+  const fs = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf' || /\.(pdf|xlsx)$/i.test(f.name));
   if (fs.length) readFiles(fs);
 });
 /* ═══════ 인쇄 ═══════ */
