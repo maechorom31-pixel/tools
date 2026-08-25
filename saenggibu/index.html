@@ -1226,13 +1226,76 @@ const isNum = v => v !== undefined && v !== null && /^\d+(\.\d+)?$/.test(String(
    과목별 세특으로 잘못 읽힌다. */
 function detectDocType(grid) {
   const lines = [];
-  for (let i = 1; i < Math.min(grid.length, 8); i++)
-    for (const v of Object.values(grid[i] || {})) if (typeof v === "string") lines.push(v);
+  let subjectAxis = false;
+  for (let i = 1; i < Math.min(grid.length, 10); i++) {
+    const row = grid[i] || {};
+    for (const v of Object.values(row)) if (typeof v === "string") lines.push(v);
+    // 세특 출력물은 축이 두 가지다. 머리글 첫 칸이 '번 호'면 학생 중심,
+    // '과 목'이면 과목 중심 — 열 짜임이 아예 달라 파서도 갈라야 한다.
+    if (typeof row.A === "string" && row.A.replace(/\s+/g, "") === "과목"
+      && Object.values(row).some(v => typeof v === "string" && v.replace(/\s+/g, "").startsWith("세부능력")))
+      subjectAxis = true;
+  }
   if (lines.some(v => v.includes("개인별"))) return "개인별세특";
   if (lines.some(v => v.includes("창의적체험활동"))) return "창체";
+  if (subjectAxis) return "과목세특";
   if (lines.some(v => v.includes("세부능력") || v.includes("세부사항"))) return "세특";
   if (lines.some(v => v.includes("행동특성"))) return "행특";
   return null;
+}
+
+/* 과목 중심 세특 출력물 -------------------------------------------------
+   열이 [과 목 | 학 년 | 학기 | 번 호 | 성 명 | 세부능력 및 특기사항]으로
+   학생 중심 출력물과 축이 반대다. 과목·학년·학기는 묶음 첫 줄에만 적히고
+   아래 줄은 비어 있으며, 쪽이 넘어가면 머리글과 함께 같은 줄이 다시 나온 뒤
+   앞 학생의 남은 대목이 이어진다. 과목이 이미 갈려 있으므로 나중에
+   본문을 다시 쪼갤 필요가 없다. */
+function parseSubject(grid) {
+  const recs = {};
+  const txt = v => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "");
+  /* 과목 이름 칸도 쪽 끝에서 잘려 두 줄로 나뉜다 — "윤리와 사" / "상".
+     다른 이름의 앞머리이거나 꼬리이면서 덜 나타난 값이 잘린 조각이다.
+     ('문학'처럼 그 자체로 과목인 이름은 쪽마다 다시 찍혀 훨씬 자주 나온다) */
+  const seen = new Map();
+  for (let i = 1; i < grid.length; i++) {
+    const A = txt((grid[i] || {}).A);
+    if (!A || isNum(A) || /^\d학년\s*\d+반$/.test(A) || /^\d{4}\.\d{2}\.\d{2}/.test(A)
+      || A.replace(/\s+/g, "") === "과목") continue;
+    seen.set(A, (seen.get(A) || 0) + 1);
+  }
+  const names = [...seen.keys()];
+  const mend = {};
+  for (const v of names) {
+    const host = names.find(w => w !== v && (w.startsWith(v) || w.endsWith(v)) && seen.get(w) > seen.get(v));
+    if (host) mend[v] = host;
+  }
+
+  let school = "", klass = "";
+  let subject = "", grade = null, sem = "", cur = null;
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i]; if (!c) continue;
+    const vals = Object.values(c);
+    if (vals.includes("/")) {                        // 쪽번호 행
+      const sch = vals.find(v => typeof v === "string" && /학교$/.test(v.trim()));
+      if (sch) school = sch.trim();
+      continue;
+    }
+    const A = txt(c.A);
+    if (/^\d학년\s*\d+반$/.test(A)) { klass = A; continue; }
+    if (A.replace(/\s+/g, "") === "과목") { cur = null; continue; }   // 열 머리글
+    if (/^\d{4}\.\d{2}\.\d{2}/.test(A)) continue;                    // 출력 날짜
+    if (A && !isNum(c.A)) subject = mend[A] || A;
+    if (isNum(c.B)) grade = parseInt(c.B, 10);
+    if (isNum(c.C)) sem = String(parseInt(c.C, 10));
+    if (isNum(c.D) && txt(c.E) && !isNum(c.E)) cur = { no: parseInt(c.D, 10), name: txt(c.E) };
+    const body = typeof c.F === "string" ? c.F : "";
+    if (!body || !cur || !subject || !grade) continue;
+    const k = [cur.no, cur.name, grade, subject, sem].join("|");
+    if (!recs[k]) recs[k] = { no: cur.no, name: cur.name, grade, area: subject, sem, kind: "subj", text: "", hope: "" };
+    recs[k].text += body;
+  }
+  if (!Object.keys(recs).length) throw new Error("과목·번호·성명 짜임을 읽지 못했습니다.");
+  return { doctype: "과목세특", school, klass, recs: Object.values(recs) };
 }
 
 /* 개인별 세부능력 및 특기사항 ----------------------------------------
@@ -1286,6 +1349,7 @@ function parseNeis(grid) {
   const doctype = detectDocType(grid);
   if (!doctype) throw new Error("창의적체험활동/세부능력 출력물이 아닙니다.");
   if (doctype === "개인별세특") return parseSolo(grid);
+  if (doctype === "과목세특") return parseSubject(grid);
   if (doctype === "행특") throw new Error("행동특성 파일은 아직 지원하지 않습니다. (창체·세특·개인별 세특만 가능)");
   const recs = {};   // "no|name|grade|area" → { no, name, grade, area, text, hope }
   let school = "", klass = "";
@@ -1649,13 +1713,33 @@ function rebuild() {
   state.chunks = [];
   const soloKeys = new Set(recs.filter(r => r.area === SOLO).map(r => r.no + "|" + r.grade));
   const lex = subjectLexicon(recs.filter(r => r.area === "세특").map(r => r.text));
+  for (const r of recs) if (r.kind === "subj" && r.area.length >= 2) lex.add(r.area);
+  /* 같은 반을 과목 중심 출력물로도, 학생 중심 출력물로도 올릴 수 있다.
+     겹치는 과목은 학기가 또렷이 적힌 과목 중심 쪽을 정본으로 삼는다. */
+  const bySubject = new Map();
   for (const r of recs) {
+    if (r.kind !== "subj") continue;
+    const k = r.no + "|" + r.grade + "|" + r.area;
+    if (!bySubject.has(k)) bySubject.set(k, new Set());
+    bySubject.get(k).add(r.sem || "");
+  }
+  for (const r of recs) {
+    if (r.kind === "subj") {          // 과목 중심 출력물은 이미 과목별로 갈려 있다
+      const t = (r.text || "").trim();
+      if (t) state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: "subj",
+        label: r.area, sem: r.sem || "", text: t, bytes: neisBytes(t) });
+      continue;
+    }
     if (r.area === "세특") {
       for (const s of splitSubjects(r.text, lex)) {
         const t = s.body.trim();
         if (t.length < 2) continue;
         // 개인별 세특 파일을 따로 올렸으면 그쪽이 정본이다 — 떼어 낸 조각은 버린다
         if (s.solo && soloKeys.has(r.no + "|" + r.grade)) continue;
+        if (!s.solo) {
+          const sems = bySubject.get(r.no + "|" + r.grade + "|" + s.subject);
+          if (sems && (!s.sem || sems.has(s.sem))) continue;
+        }
         state.chunks.push({ no: r.no, name: r.name, grade: r.grade, kind: s.solo ? "solo" : "subj",
           label: s.solo ? SOLO : s.subject, sem: s.solo ? "" : s.sem, text: t, bytes: neisBytes(t) });
       }
@@ -1693,7 +1777,7 @@ async function handleFiles(files) {
       if (school) state.school = school;
       if (klass) state.klass = klass;
       for (const r of recs) {
-        const k = [r.no, r.name, r.grade, r.area].join("|");
+        const k = [r.no, r.name, r.grade, r.area, r.sem || ""].join("|");
         const old = state.recs.get(k);
         if (!old) { state.recs.set(k, r); continue; }
         // 같은 칸이 여러 파일에 있으면 긴 쪽을 남기되, 진로희망은 어느 쪽에 있든 지키다
