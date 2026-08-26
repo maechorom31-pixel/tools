@@ -266,6 +266,28 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-kind.G{background:#E8F0F7;color:#2A5F87}
 .issue-kind.H{background:#F6EEF3;color:#8A3E6B}
 .issue-kind.I{background:#FBE3DE;color:#A8412C}
+/* 겹침 비교 카드 */
+.sheet-body.cmp-body{text-align:left;background:var(--card);padding:0}
+.cmp-sum{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--mid);
+  background:#FBFAF6;position:sticky;top:0;z-index:10}
+.cmp-sum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.cmp-sum span{display:block;margin-top:3px;font-size:12px;color:var(--faint)}
+.cmp{display:grid;grid-template-columns:1fr 1fr}
+.cmp-list{display:block}
+.cmp-col{min-width:0;border-right:1px solid var(--line)}
+.cmp-col:last-child{border-right:none}
+.cmp-list .cmp-col{border-right:none;border-bottom:1px solid var(--line)}
+.cmp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 18px 10px}
+.cmp-head b{font-size:14px}
+.cmp-head span{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.cmp-head .btn{margin-left:auto;border:1px solid var(--line);padding:5px 11px;font-size:12.5px}
+.cmp-mini{padding:0 18px 8px;font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.cmp-mini b{color:var(--mid)}
+.cmp-text{padding:0 18px 20px;font-size:14px;line-height:1.95;word-break:keep-all;
+  overflow-wrap:break-word;overflow-wrap:anywhere;white-space:pre-wrap}
+.cmp-text mark.same{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;border-radius:2px;padding:1px 0}
+@media (max-width:760px){ .cmp{grid-template-columns:1fr} .cmp-col{border-right:none;border-bottom:1px solid var(--line)} }
+
 .pagewrap{position:relative;display:inline-block;margin-bottom:14px;box-shadow:0 2px 10px #0000001f}
 .pagewrap canvas{display:block;border-radius:2px}
 .hlbox{position:absolute;background:#FFD84D4d;border:1.5px solid #E0A800;border-radius:2px;pointer-events:none}
@@ -1491,6 +1513,51 @@ function shingles(t, n = 8) {
   for (let i = 0; i + n <= flat.length; i++) set.add(flat.slice(i, i + n));
   return set;
 }
+/** 공백을 뺀 글자열과, 그 자리에서 원문 위치로 돌아가는 표 */
+function flatMapOf(t) {
+  let flat = '';
+  const map = [];
+  for (let i = 0; i < t.length; i++) {
+    if (/\s/.test(t[i])) continue;
+    flat += t[i]; map.push(i);
+  }
+  return { flat, map, src: t };
+}
+/** 형광펜 경계를 어절에 맞춘다 — 낱말 한가운데서 시작하거나 끝나면 읽기 사납다.
+    안쪽으로만 줄이므로 실제로 같지 않은 대목까지 칠하는 일은 없다. */
+function snapWord(t, s, e) {
+  while (s < e && s > 0 && !/\s/.test(t[s - 1]) && !/[.,!?)”’]/.test(t[s - 1])) s++;
+  while (e > s && e < t.length && !/\s/.test(t[e]) && !/[.,!?(“‘]/.test(t[e])) e--;
+  while (s < e && /\s/.test(t[s])) s++;
+  while (e > s && /\s/.test(t[e - 1])) e--;
+  return [s, e];
+}
+/** 두 글에서 같은 대목이 어디부터 어디까지인지.
+    겹침 판정과 같은 8글자 조각을 쓰되, 잇닿은 조각을 하나로 합쳐 구간으로 만든다. */
+function commonSpans(a, b, n = 8) {
+  const fa = flatMapOf(a), fb = flatMapOf(b);
+  const setOf = f => {
+    const s = new Set();
+    for (let i = 0; i + n <= f.flat.length; i++) s.add(f.flat.slice(i, i + n));
+    return s;
+  };
+  const sa = setOf(fa), sb = setOf(fb);
+  const runs = (f, other) => {
+    const marks = [];
+    for (let i = 0; i + n <= f.flat.length; i++) {
+      if (!other.has(f.flat.slice(i, i + n))) continue;
+      const last = marks[marks.length - 1];
+      if (last && i <= last[1]) last[1] = Math.max(last[1], i + n);
+      else marks.push([i, i + n]);
+    }
+    // 글자 수는 형광펜이 덮는 원문 길이로 센다 — 화면에 보이는 것과 숫자가 어긋나지 않게
+    return marks.map(([s, e]) => {
+      const [from, to] = snapWord(f.src, f.map[s], f.map[e - 1] + 1);
+      return { s: from, e: to, n: to - from };
+    }).filter(m => m.e > m.s);
+  };
+  return { a: runs(fa, sb), b: runs(fb, sa) };
+}
 /** 짧은 쪽을 기준으로 한 겹침 비율 */
 function overlapRatio(a, b) {
   if (!a.size || !b.size) return 0;
@@ -1561,6 +1628,7 @@ function runCheck() {
           si: A.si, ii: A.ii, it: A.it, k: 'F', ratio,
           name: `${Math.round(ratio * 100)}% 겹침 — ${other.ban}-${other.num} ${other.name}`,
           s: 0, e: 0, ex: A.it.text.slice(0, 90),
+          pair: { si: Bx.si, ii: Bx.ii },     // 비교 카드에서 나란히 놓을 상대
         });
       }
     }
@@ -1581,6 +1649,7 @@ function runCheck() {
       S.issues.push({
         si, ii: arr[1].ii, it: S.students[si]._items[arr[1].ii], k: 'H',
         name: '같은 문장이 이 학생 안에서 반복됨', s: arr[1].s, e: arr[1].e, ex: t.slice(0, 90),
+        uses: arr, sentence: t,
       });
     }
     if (byStu.size < sameMin) continue;
@@ -1589,7 +1658,7 @@ function runCheck() {
     S.issues.push({
       si: first.si, ii: first.ii, it: S.students[first.si]._items[first.ii], k: 'F',
       name: `${byStu.size}명이 같은 문장`, s: first.s, e: first.e,
-      ex: t.slice(0, 100), who,
+      ex: t.slice(0, 100), who, uses: [...byStu.values()], sentence: t,
     });
   }
   for (let si = 0; si < S.students.length; si++) {
@@ -2189,6 +2258,7 @@ const drawAll = () => { drawStudents(); drawItem(); drawNote(); drawFoot(); };
 async function showOriginal(r, it) {
   $('modalTitle').textContent = `${r.ban}반 ${r.num}번 ${r.name} · ${it.grade}학년 ${it.title}`;
   const body = $('modalBody'); body.innerHTML = '<p style="padding:30px;color:var(--faint)">원문을 불러오는 중…</p>';
+  body.classList.remove('cmp-body');       // 비교 카드에서 쓰던 판을 되돌린다
   $('modal').setAttribute('open', '');
   // 엑셀에서 읽은 기록은 원문 그림이 없다
   if (!it.spans || !it.spans.length || r._doc === undefined || !S.docs[r._doc]) {
@@ -2332,6 +2402,8 @@ function drawCheck() {
         <span class="issue-x">${ex}</span>
         <span class="issue-loc">${esc(loc)}</span></span>`;
       btn.onclick = () => {
+        if (x.pair) { showCompare({ si: x.si, ii: x.ii }, x.pair); return; }
+        if (x.uses && x.uses.length > 1) { showShared(x.uses); return; }
         S.cur = si; S.item = Math.max(0, x.ii);
         S.hit = x.e > x.s ? { s: x.s, e: x.e } : null;
         setMode('read'); drawAll();
@@ -2514,6 +2586,93 @@ function drawFindMain() {
     }
     main.appendChild(g);
   }
+}
+
+/* ═══════ 겹침 비교 카드 ═══════ */
+/** 지정한 구간에 형광펜을 칠한 HTML */
+function paintSpans(text, spans) {
+  const pts = [...new Set([0, text.length, ...spans.flatMap(m => [m.s, m.e])])].sort((a, b) => a - b);
+  let html = '';
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [a, b] = [pts[i], pts[i + 1]];
+    const on = spans.some(m => m.s <= a && m.e >= b);
+    const seg = esc(text.slice(a, b));
+    html += on ? `<mark class="same">${seg}</mark>` : seg;
+  }
+  return html || esc(text);
+}
+const stuLabel = si => {
+  const r = S.students[si];
+  return `${r.ban}반 ${r.num}번 ${r.name}`;
+};
+function openItem(si, ii, hit) {
+  $('modal').removeAttribute('open');
+  S.cur = si; S.item = ii; S.hit = hit || null;
+  setMode('read');
+  $('paneItem').scrollTop = 0;
+}
+
+/** 한 칸 — 누구의 어느 항목인지, 같은 대목이 몇 곳인지, 그리고 형광펜 친 본문 */
+function cmpColumn(si, ii, spans) {
+  const it = S.students[si]._items[ii];
+  const chars = spans.reduce((n, m) => n + m.n, 0);
+  const first = spans[0] || { s: 0, e: 0 };
+  return `<div class="cmp-col">
+      <div class="cmp-head"><b>${esc(stuLabel(si))}</b>
+        <span>${it.grade}학년 ${it.grp} · ${esc(it.title)} · ${nbytes(it.text)}/${it.limit} byte</span>
+        <button class="btn" data-open="${si}:${ii}" data-s="${first.s}" data-e="${first.e}">톺아보기에서 열기</button></div>
+      <div class="cmp-mini">같은 대목 <b>${spans.length}곳</b> · 합쳐 <b>${chars}자</b></div>
+      <div class="cmp-text">${paintSpans(it.text, spans)}</div>
+    </div>`;
+}
+function cmpBind(body) {
+  body.querySelectorAll('[data-open]').forEach(btn => {
+    const [si, ii] = btn.dataset.open.split(':').map(Number);
+    const s = +btn.dataset.s, e = +btn.dataset.e;
+    btn.onclick = () => openItem(si, ii, e > s ? { s, e } : null);
+  });
+}
+
+/** 두 기록을 나란히 놓고, 같은 대목에 형광펜을 칠한다 */
+function showCompare(A, B) {
+  const ia = S.students[A.si]._items[A.ii], ib = S.students[B.si]._items[B.ii];
+  if (!ia || !ib) return;
+  const sp = commonSpans(ia.text, ib.text);
+  const longest = Math.max(0, ...sp.a.map(m => m.n), ...sp.b.map(m => m.n));
+  $('modalTitle').textContent = '겹침 비교';
+  $('modal').setAttribute('open', '');
+  const body = $('modalBody');
+  body.classList.add('cmp-body');
+  body.innerHTML = `<div class="cmp-sum">가장 긴 대목 <b>${longest}자</b>
+      <span>형광펜 친 곳이 두 기록에 똑같이 들어 있는 대목입니다. 곳수는 칸마다 따로 셉니다 —
+      한쪽에서 붙어 있는 대목이 다른 쪽에서는 나뉘어 있을 수 있습니다.</span></div>
+    <div class="cmp">${cmpColumn(A.si, A.ii, sp.a)}${cmpColumn(B.si, B.ii, sp.b)}</div>`;
+  cmpBind(body);
+}
+
+/** 같은 문장이 여러 곳에 쓰인 경우 — 쓴 자리를 차례로 놓고 그 문장에 형광펜.
+    여러 학생일 수도 있고(F), 한 학생 안에서 되풀이된 것일 수도 있다(H). */
+function showShared(uses) {
+  const byItem = new Map();
+  for (const u of uses) {
+    const k = `${u.si}:${u.ii}`;
+    if (!byItem.has(k)) byItem.set(k, { si: u.si, ii: u.ii, spans: [] });
+    byItem.get(k).spans.push({ s: u.s, e: u.e, n: u.e - u.s });
+  }
+  const cols = [...byItem.values()];
+  const stus = new Set(uses.map(u => u.si));
+  $('modalTitle').textContent = stus.size > 1
+    ? `같은 문장을 쓴 학생 ${stus.size}명`
+    : `같은 문장이 한 학생 안에서 ${uses.length}번`;
+  $('modal').setAttribute('open', '');
+  const body = $('modalBody');
+  body.classList.add('cmp-body');
+  body.innerHTML = `<div class="cmp-sum">${stus.size > 1
+      ? `이 문장이 <b>${stus.size}명</b>의 기록에 똑같이 들어 있습니다`
+      : `이 학생의 기록에 같은 문장이 <b>${uses.length}번</b> 나옵니다`}
+      <span>형광펜 친 곳이 그 문장입니다</span></div>
+    <div class="cmp-list">${cols.map(c => cmpColumn(c.si, c.ii, c.spans)).join('')}</div>`;
+  cmpBind(body);
 }
 
 /* ═══════ 단어 추천 ═══════ */
