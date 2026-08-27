@@ -399,7 +399,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
     <p>창의적 체험활동 → 행동특성 → 세부능력 순으로 훑어보며<br>하이라이트하고 메모하고, 정정 대상을 찾습니다.</p>
     <div class="drop" id="drop">
       <button class="btn btn-solid" id="btnPick">생기부 파일 고르기</button>
-      <p style="margin-top:12px;font-size:13px;color:var(--faint)">생기부 PDF와 NEIS 세특 엑셀(.xlsx)을 함께 넣어도 됩니다</p>
+      <p style="margin-top:12px;font-size:13px;color:var(--faint)">생기부 PDF와 NEIS 창체·세특 엑셀(.xlsx)을 함께 넣어도 됩니다</p>
       <div class="prog hide" id="prog"><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
     </div>
     <div class="saved hide" id="saved"></div>
@@ -1942,8 +1942,91 @@ function parseNeisSetuk(grid) {
     }
     pageStart = false;
   }
-  if (!rows.length) throw new Error("자료 줄을 찾지 못했습니다. 엑셀은 NEIS '세부능력 및 특기사항' 내려받기만 읽습니다.");
+  if (!rows.length) throw new Error('세부능력 및 특기사항 자료 줄을 찾지 못했습니다.');
   return rows;
+}
+
+/* ── NEIS '창의적체험활동상황' 내려받기 표 읽기 ──
+   열은 번호·성명·학년·영역·시간·특기사항(A~F)이다. 번호·성명·학년은 학생이 바뀔 때만,
+   영역은 영역이 바뀔 때만 적히고 그 아래는 비운다.
+   진로활동의 희망분야는 F='희망분야' / G=값 꼴로 따로 오는데, 생기부 PDF 쪽에서도
+   특기사항으로 세지 않으므로 여기서도 건너뛴다.
+   영역은 학생·학년마다 하나뿐이라, 쪽이 넘어가며 같은 자리가 다시 나오면 언제나
+   이어지는 대목이다. 세특처럼 문장 끝을 따져 볼 것도 없다. */
+function parseNeisChangche(grid) {
+  const rows = [];
+  let ban = null, grade = null, num = null, name = '', area = null;
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i];
+    if (!c) continue;
+    if (Object.values(c).some(v => xlStr(v) === '/')) continue;      // 쪽번호 줄
+    const A = xlStr(c.A);
+    if (A) {
+      const m = /^(\d)\s*학년\s*(\d+)\s*반$/.exec(A);
+      // 반 머리줄의 학년은 학급의 학년일 뿐이다. 기록의 학년은 줄마다 적힌 C열에서 읽고,
+      // C열을 한 번도 못 본 동안에만 이것을 임시로 쓴다.
+      if (m) { ban = +m[2]; if (grade === null) grade = +m[1]; continue; }
+      if (/^(번\s*호|성\s*명|학\s*년)/.test(A)) continue;             // 열 머리글
+    }
+    if (/^(영역|시간|특기사항)$/.test(xlStr(c.D))) continue;          // 열 머리글 둘째 줄
+    const n = xlNum(c.A), nm = xlStr(c.B);
+    if (n !== null && nm) { num = n; name = nm; }
+    if (xlNum(c.C) !== null) grade = xlNum(c.C);
+    const d = xlStr(c.D);
+    if (d) {
+      const flat = d.replace(/\s/g, '');
+      area = AREAS.find(a => flat.includes(a.replace(/·/g, ''))) || AREAS.find(a => flat.includes(a)) || area;
+    }
+    const body = c.F === undefined ? '' : String(c.F);
+    if (!body || xlStr(c.F).startsWith('희망분야')) continue;
+    if (num === null || !area || grade === null) continue;
+    rows.push({ ban, num, name, grade, area, text: body });
+  }
+  if (!rows.length) throw new Error('창의적체험활동 특기사항을 찾지 못했습니다.');
+  return rows;
+}
+
+/** 어떤 내려받기인지 표 머리에서 가린다. NEIS는 제목 자간을 벌려 쓰는 일이 있어 공백을 지우고 본다 */
+function detectSheet(grid) {
+  const head = [];
+  for (let i = 1; i < Math.min(grid.length, 20); i++)
+    for (const v of Object.values(grid[i] || {})) head.push(xlStr(v).replace(/\s/g, ''));
+  if (head.some(v => v.includes('창의적체험활동'))) return '창체';
+  if (head.some(v => v.includes('세부능력') || v.includes('세부사항'))) return '세특';
+  return null;
+}
+/** 제목으로 가린 쪽을 먼저 대 보되, 아니면 다른 쪽도 대 본다 — 제목이 지워진 파일도 열리게 */
+function studentsFromSheet(grid) {
+  const order = detectSheet(grid) === '창체' ? ['창체', '세특'] : ['세특', '창체'];
+  let first;
+  for (const k of order) {
+    try {
+      return k === '창체' ? studentsFromChangche(parseNeisChangche(grid))
+                          : studentsFromRows(parseNeisSetuk(grid));
+    } catch (e) { if (first === undefined) first = e; }   // 제목으로 가린 쪽의 사정을 알려 준다
+  }
+  throw first;
+}
+
+/** 창체 줄들을 학생별 기록으로 묶는다 */
+function studentsFromChangche(rows) {
+  const byStu = new Map();
+  for (const r of rows) {
+    if (r.ban === null || !r.text.trim()) continue;
+    const sk = `${r.ban}-${r.num}-${r.name}`;
+    if (!byStu.has(sk)) {
+      byStu.set(sk, { ban: r.ban, num: r.num, name: r.name, pages: [], fromXlsx: true,
+                      changche: new Map(), subjects: new Map(), setuk: new Map(),
+                      haengteuk: new Map(), unassigned: [] });
+    }
+    const stu = byStu.get(sk);
+    const key = `${r.grade}|${r.area}`;                 // PDF에서 만드는 키와 같은 꼴
+    const had = stu.changche.get(key);
+    if (had) had.text += r.text;
+    else stu.changche.set(key, { text: r.text, breaks: [], spans: [], page: null, y0: null, y1: null });
+  }
+  if (!byStu.size) throw new Error('반 머리줄(예: 3학년 1반)이 없어 학생을 가릴 수 없습니다.');
+  return [...byStu.values()];
 }
 
 /** 표에서 읽은 줄들을 학생별 기록으로 묶는다 — PDF에서 만든 것과 같은 모양으로 */
@@ -1966,6 +2049,7 @@ function studentsFromRows(rows) {
     else stu.setuk.set(key, { text: r.text, breaks: [], spans: [], page: null,
                               y0: null, y1: null, paras: 1, verified: true });
   }
+  if (!byStu.size) throw new Error('반 머리줄(예: 3학년 1반)이 없어 학생을 가릴 수 없습니다.');
   return [...byStu.values()];
 }
 
@@ -1989,12 +2073,20 @@ function mergeStudent(r) {
   const same = S.students.find(x => x.ban === r.ban && x.num === r.num && x.name === r.name
     && (x.fromXlsx || r.fromXlsx));
   if (!same) { S.students.push(r); return r; }
-  for (const [k, v] of r.setuk) if (!same.setuk.has(k)) same.setuk.set(k, v);
-  for (const [k, v] of r.changche) if (!same.changche.has(k)) same.changche.set(k, v);
-  for (const [k, v] of r.haengteuk) if (!same.haengteuk.has(k)) same.haengteuk.set(k, v);
+  // 이미 있는 자리라도, 새로 들어온 쪽에만 원문 자리(spans)가 있으면 그것으로 바꾼다.
+  // 엑셀을 먼저 넣고 PDF를 나중에 넣어도 '생기부 원문 보기'가 살아 있게 하려는 것이다.
+  const put = (map, k, v) => {
+    const had = map.get(k);
+    if (!had || (!(had.spans || []).length && (v.spans || []).length)) map.set(k, v);
+  };
+  for (const [k, v] of r.setuk) put(same.setuk, k, v);
+  for (const [k, v] of r.changche) put(same.changche, k, v);
+  for (const [k, v] of r.haengteuk) put(same.haengteuk, k, v);
   for (const [k, v] of (r.subjects || [])) if (!same.subjects.has(k)) same.subjects.set(k, v);
   if (r._doc !== undefined) { same._doc = r._doc; same.pages = r.pages; }   // PDF가 나중이면 원문 보기가 살아난다
-  if (!r.fromXlsx) same.fromXlsx = false;
+  // 엑셀 자료가 한 번이라도 들어온 자리는 계속 표시해 둔다. 창체 엑셀 → PDF → 세특 엑셀처럼
+  // 세 번째 파일이 들어와도 같은 학생으로 합쳐지게 하려는 것이다.
+  if (r.fromXlsx) same.fromXlsx = true;
   return same;
 }
 
@@ -2008,9 +2100,9 @@ async function readFiles(files) {
     const buf = new Uint8Array(await f.arrayBuffer());
     if (/\.xlsx$/i.test(f.name)) {
       try {
-        const rows = parseNeisSetuk(await readXlsx(buf.buffer));
+        const made = studentsFromSheet(await readXlsx(buf.buffer));
         const touched = new Set();
-        for (const r of studentsFromRows(rows)) touched.add(mergeStudent(r));
+        for (const r of made) touched.add(mergeStudent(r));
         for (const r of touched) {
           r._items = buildItems(r);
           for (const it of r._items) it._name = r.name;
@@ -2049,7 +2141,7 @@ async function readFiles(files) {
   // 파일을 더 넣으면 순서가 다시 매겨진다 — 보고 있던 학생을 놓치지 않게 자리를 다시 잡는다
   const wasOn = S.students[S.cur];
   S.students.sort((a, b) => a.ban - b.ban || a.num - b.num);
-  if (!S.students.length) { $('progText').textContent = '학생을 찾지 못했습니다. 생기부 PDF나 NEIS 세특 엑셀이 맞는지 확인해 주세요.'; return; }
+  if (!S.students.length) { $('progText').textContent = '학생을 찾지 못했습니다. 생기부 PDF나 NEIS 창체·세특 엑셀이 맞는지 확인해 주세요.'; return; }
   S.cur = Math.max(0, S.students.indexOf(wasOn));
   S.item = Math.min(S.item, S.students[S.cur]._items.length - 1);
   if (S.item < 0) S.item = 0;
