@@ -116,6 +116,12 @@ h2{font-size:25px;font-weight:700;letter-spacing:-.025em;line-height:1.3;word-br
 .empty{color:var(--faint);padding:60px 0;text-align:center}
 .empty h3{font-size:16px;font-weight:600;color:var(--mid);margin-bottom:6px}
 
+/* 톺아보기 안의 점검 목록 */
+.chk-box{margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.chk-box-h{font-size:12.5px;font-weight:600;color:var(--mid);margin-bottom:9px}
+.chk-box-h span{display:block;font-weight:400;font-size:11.5px;color:var(--faint);margin-top:2px}
+.chk-rows{display:flex;flex-wrap:wrap;gap:6px}
+
 /* 하이라이트 팔레트 */
 .palette{position:fixed;display:none;gap:2px;background:var(--ink);padding:5px;border-radius:8px;box-shadow:0 6px 20px #0000002e;z-index:60}
 .palette button{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:5px;color:#fff;font-size:12px;white-space:nowrap}
@@ -302,6 +308,8 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .gth-iss-row{display:flex;align-items:center;gap:7px;padding:4px 9px;border:1px solid var(--line);
   border-radius:6px;background:var(--card);font-size:12.5px;color:var(--mid);text-align:left}
 .gth-iss-row:hover{border-color:var(--amber);background:var(--amber-soft);color:var(--ink)}
+.gth-iss-row.static{cursor:default;background:#F8F7F3;color:var(--faint)}
+.gth-iss-row.static:hover{border-color:var(--line);background:#F8F7F3;color:var(--faint)}
 .gth-text mark{background:var(--hl1);border-radius:2px;padding:1px 0;box-shadow:none}
 .gth-text mark.q{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;font-weight:600;color:var(--ink)}
 .gth-text mark.iss{background:transparent;border-bottom:2px solid var(--warn);border-radius:0;color:var(--warn)}
@@ -420,8 +428,8 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   <div class="brand">생기부 <em>톺아보기</em></div>
   <div class="modes" role="tablist">
     <button role="tab" id="tabRead" aria-selected="true">톺아보기</button>
-    <button role="tab" id="tabCheck" aria-selected="false">점검</button>
     <button role="tab" id="tabGather" aria-selected="false">모아보기</button>
+    <button role="tab" id="tabCheck" aria-selected="false">점검</button>
     <button role="tab" id="tabFind" aria-selected="false">검색</button>
     <button role="tab" id="tabIntv" aria-selected="false">면접</button>
   </div>
@@ -2217,7 +2225,7 @@ function drawStudents() {
       d.innerHTML = `<div class="ban-label">${ban}반</div>`;
       p.appendChild(d); g = d;
     }
-    const nIssue = S.issues.filter(x => x.si === i).length;
+    const nIssue = issueCount(i);
     const b = document.createElement('button');
     b.className = 'stu';
     b.setAttribute('aria-current', i === S.cur);
@@ -2252,7 +2260,7 @@ function drawItem() {
   const b = nbytes(it.text), pct = Math.min(100, (b / it.limit) * 100);
   const cls = b > it.limit + 30 ? 'over' : (b < it.limit * 0.25 ? 'low' : '');
   const n = noteOf(r, it.id);
-  const issues = S.issues.filter(x => x.si === S.cur && x.ii === S.item);
+  const issues = issuesOf(S.cur, S.item);
 
   c.innerHTML = `
     ${marksHtml(r)}
@@ -2275,12 +2283,31 @@ function drawItem() {
       ${it.spans && it.spans.length && r._doc !== undefined ? '<button class="btn btn-solid" id="btnOrig">생기부 원문 보기</button>' : ''}
       <button class="btn chk ${n.ok ? 'on' : ''}" id="btnOk">${n.ok ? '확인함' : '확인'}</button>
       <span style="font-size:12.5px;color:var(--faint)">본문을 끌어서 선택하면 색을 칠할 수 있습니다 · 스페이스로 확인하고 다음 · 1~4로 분야 이동</span>
-    </div>`;
+    </div>
+    ${issues.length ? `<div class="chk-box">
+      <div class="chk-box-h">이 항목에서 걸린 것 ${issues.length}
+        <span>점검 모드에서 켜 둔 규칙만 봅니다 · 누르면 그 자리로 갑니다</span></div>
+      <div class="chk-rows">${issues.map((x, i) => {
+        // 분량처럼 가리킬 자리가 없는 지적은 누를 수 없게 둔다
+        const at = x.e > x.s || x.pair || (x.uses && x.uses.length > 1);
+        return `<${at ? 'button' : 'span'} class="gth-iss-row${at ? '' : ' static'}"${at ? ` data-iss="${i}"` : ''}>
+          <span class="issue-kind ${x.k}">${x.k}</span><span>${esc(x.name)}</span></${at ? 'button' : 'span'}>`;
+      }).join('')}</div>
+    </div>` : ''}`;
   paintText(it, n, issues);
   if (S.hit) {
     const m = $('bodyText').querySelector('mark.hit');
     if (m) requestAnimationFrame(() => m.scrollIntoView({ block: 'center' }));
   }
+  c.querySelectorAll('[data-iss]').forEach(btn => {
+    const x = issues[+btn.dataset.iss];
+    btn.onclick = () => {
+      if (x.pair) { showCompare({ si: x.si, ii: x.ii }, x.pair); return; }
+      if (x.uses && x.uses.length > 1) { showShared(x.uses); return; }
+      S.hit = x.e > x.s ? { s: x.s, e: x.e } : null;
+      drawItem();
+    };
+  });
   c.querySelectorAll('.mark').forEach(b => { b.onclick = () => goItem(+b.dataset.go); });
   if ($('btnOrig')) $('btnOrig').onclick = () => showOriginal(r, it);
   $('btnOk').onclick = () => { n.ok = !n.ok; save(); drawItem(); drawStudents(); drawFoot(); };
@@ -2440,6 +2467,9 @@ $('modal').onclick = e => { if (e.target.id === 'modal') $('modal').removeAttrib
 
 /* ═══════ 점검 모드 ═══════ */
 const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I']);   // F(공통 문장)는 켤 때만
+/** 지금 켜 둔 규칙에 걸린 것만. 톺아보기·모아보기·점검이 같은 것을 보게 한다 */
+const issuesOf = (si, ii) => S.issues.filter(x => x.si === si && x.ii === ii && active.has(x.k));
+const issueCount = si => S.issues.filter(x => x.si === si && active.has(x.k)).length;
 let banFilter = 0;   // 0 = 전체
 
 function drawCheck() {
@@ -2819,8 +2849,8 @@ function drawGatherMain() {
   const avg = bytes.length ? Math.round(bytes.reduce((a, c) => a + c, 0) / bytes.length) : 0;
 
   const issueRows = g.rows.filter(x => !GATHER.ban || S.students[x.si].ban === GATHER.ban);
-  const issueTotal = S.issues.filter(y =>
-    issueRows.some(x => x.si === y.si && x.ii === y.ii)).length;
+  const issueTotal = S.issues.filter(y => active.has(y.k)
+    && issueRows.some(x => x.si === y.si && x.ii === y.ii)).length;
 
   main.innerHTML = `<div class="gth-head">
       <b>${g.grade}학년 ${g.grp} · ${esc(g.name)}</b>
@@ -2869,7 +2899,7 @@ function drawGatherMain() {
     const r = S.students[x.si], it = x.it, n = noteRead(r, it.id);
     const b = nbytes(it.text), pct = Math.min(100, (b / it.limit) * 100);
     const cls = b > it.limit + 30 ? 'over' : (b < it.limit * 0.25 ? 'low' : '');
-    const issues = S.issues.filter(y => y.si === x.si && y.ii === x.ii);
+    const issues = issuesOf(x.si, x.ii);
     // 칠하는 차례: 찾은 말 → 점검 자리 → 내가 친 형광펜. 앞의 것이 이긴다
     const spans = [
       ...x.hits,
@@ -3254,6 +3284,7 @@ function printInterview(r) {
 
 /* ═══════ 모드·이동 ═══════ */
 function setMode(m) {
+  const prev = S.mode;
   S.mode = m;
   $('tabRead').setAttribute('aria-selected', m === 'read');
   $('tabCheck').setAttribute('aria-selected', m === 'check');
@@ -3266,11 +3297,17 @@ function setMode(m) {
   $('gatherView').classList.toggle('hide', m !== 'gather');
   $('findView').classList.toggle('hide', m !== 'find');
   $('intvView').classList.toggle('hide', m !== 'intv');
-  $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.length}건`;
+  $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.filter(x => active.has(x.k)).length}건`;
   if (m === 'read') drawAll();
   else if (m === 'check') drawCheck();
   else if (m === 'find') { runFind(); drawFind(); }
-  else if (m === 'gather') drawGather();
+  else if (m === 'gather') {
+    // 톺아보기에서 넘어올 때만 보던 항목의 묶음으로 맞춘다.
+    // 점검·검색에서 돌아올 때까지 바꾸면 여기서 고른 자리를 잃는다.
+    const it = prev === 'read' ? (S.students[S.cur] || {})._items?.[S.item] : null;
+    if (it) GATHER.key = `${it.grade}|${it.grp}|${it.title}`;
+    drawGather();
+  }
   else { intvCur = S.cur; drawIntv(); }
 }
 function move(d) {
@@ -3352,7 +3389,7 @@ function openPrint() {
     const rows = [];
     r._items.forEach((it, ii) => {
       const n = S.notes[`${r.ban}-${r.num}::${it.id}`];
-      const issues = withIssues ? S.issues.filter(x => x.si === si && x.ii === ii && x.k !== 'F') : [];
+      const issues = withIssues ? issuesOf(si, ii).filter(x => x.k !== 'F') : [];   // 켜 둔 규칙만
       const has = (n && (n.memo || (n.hl && n.hl.length))) || issues.length;
       if (scope === 'all' && !has) return;
       if (scope === 'cur' && !has && !(n && n.ok)) return;
@@ -3405,10 +3442,11 @@ function openPrint() {
 
 /* ═══════ 정정대장 참고표 ═══════ */
 function exportIssuesCsv() {
-  if (!S.issues.length) { alert('점검에서 걸린 항목이 없습니다.'); return; }
+  const picked = S.issues.filter(x => active.has(x.k));   // 켜 둔 규칙만
+  if (!picked.length) { alert('점검에서 걸린 항목이 없습니다. (켜 둔 규칙 기준)'); return; }
   const esc2 = v => '"' + String(v).replace(/"/g, '""').replace(/\n/g, ' ') + '"';
   const rows = [['반', '번호', '성명', '학년', '항목', '규칙', '지적 내용', '해당 대목'].map(esc2).join(',')];
-  for (const x of S.issues) {
+  for (const x of picked) {
     const r = S.students[x.si];
     const it = x.ii >= 0 ? r._items[x.ii] : null;
     rows.push([
