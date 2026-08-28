@@ -296,7 +296,15 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .gth-bar.over i{background:var(--warn)} .gth-bar.low i{background:var(--amber)}
 .gth-text{font-size:14px;line-height:1.9;word-break:keep-all;overflow-wrap:break-word;
   overflow-wrap:anywhere;white-space:pre-wrap}
+.gth-in{margin-bottom:0;min-width:200px;flex:1 1 200px;max-width:320px}
+.gth-found{color:var(--amber)!important;font-weight:600}
+.gth-iss{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+.gth-iss-row{display:flex;align-items:center;gap:7px;padding:4px 9px;border:1px solid var(--line);
+  border-radius:6px;background:var(--card);font-size:12.5px;color:var(--mid);text-align:left}
+.gth-iss-row:hover{border-color:var(--amber);background:var(--amber-soft);color:var(--ink)}
 .gth-text mark{background:var(--hl1);border-radius:2px;padding:1px 0;box-shadow:none}
+.gth-text mark.q{background:#FFE9A8;box-shadow:0 0 0 1.5px #E8B93C;font-weight:600;color:var(--ink)}
+.gth-text mark.iss{background:transparent;border-bottom:2px solid var(--warn);border-radius:0;color:var(--warn)}
 .gth-text mark.c2{background:var(--hl2)} .gth-text mark.c3{background:var(--hl3)} .gth-text mark.c4{background:var(--hl4)}
 .gth-memo{margin-top:10px;font-size:12.5px;color:var(--mid);background:#F8F7F3;
   border-radius:6px;padding:8px 11px;line-height:1.6}
@@ -2559,8 +2567,8 @@ const FIND_MAX = 400;   // 화면에 그리는 최대 줄. 건수는 전부 센�
 
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** 찾을 말을 정규식으로. '붙여서 찾기'면 글자 사이에 공백·줄바꿈이 얼마든지 끼어도 맞는다 */
-function findRe(w) {
-  const body = FIND.nospace
+function findRe(w, nospace = FIND.nospace) {
+  const body = nospace
     ? [...w.replace(/\s+/g, '')].map(reEsc).join('\\s*')
     : reEsc(w);
   return new RegExp(body, 'gi');
@@ -2726,7 +2734,7 @@ function drawFindMain() {
 }
 
 /* ═══════ 모아보기 — 같은 항목을 학생끼리 죽 훑는다 ═══════ */
-const GATHER = { key: null, sort: 'num', ban: 0 };
+const GATHER = { key: null, sort: 'num', ban: 0, q: '', onlyHit: false, showIssue: false };
 
 /** 항목을 '학년 + 묶음 + 항목 이름'으로 모은다. 1학기와 2학기는 따로 둔다 —
     같은 조건끼리 견주어야 분량도 견줄 만하고, 빠진 학생도 정확히 셀 수 있다. */
@@ -2751,7 +2759,12 @@ function drawGather() {
   }
   if (!groups.some(g => g.key === GATHER.key)) GATHER.key = groups[0].key;
 
-  side.innerHTML = '<h3 class="find-side-h">항목</h3>';
+  // 찾기 칸은 왼쪽에 둔다. 목록과 같은 판에 두면 글자를 칠 때마다 칸이 새로 그려져
+  // 한글 조합이 낱자로 흩어진다.
+  side.innerHTML = `<div class="find-in">
+      <input id="gthFind" placeholder="이 항목 안에서 찾기" value="${esc(GATHER.q)}" aria-label="이 항목 안에서 찾기">
+    </div>
+    <h3 class="find-side-h">항목</h3>`;
   let lastGrp = null;
   for (const g of groups) {
     if (g.grp !== lastGrp) {
@@ -2768,10 +2781,32 @@ function drawGather() {
     b.onclick = () => { GATHER.key = g.key; drawGather(); };
     side.appendChild(b);
   }
+  $('gthFind').oninput = e => { GATHER.q = e.target.value; drawGatherMain(); };
+  drawGatherMain();
+}
 
+function drawGatherMain() {
+  const groups = gatherGroups();
+  const main = $('gatherMain');
   const g = groups.find(x => x.key === GATHER.key);
+  if (!g) { main.innerHTML = '<div class="empty"><h3>모을 항목이 없습니다</h3></div>'; return; }
   const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
+  // 이 항목 안에서만 찾는다. 띄어쓰기·줄바꿈은 무시한다 — 검색 모드와 같은 셈법
+  const terms = splitTerms(GATHER.q).map(w => w.replace(/\s+/g, '')).filter(Boolean);
+  const res = terms.map(w => findRe(w, true));
+  const hitsOf = it => {
+    const out = [];
+    for (const rx of res) {
+      rx.lastIndex = 0;
+      for (const m of it.text.matchAll(rx)) out.push({ s: m.index, e: m.index + m[0].length, cls: 'q' });
+    }
+    return out;
+  };
   let rows = g.rows.filter(x => !GATHER.ban || S.students[x.si].ban === GATHER.ban);
+  rows = rows.map(x => ({ ...x, hits: terms.length ? hitsOf(x.it) : [] }));
+  const hitTotal = rows.reduce((n, x) => n + x.hits.length, 0);
+  const hitStu = rows.filter(x => x.hits.length).length;
+  if (terms.length && GATHER.onlyHit) rows = rows.filter(x => x.hits.length);
   if (GATHER.sort === 'long') rows = [...rows].sort((a, b) => nbytes(b.it.text) - nbytes(a.it.text));
   else if (GATHER.sort === 'short') rows = [...rows].sort((a, b) => nbytes(a.it.text) - nbytes(b.it.text));
   else rows = [...rows].sort((a, b) => S.students[a.si].ban - S.students[b.si].ban || S.students[a.si].num - S.students[b.si].num);
@@ -2783,11 +2818,17 @@ function drawGather() {
   const bytes = rows.map(x => nbytes(x.it.text));
   const avg = bytes.length ? Math.round(bytes.reduce((a, c) => a + c, 0) / bytes.length) : 0;
 
+  const issueRows = g.rows.filter(x => !GATHER.ban || S.students[x.si].ban === GATHER.ban);
+  const issueTotal = S.issues.filter(y =>
+    issueRows.some(x => x.si === y.si && x.ii === y.ii)).length;
+
   main.innerHTML = `<div class="gth-head">
       <b>${g.grade}학년 ${g.grp} · ${esc(g.name)}</b>
       <span>${rows.length}명 · 평균 ${avg}byte${bytes.length ? ` · 가장 짧은 것 ${Math.min(...bytes)} · 가장 긴 것 ${Math.max(...bytes)}` : ''}</span>
+      ${terms.length ? `<span class="gth-found">찾음 ${hitTotal}곳 · 학생 ${hitStu}명</span>` : ''}
     </div>
     <div class="gth-tools">
+      <span class="chips" id="gthMode"></span>
       <span class="chips" id="gthSort"></span>
       ${bans.length > 1 ? '<span class="chips" id="gthBan"></span>' : ''}
     </div>
@@ -2804,6 +2845,18 @@ function drawGather() {
       host.appendChild(c);
     }
   };
+  {
+    const host = $('gthMode');
+    const add = (label, on, act) => {
+      const c = document.createElement('button');
+      c.className = 'chip' + (on ? '' : ' off');
+      c.textContent = label;
+      c.onclick = () => { act(); drawGather(); };
+      host.appendChild(c);
+    };
+    if (terms.length) add('찾은 학생만', GATHER.onlyHit, () => { GATHER.onlyHit = !GATHER.onlyHit; });
+    add(`점검 표시${issueTotal ? ` ${issueTotal}` : ''}`, GATHER.showIssue, () => { GATHER.showIssue = !GATHER.showIssue; });
+  }
   chipRow($('gthSort'), [['번호순', 'num'], ['긴 것부터', 'long'], ['짧은 것부터', 'short']],
     v => GATHER.sort === v, v => { GATHER.sort = v; });
   if (bans.length > 1) {
@@ -2816,20 +2869,38 @@ function drawGather() {
     const r = S.students[x.si], it = x.it, n = noteRead(r, it.id);
     const b = nbytes(it.text), pct = Math.min(100, (b / it.limit) * 100);
     const cls = b > it.limit + 30 ? 'over' : (b < it.limit * 0.25 ? 'low' : '');
-    const nIssue = S.issues.filter(y => y.si === x.si && y.ii === x.ii).length;
+    const issues = S.issues.filter(y => y.si === x.si && y.ii === x.ii);
+    // 칠하는 차례: 찾은 말 → 점검 자리 → 내가 친 형광펜. 앞의 것이 이긴다
+    const spans = [
+      ...x.hits,
+      ...(GATHER.showIssue ? issues.filter(y => y.e > y.s).map(y => ({ s: y.s, e: y.e, cls: 'iss' })) : []),
+      ...(n.hl || []).map(h => ({ s: h.s, e: h.e, cls: `c${h.c}` })),
+    ];
     const card = document.createElement('div');
     card.className = 'gth-card';
     card.innerHTML = `<div class="gth-card-h">
         <b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b>
         ${n.ok ? '<span class="tag ok">확인함</span>' : ''}
-        ${nIssue ? `<span class="tag">점검 ${nIssue}</span>` : ''}
+        ${x.hits.length ? `<span class="tag">찾음 ${x.hits.length}</span>` : ''}
+        ${issues.length ? `<span class="tag gray">점검 ${issues.length}</span>` : ''}
         <span class="gth-byte ${cls}">${b}/${it.limit} byte</span>
         <button class="btn" data-go="${x.si}:${x.ii}">열기</button>
       </div>
       <div class="gth-bar ${cls}"><i style="width:${pct}%"></i></div>
-      <div class="gth-text">${paintSpans(it.text, (n.hl || []).map(h => ({ s: h.s, e: h.e, cls: `c${h.c}` })))}</div>
-      ${n.memo ? `<div class="gth-memo">메모 — ${esc(n.memo)}</div>` : ''}`;
+      <div class="gth-text">${paintSpans(it.text, spans)}</div>
+      ${n.memo ? `<div class="gth-memo">메모 — ${esc(n.memo)}</div>` : ''}
+      ${GATHER.showIssue && issues.length ? `<div class="gth-iss">${issues.map((y, i) =>
+        `<button class="gth-iss-row" data-iss="${i}"><span class="issue-kind ${y.k}">${y.k}</span>
+          <span>${esc(y.name)}</span></button>`).join('')}</div>` : ''}`;
     card.querySelector('[data-go]').onclick = () => openItem(x.si, x.ii, null);
+    card.querySelectorAll('[data-iss]').forEach(btn => {
+      const y = issues[+btn.dataset.iss];
+      btn.onclick = () => {
+        if (y.pair) { showCompare({ si: y.si, ii: y.ii }, y.pair); return; }
+        if (y.uses && y.uses.length > 1) { showShared(y.uses); return; }
+        openItem(x.si, x.ii, y.e > y.s ? { s: y.s, e: y.e } : null);
+      };
+    });
     list.appendChild(card);
   }
 }
