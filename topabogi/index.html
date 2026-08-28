@@ -266,6 +266,41 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .issue-kind.G{background:#E8F0F7;color:#2A5F87}
 .issue-kind.H{background:#F6EEF3;color:#8A3E6B}
 .issue-kind.I{background:#FBE3DE;color:#A8412C}
+/* ── 모아보기 ── */
+.gth-grp{font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin:16px 0 5px;padding:0 8px}
+.gth-grp:first-of-type{margin-top:4px}
+.gth-pick{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:6px 8px;
+  border-radius:6px;font-size:13px;text-align:left;color:var(--mid)}
+.gth-pick:hover{background:#EDEBE4;color:var(--ink)}
+.gth-pick span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gth-pick .n{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.gth-pick[aria-current=true]{background:var(--ink);color:#fff;font-weight:600}
+.gth-pick[aria-current=true] .n{color:#ffffff99}
+.gth-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:12px}
+.gth-head b{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.gth-head span{font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.gth-tools{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px}
+.gth-miss{font-size:12.5px;color:#7A5B14;background:var(--amber-soft);border:1px solid #F0E2C0;
+  border-radius:var(--r);padding:9px 12px;margin-bottom:16px;line-height:1.65;word-break:keep-all}
+.gth-list{display:flex;flex-direction:column;gap:12px}
+.gth-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 16px 15px}
+.gth-card-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:9px}
+.gth-card-h b{font-size:14px}
+.gth-card-h .btn{margin-left:auto;border:1px solid var(--line);padding:4px 11px;font-size:12.5px}
+.tag.ok{background:#EAF3EC;color:var(--ok)}
+.gth-byte{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.gth-byte.over{color:var(--warn);font-weight:600}
+.gth-byte.low{color:var(--amber);font-weight:600}
+.gth-bar{height:2px;background:#EBE9E1;border-radius:2px;overflow:hidden;margin-bottom:10px}
+.gth-bar i{display:block;height:100%;background:var(--ink)}
+.gth-bar.over i{background:var(--warn)} .gth-bar.low i{background:var(--amber)}
+.gth-text{font-size:14px;line-height:1.9;word-break:keep-all;overflow-wrap:break-word;
+  overflow-wrap:anywhere;white-space:pre-wrap}
+.gth-text mark{background:var(--hl1);border-radius:2px;padding:1px 0;box-shadow:none}
+.gth-text mark.c2{background:var(--hl2)} .gth-text mark.c3{background:var(--hl3)} .gth-text mark.c4{background:var(--hl4)}
+.gth-memo{margin-top:10px;font-size:12.5px;color:var(--mid);background:#F8F7F3;
+  border-radius:6px;padding:8px 11px;line-height:1.6}
+
 /* 겹침 비교 카드 */
 .sheet-body.cmp-body{text-align:left;background:var(--card);padding:0}
 .cmp-sum{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--mid);
@@ -378,6 +413,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
   <div class="modes" role="tablist">
     <button role="tab" id="tabRead" aria-selected="true">톺아보기</button>
     <button role="tab" id="tabCheck" aria-selected="false">점검</button>
+    <button role="tab" id="tabGather" aria-selected="false">모아보기</button>
     <button role="tab" id="tabFind" aria-selected="false">검색</button>
     <button role="tab" id="tabIntv" aria-selected="false">면접</button>
   </div>
@@ -430,6 +466,11 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 <div class="check hide" id="findView">
   <div class="check-side" id="findSide"></div>
   <div class="check-main" id="findMain"></div>
+</div>
+
+<div class="check hide" id="gatherView">
+  <div class="check-side" id="gatherSide"></div>
+  <div class="check-main" id="gatherMain"></div>
 </div>
 
 <footer class="hide" id="foot">
@@ -1243,6 +1284,10 @@ function save() {
   catch (e) { console.warn('저장 실패', e); }
 }
 const noteOf = (s, id) => (S.notes[`${s.ban}-${s.num}::${id}`] ||= { hl: [], memo: '', ok: false });
+/* 읽기만 할 때 쓴다. noteOf는 없는 자리에 빈 기록을 만들어 두는데, 목록을 그릴 때마다
+   그러면 쓰지도 않은 빈 메모가 저장되고 내보내기에 섞여 남의 메모를 덮어쓴다. */
+const NO_NOTE = { hl: [], memo: '', ok: false };
+const noteRead = (s, id) => S.notes[`${s.ban}-${s.num}::${id}`] || NO_NOTE;
 const hasNote = s => Object.keys(S.notes).some(k =>
   k.startsWith(`${s.ban}-${s.num}::`) && (S.notes[k].memo || S.notes[k].hl.length));
 const doneCount = s => s._items.filter(it => (S.notes[`${s.ban}-${s.num}::${it.id}`] || {}).ok).length;
@@ -2680,6 +2725,115 @@ function drawFindMain() {
   }
 }
 
+/* ═══════ 모아보기 — 같은 항목을 학생끼리 죽 훑는다 ═══════ */
+const GATHER = { key: null, sort: 'num', ban: 0 };
+
+/** 항목을 '학년 + 묶음 + 항목 이름'으로 모은다. 1학기와 2학기는 따로 둔다 —
+    같은 조건끼리 견주어야 분량도 견줄 만하고, 빠진 학생도 정확히 셀 수 있다. */
+function gatherGroups() {
+  const map = new Map();
+  S.students.forEach((r, si) => r._items.forEach((it, ii) => {
+    const name = it.title;
+    const key = `${it.grade}|${it.grp}|${name}`;
+    if (!map.has(key)) map.set(key, { key, grade: it.grade, grp: it.grp, name, rows: [] });
+    map.get(key).rows.push({ si, ii, it });
+  }));
+  return [...map.values()].sort((a, b) =>
+    GROUPS.indexOf(a.grp) - GROUPS.indexOf(b.grp) || b.grade - a.grade || a.name.localeCompare(b.name, 'ko'));
+}
+
+function drawGather() {
+  const groups = gatherGroups();
+  const side = $('gatherSide'), main = $('gatherMain');
+  if (!groups.length) {
+    side.innerHTML = ''; main.innerHTML = '<div class="empty"><h3>모을 항목이 없습니다</h3></div>';
+    return;
+  }
+  if (!groups.some(g => g.key === GATHER.key)) GATHER.key = groups[0].key;
+
+  side.innerHTML = '<h3 class="find-side-h">항목</h3>';
+  let lastGrp = null;
+  for (const g of groups) {
+    if (g.grp !== lastGrp) {
+      lastGrp = g.grp;
+      const h = document.createElement('div');
+      h.className = 'gth-grp'; h.textContent = g.grp;
+      side.appendChild(h);
+    }
+    const b = document.createElement('button');
+    const cnt = g.rows.filter(x => !GATHER.ban || S.students[x.si].ban === GATHER.ban).length;
+    b.className = 'gth-pick';
+    b.setAttribute('aria-current', g.key === GATHER.key);
+    b.innerHTML = `<span>${g.grade}학년 ${esc(g.name)}</span><span class="n">${cnt}</span>`;
+    b.onclick = () => { GATHER.key = g.key; drawGather(); };
+    side.appendChild(b);
+  }
+
+  const g = groups.find(x => x.key === GATHER.key);
+  const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
+  let rows = g.rows.filter(x => !GATHER.ban || S.students[x.si].ban === GATHER.ban);
+  if (GATHER.sort === 'long') rows = [...rows].sort((a, b) => nbytes(b.it.text) - nbytes(a.it.text));
+  else if (GATHER.sort === 'short') rows = [...rows].sort((a, b) => nbytes(a.it.text) - nbytes(b.it.text));
+  else rows = [...rows].sort((a, b) => S.students[a.si].ban - S.students[b.si].ban || S.students[a.si].num - S.students[b.si].num);
+
+  // 이 항목이 없는 학생 — 작성 현황을 함께 본다
+  const have = new Set(g.rows.map(x => x.si));
+  const missing = S.students.map((r, si) => si)
+    .filter(si => !have.has(si) && (!GATHER.ban || S.students[si].ban === GATHER.ban));
+  const bytes = rows.map(x => nbytes(x.it.text));
+  const avg = bytes.length ? Math.round(bytes.reduce((a, c) => a + c, 0) / bytes.length) : 0;
+
+  main.innerHTML = `<div class="gth-head">
+      <b>${g.grade}학년 ${g.grp} · ${esc(g.name)}</b>
+      <span>${rows.length}명 · 평균 ${avg}byte${bytes.length ? ` · 가장 짧은 것 ${Math.min(...bytes)} · 가장 긴 것 ${Math.max(...bytes)}` : ''}</span>
+    </div>
+    <div class="gth-tools">
+      <span class="chips" id="gthSort"></span>
+      ${bans.length > 1 ? '<span class="chips" id="gthBan"></span>' : ''}
+    </div>
+    ${missing.length ? `<p class="gth-miss">이 항목이 없는 학생 ${missing.length}명 —
+      ${missing.map(si => `${S.students[si].ban}-${S.students[si].num} ${esc(S.students[si].name)}`).join(', ')}</p>` : ''}
+    <div class="gth-list" id="gthList"></div>`;
+
+  const chipRow = (host, items, on, pick) => {
+    for (const [label, val] of items) {
+      const c = document.createElement('button');
+      c.className = 'chip' + (on(val) ? '' : ' off');
+      c.textContent = label;
+      c.onclick = () => { pick(val); drawGather(); };
+      host.appendChild(c);
+    }
+  };
+  chipRow($('gthSort'), [['번호순', 'num'], ['긴 것부터', 'long'], ['짧은 것부터', 'short']],
+    v => GATHER.sort === v, v => { GATHER.sort = v; });
+  if (bans.length > 1) {
+    chipRow($('gthBan'), [['전체 반', 0], ...bans.map(b => [`${b}반`, b])],
+      v => GATHER.ban === v, v => { GATHER.ban = v; });
+  }
+
+  const list = $('gthList');
+  for (const x of rows) {
+    const r = S.students[x.si], it = x.it, n = noteRead(r, it.id);
+    const b = nbytes(it.text), pct = Math.min(100, (b / it.limit) * 100);
+    const cls = b > it.limit + 30 ? 'over' : (b < it.limit * 0.25 ? 'low' : '');
+    const nIssue = S.issues.filter(y => y.si === x.si && y.ii === x.ii).length;
+    const card = document.createElement('div');
+    card.className = 'gth-card';
+    card.innerHTML = `<div class="gth-card-h">
+        <b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b>
+        ${n.ok ? '<span class="tag ok">확인함</span>' : ''}
+        ${nIssue ? `<span class="tag">점검 ${nIssue}</span>` : ''}
+        <span class="gth-byte ${cls}">${b}/${it.limit} byte</span>
+        <button class="btn" data-go="${x.si}:${x.ii}">열기</button>
+      </div>
+      <div class="gth-bar ${cls}"><i style="width:${pct}%"></i></div>
+      <div class="gth-text">${paintSpans(it.text, (n.hl || []).map(h => ({ s: h.s, e: h.e, cls: `c${h.c}` })))}</div>
+      ${n.memo ? `<div class="gth-memo">메모 — ${esc(n.memo)}</div>` : ''}`;
+    card.querySelector('[data-go]').onclick = () => openItem(x.si, x.ii, null);
+    list.appendChild(card);
+  }
+}
+
 /* ═══════ 겹침 비교 카드 ═══════ */
 /** 지정한 구간에 형광펜을 칠한 HTML */
 function paintSpans(text, spans) {
@@ -2687,9 +2841,9 @@ function paintSpans(text, spans) {
   let html = '';
   for (let i = 0; i < pts.length - 1; i++) {
     const [a, b] = [pts[i], pts[i + 1]];
-    const on = spans.some(m => m.s <= a && m.e >= b);
+    const on = spans.find(m => m.s <= a && m.e >= b);
     const seg = esc(text.slice(a, b));
-    html += on ? `<mark class="same">${seg}</mark>` : seg;
+    html += on ? `<mark class="${on.cls || 'same'}">${seg}</mark>` : seg;
   }
   return html || esc(text);
 }
@@ -3032,17 +3186,20 @@ function setMode(m) {
   S.mode = m;
   $('tabRead').setAttribute('aria-selected', m === 'read');
   $('tabCheck').setAttribute('aria-selected', m === 'check');
+  $('tabGather').setAttribute('aria-selected', m === 'gather');
   $('tabFind').setAttribute('aria-selected', m === 'find');
   $('tabIntv').setAttribute('aria-selected', m === 'intv');
   $('app').classList.toggle('hide', m !== 'read');
   $('foot').classList.toggle('hide', m !== 'read');
   $('checkView').classList.toggle('hide', m !== 'check');
+  $('gatherView').classList.toggle('hide', m !== 'gather');
   $('findView').classList.toggle('hide', m !== 'find');
   $('intvView').classList.toggle('hide', m !== 'intv');
   $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.length}건`;
   if (m === 'read') drawAll();
   else if (m === 'check') drawCheck();
   else if (m === 'find') { runFind(); drawFind(); }
+  else if (m === 'gather') drawGather();
   else { intvCur = S.cur; drawIntv(); }
 }
 function move(d) {
@@ -3062,6 +3219,7 @@ $('prev').onclick = () => move(-1);
 $('next').onclick = () => move(1);
 $('tabRead').onclick = () => setMode('read');
 $('tabCheck').onclick = () => setMode('check');
+$('tabGather').onclick = () => setMode('gather');
 $('tabFind').onclick = () => setMode('find');
 $('tabIntv').onclick = () => setMode('intv');
 document.addEventListener('keydown', e => {
