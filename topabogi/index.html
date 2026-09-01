@@ -1363,14 +1363,14 @@ function groupsOf(r) {
 
 /* ═══════ 규칙 엔진 ═══════ */
 const RULES = [
-  { k: 'A', name: '오탈자·부호', desc: '자모 깨짐, 부호 앞뒤 공백, 괄호 짝' },
-  { k: 'B', name: '기재 유의사항', desc: '대학·기관명, 어학성적, 교외 수상' },
+  { k: 'A', name: '오탈자·부호', desc: '자모 깨짐, 부호 앞뒤 공백, 괄호·따옴표 짝, 연속 공백, 특수기호' },
+  { k: 'B', name: '기재 유의사항', desc: '대학·기관명, 어학성적, 교외 수상, 전화번호·전자우편·인터넷 주소' },
   { k: 'C', name: '분량', desc: 'NEIS 상한 초과 또는 지나치게 짧음' },
   { k: 'D', name: '항목 누락', desc: '이수했는데 세특이 없는 과목' },
   { k: 'E', name: '단어 검색', desc: '사전에 등록한 표현' },
   { k: 'F', name: '겹침', desc: '같은 학년·같은 과목끼리 서술이 얼마나 겹치는지' },
   { k: 'G', name: '날짜', desc: '끝나는 날이 시작보다 앞서거나, 없는 날짜' },
-  { k: 'H', name: '그 밖에', desc: '본인 실명, 지나치게 긴 문장' },
+  { k: 'H', name: '그 밖에', desc: '본인 실명, 지나치게 긴 문장, 평서형 종결' },
   { k: 'I', name: '숨은 문자', desc: '제로폭 문자·변형 선택자처럼 눈에 안 보이는 글자. 줄바꿈 없는 공백(NBSP) 같은 특수 공백은 PDF를 읽는 단계에서 보통 공백으로 바뀌어 여기에 잡히지 않습니다' },
 ];
 
@@ -1495,13 +1495,51 @@ function checkItem(it) {
       add('A', `소괄호 짝 불일치 (${a}/${b})`, orphan, orphan + 1);
     }
   }
-  // 따옴표는 여닫이가 서로 바뀌어 쓰이는 일이 잦아, 총 개수가 홀수일 때만 본다
-  for (const [o, c, nm] of [['‘', '’', '작은따옴표'], ['“', '”', '큰따옴표']]) {
-    const a = (t.split(o).length - 1), b = (t.split(c).length - 1);
-    if ((a + b) % 2 === 1) {
-      const i = Math.max(t.lastIndexOf(o), t.lastIndexOf(c));
-      add('A', `${nm} 짝 불일치 (${o}${a} ${c}${b})`, Math.max(0, i), Math.max(1, i + 1));
+  /* 따옴표 짝.
+     생기부에서 제일 많이 쓰는 것은 직선 따옴표(')인데, 여는 쪽을 빠뜨리는 일이 잦다
+     — "아이들은 놀이가 밥이다(편해문)'를 읽고"처럼. 낱말 사이에 낀 아포스트로피
+     (Tiffany's)는 따옴표가 아니므로 세지 않는다.
+     홀짝은 문장 단위로 본다. 한 항목을 통째로 세면 빠뜨린 자리 둘이 서로 상쇄되어 놓친다. */
+  const sentAt = [];
+  {
+    let last = 0;
+    // 인용문이 '~함.'으로 끝나 닫는 따옴표가 뒤따르면 거기서 끊지 않는다.
+    // 끊으면 짝이 맞는 인용문이 두 문장으로 갈려 양쪽 다 홀수가 된다.
+    const rx = /[함음임됨봄옴]\.(?!['"’”])\s*/g;
+    let m;
+    while ((m = rx.exec(t))) { sentAt.push([last, m.index + 1]); last = rx.lastIndex; }
+    if (last < t.length) sentAt.push([last, t.length]);
+  }
+  // 낱말에 붙은 아포스트로피(Tiffany's, students' work)는 따옴표가 아니다
+  const isApos = i => t[i] === "'" && /[A-Za-z]/.test(t[i - 1] || '')
+    && (/[A-Za-z]/.test(t[i + 1] || '') || /^\s[A-Za-z]/.test(t.slice(i + 1, i + 3)));
+  for (const [q, nm] of [["'", '작은따옴표'], ['"', '큰따옴표']]) {
+    for (const [s0, e0] of sentAt) {
+      const at = [];
+      for (let i = s0; i < e0; i++) if (t[i] === q && !isApos(i)) at.push(i);
+      if (at.length % 2) {
+        const i = at[at.length - 1];
+        add('A', `${nm} 짝 안 맞음 (한 문장에 ${at.length}개)`, i, i + 1);
+      }
     }
+  }
+  // 방향이 정해진 인용부호는 여닫이를 따라가며 어긋난 자리를 짚는다
+  // 방향이 정해진 인용부호. 여닫이를 서로 바꿔 쓰는 일이 잦아 순서는 따지지 않고,
+  // 개수가 어긋날 때만 알리되 자리는 여닫이를 따라가 짚는다
+  for (const [o, c, nm] of [['‘', '’', '작은따옴표'], ['“', '”', '큰따옴표'],
+                            ['『', '』', '겹낫표'], ['「', '」', '낫표'],
+                            ['《', '》', '겹화살괄호'], ['〈', '〉', '화살괄호']]) {
+    const a = (t.split(o).length - 1), b = (t.split(c).length - 1);
+    if (a === b) continue;
+    const stack = [];
+    let orphan = -1;
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] === o) stack.push(i);
+      else if (t[i] === c) { if (stack.length) stack.pop(); else if (orphan < 0) orphan = i; }
+    }
+    if (orphan < 0 && stack.length) orphan = stack[stack.length - 1];
+    if (orphan < 0) orphan = Math.max(t.lastIndexOf(o), t.lastIndexOf(c));
+    if (orphan >= 0) add('A', `${nm} 짝 불일치 (${o}${a} ${c}${b})`, orphan, orphan + 1);
   }
   const tail = t.trimEnd();
   if (tail && !/[.’”)]$/.test(tail)) add('A', '종결부호 없음', Math.max(0, tail.length - 22), tail.length);
@@ -1519,9 +1557,37 @@ function checkItem(it) {
   for (const m of t.matchAll(/[?!](?![’'"”)\]?!])/g))
     add('A', '물음표·느낌표 사용', m.index, m.index + 1);
 
+  // 두 칸 이상 이어진 공백 — 눈에 잘 안 띄는데 바이트는 그대로 먹는다
+  for (const m of t.matchAll(/ {2,}/g)) add('A', `공백 ${m[0].length}칸`, m.index, m.index + m[0].length);
+  // NEIS에 들어가면 안 되는 기호·이모지. ○●는 이름 가림표로 쓰이므로 뺀다
+  for (const m of t.matchAll(/[※★☆♡♥◈▶◀◆■□▲▼△▽◇☞☜]|[\u{1F300}-\u{1FAFF}]|[\u{2190}-\u{21FF}]|[\u{2600}-\u{27BF}]|[\u{2B00}-\u{2BFF}]/gu))
+    add('A', `기호 ${m[0]}`, m.index, m.index + m[0].length);
+
+  // B. 기재 유의 — 개인정보와 바깥 주소
+  for (const m of t.matchAll(/(?<![\d-])\d{2,4}-\d{3,4}-\d{4}(?![\d-])/g))
+    add('B', '전화번호로 보이는 숫자', m.index, m.index + m[0].length);
+  for (const m of t.matchAll(/[\w.+-]+@[\w-]+\.[A-Za-z]{2,}/g))
+    add('B', '전자우편 주소', m.index, m.index + m[0].length);
+  for (const m of t.matchAll(/https?:\/\/[^\s가-힣]+|www\.[\w-]+\.[^\s가-힣]+/gi))
+    add('B', '인터넷 주소', m.index, m.index + m[0].length);
+
   checkDates(it, add);
 
   // H. 그 밖에
+  {
+    // 생기부는 '~함·~임' 같은 명사형 종결이 원칙이다. 따옴표 안 인용문은 뺀다
+    const quotesTo = i => {
+      let n = 0;
+      for (let j = 0; j < i; j++) {
+        if (t[j] === "'" ? !isApos(j) : `"‘’“”「」『』`.includes(t[j])) n++;
+      }
+      return n;
+    };
+    for (const m of t.matchAll(/[가-힣]다\.(?=\s|$)/g)) {
+      if (quotesTo(m.index) % 2) continue;              // 인용문 안이다
+      add('H', '평서형 종결 — 명사형(~함·~임)이 원칙', m.index, m.index + m[0].length);
+    }
+  }
   if (it._name && t.includes(it._name)) {
     const i = t.indexOf(it._name);
     add('H', '본인 이름이 그대로 적힘', i, i + it._name.length);
