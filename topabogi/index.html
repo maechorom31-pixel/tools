@@ -238,6 +238,9 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 /* 사전 */
 .dict-add{display:flex;gap:6px;margin:10px 0 12px}
 .dict-add input{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px;background:var(--card)}
+.pick{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);
+  font:inherit;font-size:13px;color:var(--ink)}
+.pick:focus{border-color:var(--amber);outline:none}
 .chips{display:flex;flex-wrap:wrap;gap:5px}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--card);
   border:1px solid var(--line);border-radius:20px;font-size:12.5px}
@@ -1798,7 +1801,9 @@ function runCheck() {
       const have = new Set(r._items.filter(x => x.sec === '세특' && x.grade === g).map(x => x.title.replace(/^\d학기 /, '')));
       for (const nm of names) {
         if (![...have].some(h => h === nm || h.replace(/\s/g, '') === nm.replace(/\s/g, ''))) {
-          S.issues.push({ si, ii: -1, k: 'D', name: '세특 없음', ex: `${g}학년 「${nm}」`, s: 0, e: 0 });
+          // 항목이 없다는 지적이라 it이 없다. 묶음·항목으로 걸러 볼 수 있게 이름표만 달아 둔다
+          S.issues.push({ si, ii: -1, k: 'D', name: '세특 없음', ex: `${g}학년 「${nm}」`, s: 0, e: 0,
+                          grp: '과목세특', title: nm });
         }
       }
     }
@@ -2113,6 +2118,90 @@ function parseNeisChangche(grid) {
   return rows;
 }
 
+/* ── NEIS '자료 형식' 표 읽기 ──
+   인쇄 모양이 아니라 한 줄에 한 기록이 그대로 들어 있는 표다. 머리글이 한 줄 있고
+   (학년도·학기·학년·과목·반/번호·성명·세부능력 및 특기사항 …) 그 아래가 자료다.
+   열 차례는 내려받기마다 다를 수 있어 자리로 세지 않고 머리글 이름으로 찾는다. */
+const XL_COL = [
+  ['grade', /^학년$/], ['sem', /^학기$/], ['subject', /^과목$/], ['area', /^영역$/],
+  ['banNum', /^반\s*\/\s*번호$/], ['ban', /^반$/], ['num', /^번호$/], ['name', /^성명$/],
+  ['body', /특기사항/], ['kind', /^(과목\s*구분|이수\s*구분)$/],
+];
+function findTableHead(grid) {
+  for (let i = 1; i < Math.min(grid.length, 12); i++) {
+    const c = grid[i];
+    if (!c) continue;
+    const cols = {};
+    for (const [col, v] of Object.entries(c)) {
+      const label = xlStr(v).replace(/\s/g, '');
+      for (const [key, re] of XL_COL) if (!cols[key] && re.test(label)) cols[key] = col;
+    }
+    const hasWho = cols.banNum || (cols.ban && cols.num);
+    const hasWhat = cols.subject || cols.area;
+    if (cols.name && cols.body && hasWho && hasWhat && cols.grade) return { row: i, cols };
+  }
+  return null;
+}
+function parseNeisTable(grid) {
+  const head = findTableHead(grid);
+  if (!head) throw new Error('머리글이 있는 표가 아닙니다.');
+  const { row, cols } = head;
+  const val = (c, key) => cols[key] ? xlStr(c[cols[key]]) : '';
+  const rows = [];
+  let lastArea = null;
+  for (let i = row + 1; i < grid.length; i++) {
+    const c = grid[i];
+    if (!c) continue;
+    const body = cols.body ? (c[cols.body] === undefined ? '' : String(c[cols.body])) : '';
+    const name = val(c, 'name');
+    if (!name || !body.trim()) continue;
+    let ban = xlNum(val(c, 'ban')), num = xlNum(val(c, 'num'));
+    const bn = /^(\d+)\s*\/\s*(\d+)$/.exec(val(c, 'banNum'));
+    if (bn) { ban = +bn[1]; num = +bn[2]; }
+    const grade = xlNum(val(c, 'grade'));
+    if (ban === null || num === null || grade === null) continue;
+    const areaTxt = val(c, 'area');
+    const kindTxt = val(c, 'kind');
+    if (areaTxt) {
+      lastArea = AREAS.find(a => areaTxt.replace(/\s/g, '').includes(a.replace(/·/g, ''))) || areaTxt;
+    }
+    const area = cols.area ? lastArea : null;       // 영역 칸이 비면 앞 줄 것을 이어받는다
+    const subject = val(c, 'subject');
+    if (!area && !subject) continue;                // 어느 자리인지 알 수 없는 줄
+    rows.push({
+      ban, num, name, grade, text: body, area, subject,
+      sem: xlNum(val(c, 'sem')),
+      kind: /진로/.test(kindTxt) ? '진로선택' : (/체육|예술/.test(kindTxt) ? '체육예술' : '일반'),
+    });
+  }
+  if (!rows.length) throw new Error('표에서 자료 줄을 찾지 못했습니다.');
+  return rows;
+}
+/** 표에서 읽은 줄을 학생별 기록으로 — 영역이 있으면 창체, 과목이 있으면 세특 */
+function studentsFromTable(rows) {
+  const byStu = new Map();
+  for (const r of rows) {
+    const sk = `${r.ban}-${r.num}-${r.name}`;
+    if (!byStu.has(sk)) {
+      byStu.set(sk, { ban: r.ban, num: r.num, name: r.name, pages: [], fromXlsx: true,
+                      changche: new Map(), subjects: new Map(), setuk: new Map(),
+                      haengteuk: new Map(), unassigned: [] });
+    }
+    const stu = byStu.get(sk);
+    const blank = { text: '', breaks: [], spans: [], page: null, y0: null, y1: null, paras: 1, verified: true };
+    if (r.area) {
+      const key = `${r.grade}|${r.area}`;
+      const had = stu.changche.get(key);
+      if (had) had.text += r.text; else stu.changche.set(key, { ...blank, text: r.text });
+    } else {
+      const key = `${r.grade}|${r.kind}|${r.sem === null ? 'null' : r.sem}|${r.subject}|0`;
+      const had = stu.setuk.get(key);
+      if (had) had.text += r.text; else stu.setuk.set(key, { ...blank, text: r.text });
+    }
+  }
+  return [...byStu.values()];
+}
+
 /** 어떤 내려받기인지 표 머리에서 가린다. NEIS는 제목 자간을 벌려 쓰는 일이 있어 공백을 지우고 본다 */
 function detectSheet(grid) {
   const head = [];
@@ -2124,10 +2213,13 @@ function detectSheet(grid) {
 }
 /** 제목으로 가린 쪽을 먼저 대 보되, 아니면 다른 쪽도 대 본다 — 제목이 지워진 파일도 열리게 */
 function studentsFromSheet(grid) {
-  const order = detectSheet(grid) === '창체' ? ['창체', '세특'] : ['세특', '창체'];
+  // 머리글이 있는 '자료 형식' 표가 먼저다 — 인쇄 모양과 짜임이 아예 달라 헷갈릴 일이 없다
+  const order = findTableHead(grid) ? ['표'] : [];
+  order.push(...(detectSheet(grid) === '창체' ? ['창체', '세특'] : ['세특', '창체']));
   let first;
   for (const k of order) {
     try {
+      if (k === '표') return studentsFromTable(parseNeisTable(grid));
       return k === '창체' ? studentsFromChangche(parseNeisChangche(grid))
                           : studentsFromRows(parseNeisSetuk(grid));
     } catch (e) { if (first === undefined) first = e; }   // 제목으로 가린 쪽의 사정을 알려 준다
@@ -2537,6 +2629,18 @@ const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I']);   // F(공통 
 const issuesOf = (si, ii) => S.issues.filter(x => x.si === si && x.ii === ii && active.has(x.k));
 const issueCount = si => S.issues.filter(x => x.si === si && active.has(x.k)).length;
 let banFilter = 0;   // 0 = 전체
+let grpFilter = '';    // 묶음 (창체·행특·개세특·과목세특)
+let itemFilter = '';   // 그 묶음 안의 항목 이름
+let hideDone = false;  // '확인함'으로 표시한 항목은 접어 둔다
+
+/** 점검에서 지금 조건(규칙·반·묶음·항목·확인함)에 맞는 것 */
+function checkScope() {
+  return S.issues.filter(x => active.has(x.k)
+    && (!banFilter || S.students[x.si].ban === banFilter)
+    && (!grpFilter || (x.it ? x.it.grp : x.grp) === grpFilter)
+    && (!itemFilter || (x.it ? x.it.title : x.title) === itemFilter)
+    && !(hideDone && x.it && (S.notes[`${S.students[x.si].ban}-${S.students[x.si].num}::${x.it.id}`] || {}).ok));
+}
 
 function drawCheck() {
   const side = $('checkSide');
@@ -2548,6 +2652,48 @@ function drawCheck() {
     b.querySelector('input').onchange = e => { e.target.checked ? active.add(R.k) : active.delete(R.k); drawCheck(); };
     side.appendChild(b);
   }
+  {
+    // 묶음·항목 드롭다운. 고를 것은 지금 걸린 것에서만 뽑아 만든다 —
+    // 없는 항목을 골라 빈 목록을 보는 일이 없게
+    const scope = S.issues.filter(x => active.has(x.k)
+      && (!banFilter || S.students[x.si].ban === banFilter)
+      && !(hideDone && x.it && (S.notes[`${S.students[x.si].ban}-${S.students[x.si].num}::${x.it.id}`] || {}).ok));
+    const grpOf = x => x.it ? x.it.grp : x.grp;
+    const titleOf = x => x.it ? x.it.title : x.title;
+    const grpCnt = new Map();
+    for (const x of scope) if (grpOf(x)) grpCnt.set(grpOf(x), (grpCnt.get(grpOf(x)) || 0) + 1);
+    const grps = GROUPS.filter(g => grpCnt.has(g));
+    if (!grps.includes(grpFilter)) grpFilter = '';
+    const itemCnt = new Map();
+    for (const x of scope) {
+      if (!titleOf(x) || (grpFilter && grpOf(x) !== grpFilter)) continue;
+      itemCnt.set(titleOf(x), (itemCnt.get(titleOf(x)) || 0) + 1);
+    }
+    const names = [...itemCnt.keys()].sort((a, b) => a.localeCompare(b, 'ko'));
+    if (!names.includes(itemFilter)) itemFilter = '';
+
+    const box = document.createElement('div');
+    box.style.margin = '20px 0 4px';
+    box.innerHTML = `<h3 style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin-bottom:8px">범위</h3>
+      <select class="pick" id="fGrp"><option value="">묶음 전체 (${scope.length})</option>
+        ${grps.map(g => `<option value="${esc(g)}"${g === grpFilter ? ' selected' : ''}>${esc(g)} (${grpCnt.get(g)})</option>`).join('')}</select>
+      <select class="pick" id="fItem" style="margin-top:6px"><option value="">항목 전체</option>
+        ${names.map(n => `<option value="${esc(n)}"${n === itemFilter ? ' selected' : ''}>${esc(n)} (${itemCnt.get(n)})</option>`).join('')}</select>`;
+    side.appendChild(box);
+    $('fGrp').onchange = e => { grpFilter = e.target.value; itemFilter = ''; drawCheck(); };
+    $('fItem').onchange = e => { itemFilter = e.target.value; drawCheck(); };
+    const dn = document.createElement('div');
+    dn.className = 'chips';
+    dn.style.marginTop = '8px';
+    const c = document.createElement('button');
+    c.className = 'chip' + (hideDone ? '' : ' off');
+    c.textContent = '확인한 항목 빼기';
+    c.title = '톺아보기에서 확인함으로 표시한 항목은 목록에서 접어 둡니다';
+    c.onclick = () => { hideDone = !hideDone; drawCheck(); };
+    dn.appendChild(c);
+    box.appendChild(dn);
+  }
+
   const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
   if (bans.length > 1) {
     const bf = document.createElement('div');
@@ -2613,9 +2759,10 @@ function drawCheck() {
   }
 
   const main = $('checkMain');
-  const list = S.issues.filter(x => active.has(x.k) && (!banFilter || S.students[x.si].ban === banFilter));
+  const list = checkScope();
   if (!list.length) {
-    main.innerHTML = '<div class="empty"><h3>지적할 것이 없습니다</h3><p>선택한 규칙에서 걸린 항목이 없습니다.</p></div>';
+    main.innerHTML = `<div class="empty"><h3>지적할 것이 없습니다</h3>
+      <p>지금 켜 둔 규칙과 범위(${banFilter ? `${banFilter}반` : '전체 반'}${grpFilter ? ` · ${esc(grpFilter)}` : ''}${itemFilter ? ` · ${esc(itemFilter)}` : ''}${hideDone ? ' · 확인한 것 뺌' : ''})에서 걸린 항목이 없습니다.</p></div>`;
     return;
   }
   main.innerHTML = `<div class="notice">
@@ -2626,7 +2773,8 @@ function drawCheck() {
       학업성적관리위원회 심의를 거친 뒤 정정대장 결재 절차로 처리합니다.
     </div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:18px">
-    ${list.length}건 · 클릭하면 해당 위치로 이동합니다</p>`;
+    <b>${list.length}건</b> · 학생 ${new Set(list.map(x => x.si)).size}명 · 항목 ${new Set(list.filter(x => x.it).map(x => `${x.si}:${x.ii}`)).size}개${banFilter ? ` · ${banFilter}반` : ''}${grpFilter ? ` · ${esc(grpFilter)}` : ''}${itemFilter ? ` · ${esc(itemFilter)}` : ''}${hideDone ? ' · 확인한 것 뺌' : ''}
+    · 클릭하면 해당 위치로 이동합니다</p>`;
   const bySt = new Map();
   for (const x of list) { if (!bySt.has(x.si)) bySt.set(x.si, []); bySt.get(x.si).push(x); }
   for (const [si, arr] of bySt) {
@@ -3508,8 +3656,8 @@ function openPrint() {
 
 /* ═══════ 정정대장 참고표 ═══════ */
 function exportIssuesCsv() {
-  const picked = S.issues.filter(x => active.has(x.k));   // 켜 둔 규칙만
-  if (!picked.length) { alert('점검에서 걸린 항목이 없습니다. (켜 둔 규칙 기준)'); return; }
+  const picked = checkScope();   // 점검에서 보고 있는 조건 그대로
+  if (!picked.length) { alert('점검에서 걸린 항목이 없습니다. (지금 점검 조건 기준)'); return; }
   const esc2 = v => '"' + String(v).replace(/"/g, '""').replace(/\n/g, ' ') + '"';
   const rows = [['반', '번호', '성명', '학년', '항목', '규칙', '지적 내용', '해당 대목'].map(esc2).join(',')];
   for (const x of picked) {
@@ -3525,7 +3673,9 @@ function exportIssuesCsv() {
   const blob = new Blob(['\ufeff' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `정정대장_참고표_${new Date().toISOString().slice(0, 10)}.csv`;
+  const scopeTag = [banFilter ? `${banFilter}반` : '', grpFilter, itemFilter, hideDone ? '확인한것뺌' : '']
+    .filter(Boolean).join('_').replace(/[\\/:*?"<>|]/g, '');
+  a.download = `정정대장_참고표_${scopeTag ? scopeTag + '_' : ''}${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
 }
 
