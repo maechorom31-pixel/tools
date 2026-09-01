@@ -2202,6 +2202,92 @@ function studentsFromTable(rows) {
   return [...byStu.values()];
 }
 
+/* ── NEIS 세특 내려받기 가운데 '과목' 칸이 없는 짜임 ──
+   번호·성명·학년·특기사항만 있고, 과목은 본문 앞에 "화법과 작문:"처럼 라벨로 붙는다.
+   쪽이 넘어가면 같은 번호·성명이 다시 나오며 본문이 이어진다(학년 칸은 비워 온다).
+   과목이 줄로 갈리지 않으니 이어붙이는 규칙도 단순하다 — 같은 학생이 잇달아 나오면 이어지는 대목이다. */
+/* 과목 이름에 쓰이는 글자. 로마숫자와 괄호(물리학Ⅰ(진로))까지 받아 준다.
+   문장이 끝난 자리 다음에 오는 것만 과목 라벨로 보되, 닫는 따옴표·괄호가 뒤따라도 인정한다. */
+const SUBJ_CH = '가-힣A-Za-zⅠ-Ⅻ·()';
+const SUBJ_BOUND = new RegExp(
+  `(?=\\(\\d학기\\)[^:\\n]{1,20}:|(?<=[.함임됨움짐냄듦씀킴큼]['’"”)\\]]?)\\s*[${SUBJ_CH}][${SUBJ_CH}\\s0-9]{1,17}:(?!\\d))`);
+const SUBJ_LABEL = new RegExp(`^(?:\\((\\d)학기\\))?\\s*([${SUBJ_CH}][${SUBJ_CH}\\s0-9]{0,19}):(?!\\d)\\s*`);
+/* 문장 끝 뒤에 오는 흔한 말머리는 과목이 아니다 — '… 참여함. 주제: …' 같은 자리 */
+const NOT_SUBJ = new Set(['주제', '결론', '예시', '방법', '목표', '내용', '활동', '근거', '이유',
+  '특징', '참고', '비고', '대상', '기간', '장소', '조건', '문제', '질문', '답변', '요약', '정리']);
+function hasPlainHead(grid) {
+  for (let i = 1; i < Math.min(grid.length, 12); i++) {
+    const c = grid[i] || {};
+    if (/^번\s*호$/.test(xlStr(c.A)) && /세부능력|특기사항/.test(xlStr(c.D))) return true;
+  }
+  return false;
+}
+function parseNeisSetukPlain(grid) {
+  if (!hasPlainHead(grid)) throw new Error('과목 칸이 없는 세특 표가 아닙니다.');
+  const rows = [];
+  let ban = null, grade = null;
+  for (let i = 1; i < grid.length; i++) {
+    const c = grid[i];
+    if (!c) continue;
+    if (Object.values(c).some(v => xlStr(v) === '/')) continue;      // 쪽번호 줄
+    const A = xlStr(c.A);
+    if (A) {
+      const m = /^(\d)\s*학년\s*(\d+)\s*반$/.exec(A);
+      if (m) { ban = +m[2]; if (grade === null) grade = +m[1]; continue; }
+      if (/^(번\s*호|성\s*명|학\s*년)/.test(A)) continue;
+    }
+    const num = xlNum(c.A), name = xlStr(c.B);
+    if (num === null || !name) continue;
+    if (xlNum(c.C) !== null) grade = xlNum(c.C);
+    const body = c.D === undefined ? '' : String(c.D);
+    if (!body.trim() || ban === null || grade === null) continue;
+    const prev = rows[rows.length - 1];
+    if (prev && prev.ban === ban && prev.num === num && prev.name === name && prev.grade === grade) prev.text += body;
+    else rows.push({ ban, num, name, grade, text: body });
+  }
+  if (!rows.length) throw new Error('자료 줄을 찾지 못했습니다.');
+  return rows;
+}
+/** 한 덩이로 온 본문을 과목 라벨에서 잘라 항목으로 만든다 */
+function studentsFromPlain(rows) {
+  const byStu = new Map();
+  for (const r of rows) {
+    const sk = `${r.ban}-${r.num}-${r.name}`;
+    if (!byStu.has(sk)) {
+      byStu.set(sk, { ban: r.ban, num: r.num, name: r.name, pages: [], fromXlsx: true,
+                      changche: new Map(), subjects: new Map(), setuk: new Map(),
+                      haengteuk: new Map(), unassigned: [] });
+    }
+    const stu = byStu.get(sk);
+    // 라벨로 자른 뒤, 과목이 아닌 말머리로 잘린 조각은 앞 것에 도로 붙인다
+    const pieces = [];
+    for (const piece of r.text.split(SUBJ_BOUND)) {
+      const p = piece.trim();
+      if (!p) continue;
+      const m = SUBJ_LABEL.exec(p);
+      const head = m ? m[2].trim() : '';
+      if ((!m || NOT_SUBJ.has(head)) && pieces.length) { pieces[pieces.length - 1].raw += ' ' + p; continue; }
+      pieces.push({ raw: p });
+    }
+    for (const { raw } of pieces) {
+      const m = SUBJ_LABEL.exec(raw);
+      const sem = m && m[1] ? +m[1] : null;
+      const subj = m ? m[2].trim() : '과목 이름 없음';
+      const text = (m ? raw.slice(m[0].length) : raw).trim();
+      if (!text) continue;
+      // 이 짜임에는 과목 구분(진로선택·체육예술)이 없어 모두 일반으로 둔다.
+      // 같은 학생의 PDF와 함께 넣으면 그 두 가지는 따로 남는다.
+      const base = `${r.grade}|일반|${sem === null ? 'null' : sem}|${subj}`;
+      let seq = 0;
+      while (stu.setuk.has(`${base}|${seq}`)) seq++;
+      stu.setuk.set(`${base}|${seq}`, { text, breaks: [], spans: [], page: null,
+                                        y0: null, y1: null, paras: 1, verified: true });
+    }
+  }
+  if (!byStu.size) throw new Error('반 머리줄(예: 3학년 1반)이 없어 학생을 가릴 수 없습니다.');
+  return [...byStu.values()];
+}
+
 /** 어떤 내려받기인지 표 머리에서 가린다. NEIS는 제목 자간을 벌려 쓰는 일이 있어 공백을 지우고 본다 */
 function detectSheet(grid) {
   const head = [];
@@ -2214,12 +2300,14 @@ function detectSheet(grid) {
 /** 제목으로 가린 쪽을 먼저 대 보되, 아니면 다른 쪽도 대 본다 — 제목이 지워진 파일도 열리게 */
 function studentsFromSheet(grid) {
   // 머리글이 있는 '자료 형식' 표가 먼저다 — 인쇄 모양과 짜임이 아예 달라 헷갈릴 일이 없다
-  const order = findTableHead(grid) ? ['표'] : [];
+  const order = findTableHead(grid) ? ['표'] : (hasPlainHead(grid) ? ['평문세특'] : []);
   order.push(...(detectSheet(grid) === '창체' ? ['창체', '세특'] : ['세특', '창체']));
+  if (!order.includes('평문세특')) order.push('평문세특');
   let first;
   for (const k of order) {
     try {
       if (k === '표') return studentsFromTable(parseNeisTable(grid));
+      if (k === '평문세특') return studentsFromPlain(parseNeisSetukPlain(grid));
       return k === '창체' ? studentsFromChangche(parseNeisChangche(grid))
                           : studentsFromRows(parseNeisSetuk(grid));
     } catch (e) { if (first === undefined) first = e; }   // 제목으로 가린 쪽의 사정을 알려 준다
@@ -2624,7 +2712,7 @@ $('modalClose').onclick = () => $('modal').removeAttribute('open');
 $('modal').onclick = e => { if (e.target.id === 'modal') $('modal').removeAttribute('open'); };
 
 /* ═══════ 점검 모드 ═══════ */
-const active = new Set(['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I']);   // F(공통 문장)는 켤 때만
+const active = new Set(['A']);   // 처음에는 오탈자·부호만. 나머지는 필요할 때 켠다
 /** 지금 켜 둔 규칙에 걸린 것만. 톺아보기·모아보기·점검이 같은 것을 보게 한다 */
 const issuesOf = (si, ii) => S.issues.filter(x => x.si === si && x.ii === ii && active.has(x.k));
 const issueCount = si => S.issues.filter(x => x.si === si && active.has(x.k)).length;
@@ -2644,7 +2732,11 @@ function checkScope() {
 
 function drawCheck() {
   const side = $('checkSide');
-  side.innerHTML = '<h3 style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em;margin-bottom:9px">점검 규칙</h3>';
+  side.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:9px">
+      <h3 style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.09em">점검 규칙</h3>
+      <button class="btn" id="ruleAll" style="margin-left:auto;padding:2px 7px;font-size:11.5px">전체</button>
+      <button class="btn" id="ruleNone" style="padding:2px 7px;font-size:11.5px">해제</button>
+    </div>`;
   for (const R of RULES) {
     const n = S.issues.filter(x => x.k === R.k && (!banFilter || S.students[x.si].ban === banFilter)).length;
     const b = document.createElement('label'); b.className = 'rule'; b.title = R.desc;
@@ -2693,6 +2785,9 @@ function drawCheck() {
     dn.appendChild(c);
     box.appendChild(dn);
   }
+
+  $('ruleAll').onclick = () => { RULES.forEach(R => active.add(R.k)); drawCheck(); };
+  $('ruleNone').onclick = () => { active.clear(); drawCheck(); };
 
   const bans = [...new Set(S.students.map(r => r.ban))].sort((a, b) => a - b);
   if (bans.length > 1) {
