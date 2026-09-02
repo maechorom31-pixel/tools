@@ -320,6 +320,20 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 .gth-memo{margin-top:10px;font-size:12.5px;color:var(--mid);background:#F8F7F3;
   border-radius:6px;padding:8px 11px;line-height:1.6}
 
+/* ── 독서 ── */
+.bk-n{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
+.stu[aria-current=true] .bk-n{color:#ffffff99}
+.bk-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 15px 6px;margin-bottom:10px}
+.bk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:8px}
+.bk-h b{font-size:15px;letter-spacing:-.01em}
+.bk-au{font-size:13px;color:var(--mid)}
+.bk-src{margin-left:auto;font-size:11.5px;color:var(--faint)}
+.bk-hits{display:flex;flex-direction:column}
+.bk-hit{display:flex;flex-direction:column;gap:2px;padding:8px 0 9px;border-top:1px solid var(--line);text-align:left;width:100%}
+.bk-hit:hover .find-snip{color:var(--ink)}
+.bk-hit .find-snip mark{background:#FFE9A8;box-shadow:none;font-weight:600;color:var(--ink);border-radius:2px;padding:0 1px}
+.bk-card .chips{padding-bottom:8px}
+
 /* 겹침 비교 카드 */
 .sheet-body.cmp-body{text-align:left;background:var(--card);padding:0}
 .cmp-sum{padding:14px 20px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--mid);
@@ -434,6 +448,7 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
     <button role="tab" id="tabGather" aria-selected="false">모아보기</button>
     <button role="tab" id="tabCheck" aria-selected="false">점검</button>
     <button role="tab" id="tabFind" aria-selected="false">검색</button>
+    <button role="tab" id="tabBooks" aria-selected="false">독서</button>
     <button role="tab" id="tabIntv" aria-selected="false">면접</button>
   </div>
   <div class="tools">
@@ -485,6 +500,11 @@ footer{position:fixed;left:212px;right:292px;bottom:0;background:linear-gradient
 <div class="check hide" id="findView">
   <div class="check-side" id="findSide"></div>
   <div class="check-main" id="findMain"></div>
+</div>
+
+<div class="check hide" id="booksView">
+  <div class="check-side" id="booksSide"></div>
+  <div class="check-main" id="booksMain"></div>
 </div>
 
 <div class="check hide" id="gatherView">
@@ -2212,6 +2232,9 @@ const SUBJ_CH = '가-힣A-Za-zⅠ-Ⅻ·()';
 const SUBJ_BOUND = new RegExp(
   `(?=\\(\\d학기\\)[^:\\n]{1,20}:|(?<=[.함임됨움짐냄듦씀킴큼]['’"”)\\]]?)\\s*[${SUBJ_CH}][${SUBJ_CH}\\s0-9]{1,17}:(?!\\d))`);
 const SUBJ_LABEL = new RegExp(`^(?:\\((\\d)학기\\))?\\s*([${SUBJ_CH}][${SUBJ_CH}\\s0-9]{0,19}):(?!\\d)\\s*`);
+/* 개인별 세특이 시작하는 자리. 문장이 끝난 뒤 학교자율과정 활동으로 시작한다 —
+   PDF 쪽 parseSetuk의 RE_JAYUL과 같은 신호를 문장 경계에서 찾는다 */
+const SOLO_START = /(?<=[.!?]['’"”)]?\s*)(?:[(‘'"“]\s*)?(?:학교\s*)?자율\s*적?\s*교육\s*과\s*정|(?<=[.!?]\s*)학교자율과정|(?<=[.!?]\s*)융합\s*주제\s*탐구\s*프로젝트/;
 /* 문장 끝 뒤에 오는 흔한 말머리는 과목이 아니다 — '… 참여함. 주제: …' 같은 자리 */
 const NOT_SUBJ = new Set(['주제', '결론', '예시', '방법', '목표', '내용', '활동', '근거', '이유',
   '특징', '참고', '비고', '대상', '기간', '장소', '조건', '문제', '질문', '답변', '요약', '정리']);
@@ -2273,8 +2296,30 @@ function studentsFromPlain(rows) {
       const m = SUBJ_LABEL.exec(raw);
       const sem = m && m[1] ? +m[1] : null;
       const subj = m ? m[2].trim() : '과목 이름 없음';
-      const text = (m ? raw.slice(m[0].length) : raw).trim();
+      let text = (m ? raw.slice(m[0].length) : raw).trim();
       if (!text) continue;
+      // 마지막 과목 뒤에 개인별 세특이 라벨 없이 붙어 온다. 학교자율과정 활동으로 시작하는
+      // 문장부터 떼어 개세특으로 보낸다 — 단, 한도를 넘긴 덩이에서만. 한도 안이면 과목 세특이
+      // 학교자율과정을 한 문장 언급했을 뿐일 수 있다.
+      const lim = byteLimit('세특', r.grade, S.curGrade);
+      if (nbytes(text) > lim + 30) {
+        // 앞쪽(과목)이 250byte 이상이면서 한도 안에 들고, 뒤쪽(개세특)도 250byte 이상인 자리 가운데
+        // 마지막 것에서 자른다 — 과목 세특이 학교자율과정을 한 문장 언급한 자리에서 잘리지 않게
+        let cut = -1;
+        for (const m2 of text.matchAll(new RegExp(SOLO_START.source, 'g'))) {
+          const head = nbytes(text.slice(0, m2.index)), tail = nbytes(text.slice(m2.index));
+          if (head >= 250 && head <= lim && tail >= 250) cut = m2.index;
+        }
+        if (cut > 0) {
+          const solo = text.slice(cut).replace(/^[.\s]+/, '').trim();
+          text = text.slice(0, cut).trim();
+          const k2 = `${r.grade}|개인별|null|개인별 세부능력 및 특기사항|0`;
+          const had = stu.setuk.get(k2);
+          if (had) had.text += solo;
+          else stu.setuk.set(k2, { text: solo, breaks: [], spans: [], page: null,
+                                   y0: null, y1: null, paras: 1, verified: true });
+        }
+      }
       // 이 짜임에는 과목 구분(진로선택·체육예술)이 없어 모두 일반으로 둔다.
       // 같은 학생의 PDF와 함께 넣으면 그 두 가지는 따로 남는다.
       const base = `${r.grade}|일반|${sem === null ? 'null' : sem}|${subj}`;
@@ -2382,9 +2427,33 @@ function mergeStudent(r) {
   if (!same) { S.students.push(r); return r; }
   // 이미 있는 자리라도, 새로 들어온 쪽에만 원문 자리(spans)가 있으면 그것으로 바꾼다.
   // 엑셀을 먼저 넣고 PDF를 나중에 넣어도 '생기부 원문 보기'가 살아 있게 하려는 것이다.
+  // 같은 기록이 다른 이름으로 들어오는 일이 있다 — 세특을 '과목 칸 있는 인쇄형'과 '라벨형'으로
+  // 두 번 받으면 학기·과목 구분이 달라 키가 어긋난다. 본문이 같으면 같은 기록으로 보고 하나만 둔다.
+  const flat = t => (t || '').replace(/\s+/g, '');
   const put = (map, k, v) => {
     const had = map.get(k);
-    if (!had || (!(had.spans || []).length && (v.spans || []).length)) map.set(k, v);
+    if (had) {
+      if (!(had.spans || []).length && (v.spans || []).length) map.set(k, v);
+      return;
+    }
+    // 세특 키는 학년|구분|학기|과목|차례. 같은 학년·과목인데 구분·학기만 다르고 본문이 거의 같으면
+    // (인쇄형은 학기·구분을 알고 라벨형은 모르는 식) 같은 기록이다. 더 많이 아는 키를 남긴다.
+    const seg = key => String(key).split('|');
+    const knows = key => { const p = seg(key); return (p[1] !== '일반' ? 1 : 0) + (p[2] !== 'null' ? 1 : 0); };
+    const pk = seg(k);
+    if (pk.length !== 5) { map.set(k, v); return; }        // 창체·행특 키는 이름이 곧 자리다
+    let sh = null;
+    for (const [k2, v2] of map) {
+      const p2 = seg(k2);
+      if (p2.length !== 5 || p2[0] !== pk[0] || p2[3] !== pk[3]) continue;   // 같은 학년·과목끼리만
+      sh = sh || shingles(v.text);
+      const same = flat(v2.text) === flat(v.text) || overlapRatio(shingles(v2.text), sh) >= 0.9;
+      if (!same) continue;
+      const better = (!(v2.spans || []).length && (v.spans || []).length) || knows(k) > knows(k2);
+      if (better) { map.delete(k2); map.set(k, (v.spans || []).length ? v : { ...v, spans: v2.spans, page: v2.page, y0: v2.y0, y1: v2.y1 }); }
+      return;
+    }
+    map.set(k, v);
   };
   for (const [k, v] of r.setuk) put(same.setuk, k, v);
   for (const [k, v] of r.changche) put(same.changche, k, v);
@@ -3244,6 +3313,106 @@ function drawGatherMain() {
   }
 }
 
+/* ═══════ 독서 — 기록 속 책을 학생별·책별로 ═══════ */
+const BOOKS = { cur: 0, by: 'stu' };
+
+function drawBooks() {
+  const side = $('booksSide'), main = $('booksMain');
+  if (!S.students.length) { side.innerHTML = ''; main.innerHTML = '<div class="empty"><h3>학생이 없습니다</h3></div>'; return; }
+  if (BOOKS.cur >= S.students.length) BOOKS.cur = 0;
+  const all = S.students.map((r, si) => ({ r, si, books: collectBooks(r) }));
+  const total = all.reduce((n, x) => n + x.books.length, 0);
+  const distinct = new Set(all.flatMap(x => x.books.map(b => bkKey(b.b)))).size;
+  const noAuthor = all.reduce((n, x) => n + x.books.filter(b => !b.author).length, 0);
+  const unsure = all.reduce((n, x) => n + x.books.filter(b => !b.sure).length, 0);
+
+  side.innerHTML = `<div class="chips" style="margin-bottom:14px">
+      <button class="chip${BOOKS.by === 'stu' ? '' : ' off'}" data-by="stu">학생별</button>
+      <button class="chip${BOOKS.by === 'book' ? '' : ' off'}" data-by="book">책별</button>
+    </div>
+    <p class="find-hint" style="margin-bottom:14px">학생 ${S.students.length}명 · 책 ${total}권<br>
+      서로 다른 책 ${distinct}종${noAuthor ? ` · 저자 없는 표기 ${noAuthor}` : ''}${unsure ? ` · 확인 필요 ${unsure}` : ''}</p>`;
+  side.querySelectorAll('[data-by]').forEach(b => { b.onclick = () => { BOOKS.by = b.dataset.by; drawBooks(); }; });
+
+  if (BOOKS.by === 'stu') {
+    let ban = null, g = null;
+    for (const { r, si, books } of all) {
+      if (r.ban !== ban) {
+        ban = r.ban;
+        const d = document.createElement('div'); d.className = 'ban-group';
+        d.innerHTML = `<div class="ban-label">${ban}반</div>`;
+        side.appendChild(d); g = d;
+      }
+      const b = document.createElement('button');
+      b.className = 'stu'; b.setAttribute('aria-current', si === BOOKS.cur);
+      b.innerHTML = `<span class="stu-no">${r.num}</span><span>${esc(r.name)}</span>
+        <span class="stu-dots"><span class="bk-n">${books.length || ''}</span>${books.some(x => !x.sure) ? '<i class="dot warn"></i>' : ''}</span>`;
+      b.onclick = () => { BOOKS.cur = si; drawBooks(); };
+      g.appendChild(b);
+    }
+  }
+
+  const howTag = x => x.sure
+    ? (x.author ? '' : '<span class="tag gray">저자 없음</span>')
+    : '<span class="tag">제목 확인 필요</span>';
+  const snippet = (it, h) => {
+    const t = it.text, a = Math.max(0, h.s - 30), b = Math.min(t.length, h.e + 30);
+    return `${a > 0 ? '…' : ''}${esc(t.slice(a, h.s))}<mark>${esc(t.slice(h.s, h.e))}</mark>${esc(t.slice(h.e, b))}${b < t.length ? '…' : ''}`;
+  };
+
+  if (BOOKS.by === 'stu') {
+    const { r, si, books } = all[BOOKS.cur];
+    main.innerHTML = `<div class="issue-head" style="margin-bottom:4px">
+        <b>${r.ban}반 ${r.num}번 ${esc(r.name)} — ${books.length}권</b>
+        <button class="btn btn-solid" id="bkPrint" style="margin-left:auto">독서 목록 인쇄</button>
+      </div>
+      <p class="find-hint" style="margin-bottom:16px">창체·세특·행특 본문에서 '제목(저자)' 꼴과 읽었다는 서술을 모았습니다.
+        여는 따옴표가 빠져 제목의 시작을 알 수 없는 것은 앞 문장 경계까지 보여 주니 확인해 주세요.</p>
+      ${books.length ? '' : '<div class="empty"><h3>기록에서 찾은 책이 없습니다</h3></div>'}`;
+    $('bkPrint').onclick = printBooks;
+    for (const x of books) {
+      const card = document.createElement('div'); card.className = 'bk-card';
+      card.innerHTML = `<div class="bk-h"><b>『${esc(x.b)}』</b>${x.author ? `<span class="bk-au">${esc(x.author)}</span>` : ''}${howTag(x)}
+          <span class="bk-src">${esc(x.srcs.join(' · '))}</span></div>
+        <div class="bk-hits">${x.hits.map((h, i) => {
+          const it = r._items[h.ii];
+          return `<button class="bk-hit" data-i="${i}"><span class="find-snip">${snippet(it, h)}</span>
+            <span class="issue-loc">${it.grade}학년 ${it.grp} · ${esc(it.title)}</span></button>`;
+        }).join('')}</div>`;
+      card.querySelectorAll('.bk-hit').forEach(btn => {
+        const h = x.hits[+btn.dataset.i];
+        btn.onclick = () => openItem(si, h.ii, { s: h.s, e: h.e });
+      });
+      main.appendChild(card);
+    }
+    return;
+  }
+
+  // 책별 — 누가 읽었는지
+  const byBook = new Map();
+  for (const { r, si, books } of all) for (const x of books) {
+    const k = bkKey(x.b);
+    if (!byBook.has(k)) byBook.set(k, { b: x.b, author: x.author, sure: x.sure, who: [] });
+    const e = byBook.get(k);
+    if (!e.author && x.author) e.author = x.author;
+    e.who.push({ r, si, hit: x.hits[0] });
+  }
+  const list = [...byBook.values()].sort((a, b) => b.who.length - a.who.length || a.b.localeCompare(b.b, 'ko'));
+  main.innerHTML = `<div class="issue-head" style="margin-bottom:12px"><b>책별 — ${list.length}종</b>
+      <span>많이 읽은 책부터</span></div>`;
+  for (const x of list) {
+    const card = document.createElement('div'); card.className = 'bk-card';
+    card.innerHTML = `<div class="bk-h"><b>『${esc(x.b)}』</b>${x.author ? `<span class="bk-au">${esc(x.author)}</span>` : ''}
+        ${x.sure ? '' : '<span class="tag">제목 확인 필요</span>'}<span class="bk-src">${x.who.length}명</span></div>
+      <div class="chips">${x.who.map((w, i) => `<button class="chip" data-i="${i}">${w.r.ban}-${w.r.num} ${esc(w.r.name)}</button>`).join('')}</div>`;
+    card.querySelectorAll('[data-i]').forEach(btn => {
+      const w = x.who[+btn.dataset.i];
+      btn.onclick = () => openItem(w.si, w.hit.ii, { s: w.hit.s, e: w.hit.e });
+    });
+    main.appendChild(card);
+  }
+}
+
 /* ═══════ 겹침 비교 카드 ═══════ */
 /** 지정한 구간에 형광펜을 칠한 HTML */
 function paintSpans(text, spans) {
@@ -3424,28 +3593,88 @@ function suggestQuestions(it, seeds) {
   return q.slice(0, 4);
 }
 
-const RE_BOOK = /['‘]([^'’()]{2,30})\(([가-힣A-Za-z·,\s]{2,18})\)['’]/g;
+/* ═══════ 기록 속 책 찾기 ═══════
+   생기부에 책이 적히는 꼴이 다섯 가지다.
+     '제목(저자)'  ·  '제목'(저자)  ·  '제목'을 읽고  ·  『제목』  ·  제목(저자)'를 읽고(여는 따옴표가 빠진 것)
+   괄호 안이 사람 이름처럼 생겼을 때만 저자로 본다 — 날짜·시간·'관점 비교' 같은 것은 저자가 아니다. */
+const BK_Q = "'‘“『「", BK_C = "'’”』」";
+const BK_NAME = "(?:[가-힣]{1,7}(?:\\s[가-힣]{1,7}){0,3}|[A-Za-z][A-Za-z.\\-' ]{1,30})";
+const BK_AUTHOR = new RegExp(`^${BK_NAME}(?:\\s*[,·]\\s*${BK_NAME}){0,3}(?:\\s*(?:외|역|옮김|엮음|편|글|그림|공저|지음)\\s*\\d*)?$`);
+const BK_NOT = /\d|활동|시간|학기|비교|관점|주제|과정|프로젝트|보고서|발표|토론|수업|단원|이론|개념|기준|사례/;
+const isAuthor = a => a.trim().length >= 2 && BK_AUTHOR.test(a.trim()) && !BK_NOT.test(a);
+const RE_READ = '(?:을|를|은|는|이|가|의)?\\s*(?:읽|완독|정독|탐독|필사)';
+const BK_RE = {
+  quotedWithAuthor: new RegExp(`[${BK_Q}]([^${BK_C}()]{2,40})\\(([^()]{2,30})\\)[${BK_C}]`, 'g'),
+  quotedThenAuthor: new RegExp(`[${BK_Q}]([^${BK_C}()]{2,40})[${BK_C}]\\s*\\(([^()]{2,30})\\)`, 'g'),
+  quotedThenRead: new RegExp(`[${BK_Q}]([^${BK_C}.!?]{2,40})[${BK_C}]${RE_READ}`, 'g'),
+  bracket: /『([^』]{2,40})』/g,
+  noOpen: new RegExp(`\\(([^()]{2,30})\\)['’]${RE_READ}`, 'g'),
+};
+const bkKey = t => t.replace(/[\s'’"”“‘.,!?·:『』「」]/g, '').toLowerCase();
 
+/** 한 본문에서 책을 찾는다. { title, author, s, e, how, sure } */
+function findBooks(t) {
+  const out = [], seen = new Set();
+  const add = (title, author, s, e, how, sure) => {
+    title = title.replace(/\s+/g, ' ').trim().replace(/^[\s,]+|[\s,]+$/g, '');
+    // '제목(저자)'가 통째로 제목 자리에 들어왔으면 괄호를 떼어 저자로 옮긴다
+    const tail = /^(.{2,})\(([^()]{2,30})\)$/.exec(title);
+    if (tail && isAuthor(tail[2])) { title = tail[1].trim(); author = author || tail[2]; if (how === '저자 없음') how = '따옴표+저자'; }
+    if (title.length < 2) return;
+    const key = bkKey(title);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push({ title, author: (author || '').replace(/\s+/g, ' ').trim(), s, e, how, sure });
+  };
+  for (const m of t.matchAll(BK_RE.quotedWithAuthor))
+    if (isAuthor(m[2])) add(m[1], m[2], m.index, m.index + m[0].length, '따옴표+저자', true);
+  for (const m of t.matchAll(BK_RE.quotedThenAuthor))
+    if (isAuthor(m[2])) add(m[1], m[2], m.index, m.index + m[0].length, '따옴표+저자', true);
+  for (const m of t.matchAll(BK_RE.bracket)) {
+    const tail = /^(.{2,})\(([^()]{2,30})\)$/.exec(m[1]);
+    if (tail && isAuthor(tail[2])) add(tail[1], tail[2], m.index, m.index + m[0].length, '겹낫표', true);
+    else add(m[1], '', m.index, m.index + m[0].length, '겹낫표', true);
+  }
+  for (const m of t.matchAll(BK_RE.quotedThenRead))
+    add(m[1], '', m.index, m.index + m[0].length, '저자 없음', true);
+  // 여는 따옴표가 빠진 것 — 제목의 시작을 확정할 수 없어 앞 문장 경계까지 보여 주고 확인을 청한다
+  for (const m of t.matchAll(BK_RE.noOpen)) {
+    if (!isAuthor(m[1])) continue;
+    const before = t.slice(0, m.index);
+    if (/[’'"”]$/.test(before)) continue;                       // 사실은 여닫이가 다 있는 것
+    const cut = Math.max(before.lastIndexOf('.'), before.lastIndexOf(','), before.lastIndexOf("'"), before.lastIndexOf('’'), before.length - 34);
+    const raw = before.slice(cut + 1);
+    const guess = raw.trim();
+    const start = cut + 1 + (raw.length - raw.trimStart().length);
+    if (guess.length >= 2) add(guess, m[1], start, m.index + m[0].length, '여는 따옴표 없음', false);
+  }
+  out.sort((a, b) => a.s - b.s);
+  return out;
+}
+
+/** 학생 한 사람의 책 목록. 같은 책이 여러 항목에 나오면 하나로 묶고 나온 자리를 모두 기억한다 */
 function collectBooks(r) {
   const map = new Map();
-  for (const it of r._items) {
-    for (const m of it.text.matchAll(RE_BOOK)) {
-      if (/^\d/.test(m[2])) continue;
-      const key = `${m[1]}(${m[2]})`;
-      if (!map.has(key)) map.set(key, { srcs: new Set(), its: [] });
+  r._items.forEach((it, ii) => {
+    for (const bk of findBooks(it.text)) {
+      const key = bkKey(bk.title);
+      if (!map.has(key)) map.set(key, { b: bk.title, author: bk.author, how: bk.how, sure: bk.sure, srcs: new Set(), its: [], hits: [] });
       const e = map.get(key);
+      if (!e.author && bk.author) e.author = bk.author;
+      if (!e.sure && bk.sure) { e.sure = true; e.how = bk.how; e.b = bk.title; }
       e.srcs.add(`${it.grade}학년 ${it.grp}${it.sec === '세특' ? ' ' + it.title : ''}`);
       if (!e.its.includes(it)) e.its.push(it);
+      e.hits.push({ ii, s: bk.s, e: bk.e });
     }
-  }
-  return [...map.entries()].map(([b, e]) => ({ b, srcs: [...e.srcs], its: e.its }));
+  });
+  return [...map.values()].map(e => ({ ...e, srcs: [...e.srcs] }));
 }
 
 function printBooks() {
   const all = confirm('전체 학생의 독서 목록을 담을까요?\n(취소를 누르면 지금 보는 학생만 담습니다)');
   const picks = S.students
     .map((r, i) => ({ r, i, books: collectBooks(r) }))
-    .filter(x => (all || x.i === intvCur) && x.books.length);
+    .filter(x => (all || x.i === (S.mode === 'books' ? BOOKS.cur : intvCur)) && x.books.length);
   if (!picks.length) { alert('기록에서 찾은 책이 없습니다.'); return; }
   const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   $('printArea').innerHTML = `<header class="pr-head">
@@ -3454,7 +3683,7 @@ function printBooks() {
     </header>` + picks.map(({ r, books }) => `<section class="pr-stu">
       <h2>${r.ban}반 ${r.num}번 ${esc(r.name)} — ${books.length}권</h2>
       ${books.map(x => `<article class="pr-item" style="margin-bottom:3mm">
-        <h3 style="margin-bottom:.5mm">『${esc(x.b)}』</h3>
+        <h3 style="margin-bottom:.5mm">『${esc(x.b)}』${x.author ? ` <span class="pr-byte">${esc(x.author)}</span>` : ''}${x.sure ? '' : ' <span class="pr-byte">제목 확인 필요</span>'}</h3>
         <div class="pr-body" style="font-size:8.8pt;color:#555">${esc(x.srcs.join(' · '))}</div>
       </article>`).join('')}
     </section>`).join('');
@@ -3466,7 +3695,7 @@ function printBooks() {
 function crossQuestions(r) {
   // 여러 항목에 거듭 나온 책만 다룬다 — 학년 연결·교과 융합형은 실전에서 잘 나오지 않아 뺐다
   return collectBooks(r).filter(x => x.its.length >= 2).slice(0, 4).map(b =>
-    ({ q: `『${b.b.split('(')[0]}』을(를) ${b.srcs.join('과 ')}에서 모두 다뤘습니다. 항목마다 이 책에서 얻은 것이 달랐다면 무엇인가요?`, w: b.b }));
+    ({ q: `『${b.b}』을(를) ${b.srcs.join('과 ')}에서 모두 다뤘습니다. 항목마다 이 책에서 얻은 것이 달랐다면 무엇인가요?`, w: b.b }));
 }
 
 function drawIntv() {
@@ -3599,17 +3828,20 @@ function setMode(m) {
   $('tabCheck').setAttribute('aria-selected', m === 'check');
   $('tabGather').setAttribute('aria-selected', m === 'gather');
   $('tabFind').setAttribute('aria-selected', m === 'find');
+  $('tabBooks').setAttribute('aria-selected', m === 'books');
   $('tabIntv').setAttribute('aria-selected', m === 'intv');
   $('app').classList.toggle('hide', m !== 'read');
   $('foot').classList.toggle('hide', m !== 'read');
   $('checkView').classList.toggle('hide', m !== 'check');
   $('gatherView').classList.toggle('hide', m !== 'gather');
   $('findView').classList.toggle('hide', m !== 'find');
+  $('booksView').classList.toggle('hide', m !== 'books');
   $('intvView').classList.toggle('hide', m !== 'intv');
   $('cnt').textContent = `학생 ${S.students.length}명 · 점검 ${S.issues.filter(x => active.has(x.k)).length}건`;
   if (m === 'read') drawAll();
   else if (m === 'check') drawCheck();
   else if (m === 'find') { runFind(); drawFind(); }
+  else if (m === 'books') { if (prev === 'read') BOOKS.cur = S.cur; drawBooks(); }
   else if (m === 'gather') {
     // 톺아보기에서 넘어올 때만 보던 항목의 묶음으로 맞춘다.
     // 점검·검색에서 돌아올 때까지 바꾸면 여기서 고른 자리를 잃는다.
@@ -3638,6 +3870,7 @@ $('tabRead').onclick = () => setMode('read');
 $('tabCheck').onclick = () => setMode('check');
 $('tabGather').onclick = () => setMode('gather');
 $('tabFind').onclick = () => setMode('find');
+$('tabBooks').onclick = () => setMode('books');
 $('tabIntv').onclick = () => setMode('intv');
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea')) return;
