@@ -3314,7 +3314,7 @@ function drawGatherMain() {
 }
 
 /* ═══════ 독서 — 기록 속 책을 학생별·책별로 ═══════ */
-const BOOKS = { cur: 0, by: 'stu' };
+const BOOKS = { cur: 0, by: 'stu', item: null };   // by: stu(학생별) · book(책별) · item(과목별)
 
 function drawBooks() {
   const side = $('booksSide'), main = $('booksMain');
@@ -3328,6 +3328,7 @@ function drawBooks() {
 
   side.innerHTML = `<div class="chips" style="margin-bottom:14px">
       <button class="chip${BOOKS.by === 'stu' ? '' : ' off'}" data-by="stu">학생별</button>
+      <button class="chip${BOOKS.by === 'item' ? '' : ' off'}" data-by="item">과목별</button>
       <button class="chip${BOOKS.by === 'book' ? '' : ' off'}" data-by="book">책별</button>
     </div>
     <p class="find-hint" style="margin-bottom:14px">학생 ${S.students.length}명 · 책 ${total}권<br>
@@ -3359,6 +3360,85 @@ function drawBooks() {
     const t = it.text, a = Math.max(0, h.s - 30), b = Math.min(t.length, h.e + 30);
     return `${a > 0 ? '…' : ''}${esc(t.slice(a, h.s))}<mark>${esc(t.slice(h.s, h.e))}</mark>${esc(t.slice(h.e, b))}${b < t.length ? '…' : ''}`;
   };
+
+  if (BOOKS.by === 'item') {
+    // 과목 선생님이 자기 과목만 보게 — 항목을 고르면 그 항목에서 책을 든 학생 명단이 선다
+    const groups = gatherGroups().map(g => {
+      const rows = g.rows.map(x => ({ ...x, books: findBooks(x.it.text) }));
+      return { ...g, rows, withBook: rows.filter(x => x.books.length).length };
+    });
+    if (!groups.some(g => g.key === BOOKS.item)) BOOKS.item = (groups.find(g => g.withBook) || groups[0] || {}).key || null;
+    let lastGrp = null;
+    for (const g of groups) {
+      if (g.grp !== lastGrp) {
+        lastGrp = g.grp;
+        const h = document.createElement('div'); h.className = 'gth-grp'; h.textContent = g.grp; side.appendChild(h);
+      }
+      const b = document.createElement('button');
+      b.className = 'gth-pick';
+      b.setAttribute('aria-current', g.key === BOOKS.item);
+      b.innerHTML = `<span>${g.grade}학년 ${esc(g.name)}</span><span class="n">${g.withBook}/${g.rows.length}</span>`;
+      b.onclick = () => { BOOKS.item = g.key; drawBooks(); };
+      side.appendChild(b);
+    }
+    const g = groups.find(x => x.key === BOOKS.item);
+    if (!g) { main.innerHTML = '<div class="empty"><h3>항목이 없습니다</h3></div>'; return; }
+    const rows = [...g.rows].sort((a, b) => S.students[a.si].ban - S.students[b.si].ban || S.students[a.si].num - S.students[b.si].num);
+    const titles = new Map();
+    for (const x of rows) for (const bk of x.books) {
+      const k = bkKey(bk.title);
+      if (!titles.has(k)) titles.set(k, { b: bk.title, author: bk.author, sure: bk.sure, who: [] });
+      const e = titles.get(k);
+      if (!e.author && bk.author) e.author = bk.author;
+      if (!e.sure && bk.sure) { e.sure = true; e.b = bk.title; }
+      e.who.push({ si: x.si, ii: x.ii, s: bk.s, e: bk.e });
+    }
+    const none = rows.filter(x => !x.books.length);
+    // 이 항목 자체가 없는 학생 — 모아보기와 같은 셈법으로, 명단에서 빠지지 않게
+    const have = new Set(g.rows.map(x => x.si));
+    const missing = S.students.map((r, si) => si).filter(si => !have.has(si));
+    main.innerHTML = `<div class="issue-head" style="margin-bottom:4px">
+        <b>${g.grade}학년 ${g.grp} · ${esc(g.name)}</b>
+        <span>${g.rows.length}명 중 ${g.withBook}명이 책을 언급 · 책 ${titles.size}종</span>
+      </div>
+      <p class="find-hint" style="margin-bottom:16px">이 항목의 본문에서만 찾은 책입니다. 다른 항목에서 든 책은 학생별 보기에 있습니다.</p>
+      ${none.length ? `<p class="gth-miss">책을 언급하지 않은 학생 ${none.length}명 —
+        ${none.map(x => `${S.students[x.si].ban}-${S.students[x.si].num} ${esc(S.students[x.si].name)}`).join(', ')}</p>` : ''}
+      ${missing.length ? `<p class="gth-miss">이 항목이 없는 학생 ${missing.length}명 —
+        ${missing.map(si => `${S.students[si].ban}-${S.students[si].num} ${esc(S.students[si].name)}`).join(', ')}</p>` : ''}`;
+    for (const x of rows) {
+      if (!x.books.length) continue;
+      const r = S.students[x.si];
+      const card = document.createElement('div'); card.className = 'bk-card';
+      card.innerHTML = `<div class="bk-h"><b>${r.ban}반 ${r.num}번 ${esc(r.name)}</b>
+          <span class="bk-src">${x.books.length}권</span></div>
+        <div class="bk-hits">${x.books.map((bk, i) => `<button class="bk-hit" data-i="${i}">
+            <span><b>『${esc(bk.title)}』</b>${bk.author ? ` <span class="bk-au">${esc(bk.author)}</span>` : ''} ${howTag(bk)}</span>
+            <span class="find-snip">${snippet(x.it, bk)}</span></button>`).join('')}</div>`;
+      card.querySelectorAll('.bk-hit').forEach(btn => {
+        const bk = x.books[+btn.dataset.i];
+        btn.onclick = () => openItem(x.si, x.ii, { s: bk.s, e: bk.e });
+      });
+      main.appendChild(card);
+    }
+    if (titles.size) {
+      const list = [...titles.values()].sort((a, b) => b.who.length - a.who.length || a.b.localeCompare(b.b, 'ko'));
+      const box = document.createElement('div');
+      box.innerHTML = `<div class="issue-head" style="margin:26px 0 10px"><b>이 항목에 나온 책 ${list.length}종</b><span>많이 읽은 책부터</span></div>`;
+      for (const x of list) {
+        const card = document.createElement('div'); card.className = 'bk-card';
+        card.innerHTML = `<div class="bk-h"><b>『${esc(x.b)}』</b>${x.author ? `<span class="bk-au">${esc(x.author)}</span>` : ''}${x.sure ? '' : '<span class="tag">제목 확인 필요</span>'}<span class="bk-src">${x.who.length}명</span></div>
+          <div class="chips">${x.who.map((w, i) => `<button class="chip" data-i="${i}">${S.students[w.si].ban}-${S.students[w.si].num} ${esc(S.students[w.si].name)}</button>`).join('')}</div>`;
+        card.querySelectorAll('[data-i]').forEach(btn => {
+          const w = x.who[+btn.dataset.i];
+          btn.onclick = () => openItem(w.si, w.ii, { s: w.s, e: w.e });
+        });
+        box.appendChild(card);
+      }
+      main.appendChild(box);
+    }
+    return;
+  }
 
   if (BOOKS.by === 'stu') {
     const { r, si, books } = all[BOOKS.cur];
