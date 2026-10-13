@@ -1583,11 +1583,20 @@ function mergeBoxes(boxes) {
   return out;
 }
 
+/* 성의 글자 수 — 두 글자 성(남궁·황보 …)은 이름이 세 글자 이상일 때만 */
+function surnameLen(name) { return name.length >= 3 && COMPOUND_SURNAMES.includes(name.slice(0, 2)) ? 2 : 1; }
+/* 이름 처리 방식대로 적은 이름: 그대로 기가영 · 성만 남김 기ㅇㅇ · 지우기 ㅇㅇㅇ */
+function maskName(name, mode) {
+  if (mode === "keep") return name;
+  const k = mode === "surname" ? surnameLen(name) : 0;
+  return name.slice(0, k) + "ㅇ".repeat(name.length - k);
+}
+
 /* 학생 이름을 '성만 남김'으로 둘 때: 상자에서 성 글자만 빼 준다 */
 function surnameCut(box, glyphsById) {
   const gl = box.glyphs.map(id => glyphsById[id]).sort((a, b) => a.bx - b.bx);
   const txt = gl.map(g => g.ch).join("");
-  const k = (txt.length >= 3 && COMPOUND_SURNAMES.includes(txt.slice(0, 2))) ? 2 : 1;
+  const k = surnameLen(txt);
   const rest = gl.slice(k);
   if (!rest.length) return null;
   return { ...box, x0: Math.min(...rest.map(g => g.x0)) - 0.6, x1: box.x1, glyphs: rest.map(g => g.id), text: rest.map(g => g.ch).join("") };
@@ -1636,7 +1645,7 @@ function updateCounts() {
   const c = {};
   if (f?.boxes) f.boxes.forEach(bs => bs.forEach(b => { if (b.on) c[b.kind] = (c[b.kind] || 0) + 1; }));
   document.querySelectorAll("[data-c]").forEach(el => { const n = c[el.dataset.c] || 0; el.textContent = f?.boxes ? n + "곳" : ""; });
-  $("nameCnt").textContent = f?.boxes ? `찾은 이름 ${(c.name || 0)}곳` + (f.names?.student.size ? ` · ${[...f.names.student].length}명` : "") : "";
+  $("nameCnt").textContent = f?.boxes ? `찾은 이름 ${(c.name || 0)}곳` + (f.names?.student.size ? ` · ${[...f.names.student].length}명` : "") + ` · 파일 이름 ${outName(f)}` : "";
 }
 
 /* 쪽마다 실제로 지울 상자 (항목 켜짐 · 이름 처리 반영) */
@@ -1736,7 +1745,7 @@ async function showFile() {
     const pno = document.createElement("span"); pno.className = "pno"; pno.textContent = `${p + 1} / ${pj.numPages}`; div.appendChild(pno);
     host.appendChild(div);
     await page.render({ canvasContext: cv.getContext("2d"), viewport: page.getViewport({ scale: vp.scale * dpr }) }).promise;
-    div._vp = vp; div._p = p; div._ov = ov;
+    div._vp = vp; div._p = p; div._ov = ov; div._f = f;
     if (!showOut) { drawBoxes(div); bindDraw(div); }
   }
 }
@@ -1796,7 +1805,8 @@ function textIn(pg, r) {
   return pg.glyphs.filter(g => { const x = (g.x0 + g.x1) / 2, y = (g.y0 + g.y1) / 2; return x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1; }).map(g => g.ch).join("");
 }
 function refreshBoxes() {
-  document.querySelectorAll(".pg").forEach(div => { if (div._ov && S.view === "src") drawBoxes(div); });
+  /* 다른 파일의 쪽이 아직 그려져 있는 동안(파일을 막 바꾼 때)은 건너뛴다 */
+  document.querySelectorAll(".pg").forEach(div => { if (div._ov && S.view === "src" && div._f === S.files[S.cur]) drawBoxes(div); });
   updateCounts(); renderFound(); renderFiles();
 }
 function renderFound() {
@@ -1885,12 +1895,24 @@ async function build(f) {
   f.out = { bytes: r.bytes, url, name, checks, total, images: r.report.images, size: r.bytes.length };
   f._pjOut = null;
 }
+/* 내려받을 파일 이름은 이름 처리 방식을 따른다 — 기가영 / 기ㅇㅇ / ㅇㅇㅇ + _블라인드.
+   학급 파일이면 첫 학생 뒤에 "외 N명". 학생 이름을 못 찾았으면 원래 파일 이름에서
+   찾은 이름만 같은 방식으로 바꿔 쓴다. 같은 이름이 겹치면 _2, _3을 붙인다. */
 function outName(f) {
-  let base = f.name.replace(/\.pdf$/i, "");
-  const names = [...(f.names?.student || []), ...(f.names?.family || []), ...(f.names?.teacher || [])].sort((a, b) => b.length - a.length);
-  for (const n of names) base = base.split(n).join("○○○");
-  base = base.replace(/\d{6}-?\d{7}/g, "");
-  return base + "_블라인드.pdf";
+  const students = [...(f.names?.student || [])];
+  let base;
+  if (students.length) {
+    base = maskName(students[0], S.nameMode) + (students.length > 1 ? ` 외 ${students.length - 1}명` : "");
+  } else {
+    base = f.name.replace(/\.pdf$/i, "").replace(/\d{6}-?\d{7}/g, "");
+    const others = [...(S.enabled.family ? f.names?.family || [] : []), ...(S.enabled.teacher ? f.names?.teacher || [] : [])];
+    for (const n of others.sort((a, b) => b.length - a.length)) base = base.split(n).join(maskName(n, "remove"));
+  }
+  base += "_블라인드";
+  const taken = new Set(S.files.filter(x => x !== f && x.out).map(x => x.out.name));
+  let name = base + ".pdf";
+  for (let k = 2; taken.has(name); k++) name = `${base}_${k}.pdf`;
+  return name;
 }
 function renderResult() {
   const f = S.files[S.cur], host = $("result");
