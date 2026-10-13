@@ -396,6 +396,8 @@ const DEFAULT_DATA = {
     { icon: "🔎", name: "대학 개설학과·모집인원 검색",   url: "https://jinhak.esteacher.kr/2027uni.html",                      desc: "2027 대학별 개설학과·모집인원·계열 검색 (진로진학 상담 도구)", cat: "대입", fav: false },
     { icon: "🧮", name: "대학별 교과 환산점수 계산",     url: "https://maechorom31-pixel.github.io/grade/univ/",               desc: "대학별 교과전형 환산점수 산출·비교",                   cat: "대입", fav: false },
     { icon: "💡", name: "탐구 키워드 펼쳐보기",         url: "https://maechorom31-pixel.github.io/keyword-explorer/",         desc: "탐구 주제·키워드 색인을 펼쳐서 탐색",                  cat: "대입", fav: false },
+    { icon: "🧪", name: "학과별 전공 탐구 가이드",       url: "https://jinhak.esteacher.kr/majortam.html",                    desc: "40개 학과 · 탐구 주제 4,000개 · 학과별 3년 탐구 로드맵 (충남진로융합교육원, 2022 개정 기준)", cat: "대입", fav: true },
+    { icon: "📰", name: "칼럼 탐구 주제 찾기",          url: "https://column.jinrosillok.kr/",                                desc: "진로진학실록 — 주 2회 학과별 칼럼과 탐구·면접·토론 질문 (교사 검토 후 공개)", cat: "대입", fav: true },
     { icon: "📖", name: "문학 자율학습",               url: "https://maechorom31-pixel.github.io/literary-Texts/",           desc: "수능특강 문학 — 작품 급소(크럭스)·O/X 선지 판단 학습", cat: "국어", fav: false },
     { icon: "📚", name: "독서 자율학습",               url: "https://maechorom31-pixel.github.io/Non-literary-Texts/",       desc: "수능특강 독서 — 도식 기반 능동 회상·분산 반복 학습",   cat: "국어", fav: false },
     { icon: "🔍", name: "생기부 점검실",              url: "https://maechorom31-pixel.github.io/tools/saenggibu/",          desc: "NEIS 창체·세특 엑셀 원본 그대로 — 작성 현황·겹침 점검·AI 맞춤법·학급 총평 분석", cat: "도구", fav: false },
@@ -414,7 +416,7 @@ const STORE_KEY = "linkhub-data-v3";
 const THEME_KEY = "linkhub-theme";
 /* seenDefaults가 없는 예전 저장본은 이 목록만 새 링크로 보고, 나머지 기본 링크는
    이미 본 것으로 친다 — 예전에 지운 링크가 되살아나지 않도록. */
-const NEW_DEFAULT_URLS = ["https://maechorom31-pixel.github.io/tools/topabogi/", "https://maechorom31-pixel.github.io/tools/blind/"];
+const NEW_DEFAULT_URLS = ["https://maechorom31-pixel.github.io/tools/topabogi/", "https://maechorom31-pixel.github.io/tools/blind/", "https://jinhak.esteacher.kr/majortam.html", "https://column.jinrosillok.kr/"];
 let data = loadData();
 saveData();   // 새로 채운 링크와 seenDefaults를 바로 굳혀 둔다
 let editMode = false;
