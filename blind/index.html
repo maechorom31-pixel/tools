@@ -41,9 +41,16 @@ section.step{background:var(--card);border:1px solid var(--line);border-radius:1
 .btn[disabled]{opacity:.45;cursor:default}
 @media (hover:hover){.btn:not([disabled]):hover{border-color:var(--amber-dark)} .btn.main:not([disabled]):hover{background:#E8930A}}
 .btn:active{transform:scale(.98)}
-.files{margin-top:16px;display:grid;gap:8px}
-.file{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:left;width:100%}
-.file.on{border-color:var(--amber-dark);background:var(--amber-soft)}
+.files{margin-top:8px;display:grid;gap:8px}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) auto;border:1px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden}
+.frow.on{border-color:var(--amber-dark);background:var(--amber-soft)}
+.file{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:10px 14px;border:0;background:none;text-align:left;width:100%;min-width:0}
+.file[disabled]{cursor:default}
+.rm{border:0;border-left:1px solid var(--line);background:none;padding:0 14px;min-height:44px;font-size:13px;color:var(--mid);white-space:nowrap}
+.frow.on .rm{border-left-color:#EBD9B4}
+@media (hover:hover){.rm:hover{color:var(--err)}}
+.filebar{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:13px;color:var(--mid)}
+.filebar .btn{min-height:34px;font-size:13px}
 .file .fn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file .meta{font-size:13px;color:var(--mid);font-variant-numeric:tabular-nums;white-space:nowrap}
 .file .meta.err{color:var(--err)}
@@ -127,6 +134,7 @@ footer{padding:24px 0 48px;color:var(--mid);font-size:13px}
     <p>또는 파일을 여기에 끌어다 놓으세요</p>
     <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
   </div>
+  <div class="filebar" id="filebar" hidden><span id="fileN"></span><button class="btn" id="clearAll" type="button">모두 비우기</button></div>
   <div class="files" id="files"></div>
 </section>
 
@@ -1692,6 +1700,7 @@ async function addFiles(list) {
     } catch (e) {
       f.error = "오류: " + (e?.message || e);
     }
+    if (f.removed) { f.bytes = f.doc = f.pages = f.boxes = null; continue; }
     if (S.cur < 0 && !f.error) S.cur = S.files.indexOf(f);
     renderFiles();
     if (S.files[S.cur] === f) showFile();
@@ -1702,13 +1711,46 @@ function renderFiles() {
     const n = f.boxes ? f.boxes.reduce((a, bs) => a + bs.length, 0) : 0;
     const meta = f.error ? `<span class="meta err">${esc(f.error)}</span>` :
       `<span class="meta">${esc(f.status)}${f.boxes ? ` · 찾은 자리 ${n}곳` : ""}${f.warn ? ` · ${esc(f.warn)}` : ""}${f.out ? " · 만듦" : ""}</span>`;
-    return `<button type="button" class="file${i === S.cur ? " on" : ""}" data-i="${i}" ${f.error ? "disabled" : ""}><span class="fn">${esc(f.name)}</span>${meta}</button>`;
+    return `<div class="frow${i === S.cur ? " on" : ""}"><button type="button" class="file" data-i="${i}" ${f.error ? "disabled" : ""}><span class="fn">${esc(f.name)}</span>${meta}</button>` +
+      `<button type="button" class="rm" data-rm="${i}" aria-label="${esc(f.name)} 빼기">빼기</button></div>`;
   }).join("");
   $("files").querySelectorAll(".file").forEach(el => el.onclick = () => { S.cur = +el.dataset.i; renderFiles(); showFile(); });
+  $("files").querySelectorAll(".rm").forEach(el => el.onclick = () => removeFiles([+el.dataset.rm]));
+  $("filebar").hidden = !S.files.length;
+  $("clearAll").disabled = !!S.busy;
+  $("files").querySelectorAll(".rm").forEach(el => { el.disabled = !!S.busy; });
+  $("fileN").textContent = `올린 파일 ${S.files.length}개`;
   const ok = S.files.some(f => f.boxes);
   $("mkOne").disabled = !S.files[S.cur]?.boxes;
   $("mkAll").disabled = !ok;
 }
+
+/* ---------- 파일 빼기 ----------
+   목록에서만 지우는 것이 아니라 메모리에 올려 둔 원본·미리보기·만든 결과까지 놓아준다. */
+function removeFiles(idx) {
+  const gone = idx.map(i => S.files[i]).filter(Boolean);
+  const keep = S.files[S.cur];
+  for (const f of gone) {
+    if (f.out?.url) URL.revokeObjectURL(f.out.url);
+    for (const k of ["_pjSrc", "_pjOut"]) { try { f[k]?.destroy(); } catch { /* 무시 */ } f[k] = null; }
+    f.bytes = f.doc = f.pages = f.boxes = f.names = f.out = null;
+    f.removed = true;
+  }
+  const at = S.cur;
+  S.files = S.files.filter(f => !gone.includes(f));
+  if (keep && !gone.includes(keep)) S.cur = S.files.indexOf(keep);
+  else {
+    // 지운 파일 자리의 다음 파일 → 없으면 앞 파일
+    const after = S.files.slice(Math.min(at, S.files.length)).find(f => f.boxes) || S.files.slice().reverse().find(f => f.boxes);
+    S.cur = after ? S.files.indexOf(after) : -1;
+  }
+  const st = $("status");
+  st.className = "status";
+  st.textContent = gone.length > 1 ? `파일 ${gone.length}개를 뺐습니다.` : gone.length ? `뺐습니다: ${gone[0].name}` : "";
+  if (S.view === "out") { S.view = "src"; $("viewSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === "src"))); }
+  renderFiles(); showFile();
+}
+$("clearAll").onclick = () => removeFiles(S.files.map((_, i) => i));
 
 /* ---------- 쪽 그리기 ---------- */
 let renderToken = 0;
@@ -1718,8 +1760,12 @@ async function showFile() {
   renderFound();
   renderResult();
   const host = $("pages");
-  if (!f?.boxes) { host.innerHTML = '<p class="empty">아직 올린 파일이 없습니다. 위에서 PDF를 고르면 여기에 쪽이 나타납니다.</p>'; return; }
   const token = ++renderToken;
+  if (!f?.boxes) { host.innerHTML = '<p class="empty">아직 올린 파일이 없습니다. 위에서 PDF를 고르면 여기에 쪽이 나타납니다.</p>'; return; }
+  try { await drawPages(f, host, token); }
+  catch (e) { if (token === renderToken && !f.removed) throw e; /* 그리는 도중 파일을 바꾸거나 뺀 경우 */ }
+}
+async function drawPages(f, host, token) {
   const lib = await initPdfjs();
   const showOut = S.view === "out" && f.out;
   const src = showOut ? f.out.bytes : f.bytes;
@@ -1929,6 +1975,8 @@ function renderResult() {
 }
 async function run(list) {
   const st = $("status");
+  S.busy = true;
+  renderFiles();
   $("mkOne").disabled = $("mkAll").disabled = true;
   try {
     for (const f of list) {
@@ -1939,6 +1987,7 @@ async function run(list) {
   } catch (e) {
     st.className = "status err"; st.textContent = "오류: " + (e?.message || e) + " — 이 파일은 만들지 못했습니다. 다른 저장 방식(PDF로 인쇄 등)으로 다시 저장해 넣어 보세요.";
   }
+  S.busy = false;
   renderFiles(); renderResult();
 }
 $("mkOne").onclick = () => S.files[S.cur]?.boxes && run([S.files[S.cur]]);
