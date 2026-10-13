@@ -37,6 +37,7 @@ section.step{background:var(--card);border:1px solid var(--line);border-radius:1
 .drop.over{border-color:var(--amber-dark);background:var(--amber-soft)}
 .drop p{color:var(--mid);font-size:14px;margin-top:8px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #D9D5CE;background:var(--card);font-weight:600;font-size:14px;white-space:nowrap}
+a.btn{text-decoration:none;color:var(--ink)}
 .btn.main{background:var(--amber);border-color:var(--amber);color:#1A1A1A}
 .btn[disabled]{opacity:.45;cursor:default}
 @media (hover:hover){.btn:not([disabled]):hover{border-color:var(--amber-dark)} .btn.main:not([disabled]):hover{background:#E8930A}}
@@ -83,6 +84,7 @@ section.step{background:var(--card);border:1px solid var(--line);border-radius:1
 .pages{display:grid;gap:28px;overflow:hidden;background:var(--sub);border-radius:8px;padding:16px;min-height:200px}
 .pg{position:relative;margin:0 auto;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08);touch-action:none;user-select:none;-webkit-user-select:none}
 .pg canvas{display:block;width:100%;height:100%}
+.parthead{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;margin:8px 0 -12px;white-space:pre}
 .pg .ov{position:absolute;inset:0;cursor:crosshair}
 .pg .pno{position:absolute;right:8px;bottom:-22px;font-size:12px;color:var(--mid)}
 .bx{position:absolute;border:1.5px solid var(--amber-dark);background:rgba(245,158,11,.38);border-radius:2px;cursor:pointer}
@@ -109,11 +111,23 @@ section.step{background:var(--card);border:1px solid var(--line);border-radius:1
 .checks .bad{color:var(--err)}
 .result{margin-top:16px}
 .result h3{font-size:15px;font-weight:700;margin-top:16px}
+.result .bad{color:var(--err);font-weight:600}
+.part{border-top:1px solid var(--line);padding:4px 0}
+.part:last-child{border-bottom:1px solid var(--line)}
+.part summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;cursor:pointer;padding:6px 0;list-style:none}
+.part summary::-webkit-details-marker{display:none}
+.part .pn{font-variant-numeric:tabular-nums;font-weight:700;color:var(--amber-dark);font-size:13px}
+.part .pt{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.part .ps{font-size:13px;color:var(--mid);white-space:nowrap}
+.part .btn{min-height:34px;font-size:13px}
+.part .checks{margin:0 0 10px 32px}
+@media (max-width:600px){.part summary{grid-template-columns:auto minmax(0,1fr) auto}.part .ps{display:none}.part .checks{margin-left:0}}
 .status{font-size:14px;margin-top:8px;color:var(--mid)}
 .status.err{color:var(--err)}
 .nowrap{white-space:nowrap}
 footer{padding:24px 0 48px;color:var(--mid);font-size:13px}
 body.has-bar footer{padding-bottom:140px}
+@media (max-width:760px){body.has-bar footer{padding-bottom:190px}}
 /* 아래 실행 막대 — 쪽을 끝까지 내리지 않아도 만들고 내려받는다 */
 .actbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);
   box-shadow:0 -1px 2px rgba(0,0,0,.04);padding:10px 0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
@@ -1110,7 +1124,10 @@ async function redact(doc, plan, opts = {}) {
   const report = { glyphs: 0, images: 0, pages: [] };
   const pageRewrite = new Map();   // 쪽 객체 id → 새 쪽 사전
 
+  /* opts.pages가 있으면 그 쪽만 담는다 (학급 파일을 학생별로 나눌 때) */
+  const sel = opts.pages ? new Set(opts.pages) : null;
   for (let p = 0; p < pages.length; p++) {
+    if (sel && !sel.has(p)) continue;
     const pg = pages[p], pl = plan[p] || { rects: [] };
     const rects = pl.rects || [];
     const ctx = {
@@ -1169,6 +1186,7 @@ async function redact(doc, plan, opts = {}) {
   const kids = [];
   const pagesId = nextId++;
   for (let p = 0; p < pages.length; p++) {
+    if (sel && !sel.has(p)) continue;
     const nd = pageRewrite.get(p);
     nd.set("Parent", { t: "ref", n: pagesId, g: 0 });
     nd.set("Type", { t: "name", v: "Page" });
@@ -1529,8 +1547,8 @@ function detectPage(page, opt, names) {
   /* 3. 정해진 꼴 */
   for (const ln of lines) {
     const t = ln.text;
-    const fm = t.match(/반\s*\d{1,2}\s*번\s*호\s*\d{1,3}\s*성\s*명\s*[:：]?\s*([가-힣]{2,5})(?![가-힣])/);
-    if (fm) names.footer.add(fm[1]);
+    const fm = t.match(/반\s*(\d{1,2})\s*번\s*호\s*(\d{1,3})\s*성\s*명\s*[:：]?\s*([가-힣]{2,5})(?![가-힣])/);
+    if (fm) { names.footer.add(fm[3]); if (!page.owner) page.owner = { key: `${+fm[1]}|${+fm[2]}|${fm[3]}`, name: fm[3] }; }
     const pat = (kind, re, grp = 0) => {
       const r = new RegExp(re.source, "g"); let m;
       while ((m = r.exec(t))) {
@@ -1583,6 +1601,16 @@ function detectAll(pages) {
   for (const n of names.student) { names.family.delete(n); names.teacher.delete(n); }
   /* 파일의 주인(학생) — 쪽 아래 발급 정보가 가장 믿을 만하고, 없으면 처음 찾은 학생 성명 하나 */
   names.owners = names.footer.size ? [...names.footer] : [...names.student].slice(0, 1);
+  /* 학생별 쪽 묶음 — 발급 정보가 없는 쪽은 앞쪽 학생에게, 맨 앞 쪽들은 첫 학생에게 붙인다 */
+  let last = null;
+  const own = pages.map(p => (last = p.owner || last));
+  const first = own.find(Boolean);
+  const groups = [];
+  own.forEach((o, i) => {
+    const k = (o || first)?.key ?? "", g = groups.find(x => x.key === k);
+    if (g) g.pages.push(i); else groups.push({ key: k, name: (o || first)?.name || names.owners[0] || "", pages: [i] });
+  });
+  names.groups = groups.length ? groups : [{ key: "", name: names.owners[0] || "", pages: pages.map((_, i) => i) }];
   pages.forEach((p, i) => per[i].push(...nameSweep(p, names)));
   const result = pages.map((p, i) => {
     const boxes = [];
@@ -1698,7 +1726,7 @@ function updateCounts() {
   const c = {};
   if (f?.boxes) f.boxes.forEach(bs => bs.forEach(b => { if (b.on) c[b.kind] = (c[b.kind] || 0) + 1; }));
   document.querySelectorAll("[data-c]").forEach(el => { const n = c[el.dataset.c] || 0; el.textContent = f?.boxes ? n + "곳" : ""; });
-  $("nameCnt").innerHTML = f?.boxes ? `찾은 이름 ${(c.name || 0)}곳` + (f.names?.owners?.length ? ` · 학생 ${f.names.owners.length}명` : "") + ` · 파일 이름 <span class="nowrap">${esc(outName(f))}</span>` : "";
+  $("nameCnt").innerHTML = f?.boxes ? `찾은 이름 ${(c.name || 0)}곳` + (f.names?.owners?.length ? ` · 학생 ${f.names.owners.length}명` : "") + (() => { const ns = previewNames(f); return ns.length > 1 ? ` · 학생별 ${ns.length}개 파일 <span class="nowrap">${esc(ns[0])}</span> …` : ` · 파일 이름 <span class="nowrap">${esc(ns[0] || "")}</span>`; })() : "";
 }
 
 /* 쪽마다 실제로 지울 상자 (항목 켜짐 · 이름 처리 반영) */
@@ -1755,7 +1783,7 @@ function renderFiles() {
   $("files").innerHTML = S.files.map((f, i) => {
     const n = f.boxes ? f.boxes.reduce((a, bs) => a + bs.length, 0) : 0;
     const meta = f.error ? `<span class="meta err">${esc(f.error)}</span>` :
-      `<span class="meta">${esc(f.status)}${f.boxes ? ` · 찾은 자리 ${n}곳` : ""}${f.warn ? ` · ${esc(f.warn)}` : ""}${f.out ? " · 만듦" : ""}</span>`;
+      `<span class="meta">${esc(f.status)}${f.boxes ? ` · 찾은 자리 ${n}곳` : ""}${f.warn ? ` · ${esc(f.warn)}` : ""}${f.out ? (f.out.parts.length > 1 ? ` · ${f.out.parts.length}개 만듦` : " · 만듦") : (f.names?.groups.length > 1 ? ` · 학생 ${f.names.groups.length}명` : "")}</span>`;
     return `<div class="frow${i === S.cur ? " on" : ""}"><button type="button" class="file" data-i="${i}" ${f.error ? "disabled" : ""}><span class="fn">${esc(f.name)}</span>${meta}</button>` +
       `<button type="button" class="rm" data-rm="${i}" aria-label="${esc(f.name)} 빼기">빼기</button></div>`;
   }).join("");
@@ -1777,8 +1805,8 @@ function removeFiles(idx) {
   const gone = idx.map(i => S.files[i]).filter(Boolean);
   const keep = S.files[S.cur];
   for (const f of gone) {
-    if (f.out?.url) URL.revokeObjectURL(f.out.url);
-    for (const k of ["_pjSrc", "_pjOut"]) { try { f[k]?.destroy(); } catch { /* 무시 */ } f[k] = null; }
+    releaseOut(f);
+    try { f._pjSrc?.destroy(); } catch { /* 무시 */ } f._pjSrc = null;
     f.bytes = f.doc = f.pages = f.boxes = f.names = f.out = null;
     f.removed = true;
   }
@@ -1814,13 +1842,20 @@ async function showFile() {
 async function drawPages(f, host, token) {
   const lib = await initPdfjs();
   const showOut = S.view === "out" && f.out;
-  const src = showOut ? f.out.bytes : f.bytes;
-  const key = showOut ? "_pjOut" : "_pjSrc";
-  if (!f[key]) f[key] = await lib.getDocument({ data: src.slice(), isEvalSupported: false }).promise;
-  const pj = f[key];
+  /* 결과 보기는 학생별 파일을 차례로 잇는다 */
+  if (showOut && !f._pjOut) f._pjOut = await Promise.all(f.out.parts.map(p => lib.getDocument({ data: p.bytes.slice(), isEvalSupported: false }).promise));
+  if (!showOut && !f._pjSrc) f._pjSrc = await lib.getDocument({ data: f.bytes.slice(), isEvalSupported: false }).promise;
+  const docs = showOut ? f._pjOut : [f._pjSrc];
   if (token !== renderToken) return;
   host.innerHTML = "";
   const width = Math.max(200, Math.min(host.clientWidth - 32, 820));
+  for (let d = 0; d < docs.length; d++) {
+  const pj = docs[d];
+  if (showOut && docs.length > 1) {
+    const h = document.createElement("p"); h.className = "parthead";
+    h.textContent = `${String(d + 1).padStart(2, "0")}  ${f.out.parts[d].name}`;
+    host.appendChild(h);
+  }
   for (let p = 0; p < pj.numPages; p++) {
     const page = await pj.getPage(p + 1);
     if (token !== renderToken) return;
@@ -1839,6 +1874,7 @@ async function drawPages(f, host, token) {
     await page.render({ canvasContext: cv.getContext("2d"), viewport: page.getViewport({ scale: vp.scale * dpr }) }).promise;
     div._vp = vp; div._p = p; div._ov = ov; div._f = f;
     if (!showOut) { drawBoxes(div); bindDraw(div); }
+  }
   }
 }
 function toView(vp, r) {
@@ -1924,7 +1960,7 @@ $("viewSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
 /* 상자를 바꾸면 만든 결과는 낡은 것이 된다 */
 function invalidate() {
   const f = S.files[S.cur];
-  if (f?.out) { if (f.out.url) URL.revokeObjectURL(f.out.url); f.out = null; f._pjOut = null; renderResult(); }
+  if (f?.out) { releaseOut(f); renderResult(); }
   if (S.view === "out") { S.view = "src"; $("viewSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === "src"))); showFile(); }
 }
 
@@ -1947,15 +1983,12 @@ function secretsFor(f) {
   if (S.enabled.teacher) for (const n of f.names.teacher) out.add(n);
   return [...out];
 }
-async function build(f) {
-  const plan = planFor(f);
-  const r = await redact(f.doc, plan);
+/* 결과 파일 하나를 두 가지 해석기로 다시 읽어 확인한다 */
+async function verify(f, r, pageIdx) {
   const checks = [];
-  /* 1) 이 도구의 해석기로 다시 읽기 */
   const back = await PdfDoc.open(r.bytes.slice().buffer);
   const bp = await analyze(back);
   const ownText = bp.map(p => buildLines(p.glyphs).map(l => l.text).join("\n")).join("\n");
-  /* 2) pdf.js(다른 해석기)로 다시 읽기 */
   const lib = await initPdfjs();
   const pj = await lib.getDocument({ data: r.bytes.slice(), isEvalSupported: false }).promise;
   let pjText = "";
@@ -1974,37 +2007,70 @@ async function build(f) {
     : { ok: true, t: `지운 항목 ${secrets.length}가지를 결과 파일에서 두 가지 방법으로 다시 찾아보았고, 하나도 나오지 않았습니다.` });
   const rrnLeft = /\d{6}-?[1-8][\d*]{6}/.test(A) || /\d{6}-?[1-8][\d*]{6}/.test(B);
   if (S.enabled.rrn) checks.push(rrnLeft ? { ok: false, t: "주민등록번호 모양의 글자가 결과에 남아 있습니다." } : { ok: true, t: "주민등록번호 모양의 글자가 없습니다." });
-  const imgsBefore = f.pages.reduce((a, p) => a + p.images.length, 0), imgsAfter = bp.reduce((a, p) => a + p.images.length, 0);
+  const imgsBefore = pageIdx.reduce((n, p) => n + f.pages[p].images.length, 0), imgsAfter = bp.reduce((n, p) => n + p.images.length, 0);
   checks.push({ ok: true, t: `그림 ${imgsBefore}개 중 ${imgsBefore - imgsAfter}개를 파일에서 뺐습니다.` });
   const info = meta?.info || {};
   const metaLeft = ["Title", "Author", "Subject", "Keywords", "Creator", "Producer"].filter(k => info[k]);
   checks.push(metaLeft.length || meta?.metadata ? { ok: false, t: "문서 정보가 남아 있습니다: " + metaLeft.join(", ") } : { ok: true, t: "문서 정보(제목·작성자·만든 프로그램)·책갈피·주석을 비웠습니다." });
   if (r.report.covered) checks.push({ ok: false, t: `그림 위에 그린 상자 ${r.report.covered}개는 그림을 통째로 빼지 않는 한 가림만 됩니다. 그 그림 전체를 덮도록 상자를 크게 그리면 그림을 뺍니다.` });
-  if (f.scanned?.length) checks.push({ ok: false, t: `${f.scanned.join(", ")}쪽은 그림으로 된 쪽이라 글자 단위로 지우지 못했습니다.` });
-  const total = r.report.glyphs;
-  const name = outName(f);
-  const url = URL.createObjectURL(new Blob([r.bytes], { type: "application/pdf" }));
-  f.out = { bytes: r.bytes, url, name, checks, total, images: r.report.images, size: r.bytes.length };
-  f._pjOut = null;
+  const scanned = (f.scanned || []).filter(n => pageIdx.includes(n - 1));
+  if (scanned.length) checks.push({ ok: false, t: `${scanned.join(", ")}쪽은 그림으로 된 쪽이라 글자 단위로 지우지 못했습니다.` });
+  return checks;
+}
+/* 학급 전체 파일도 학생마다 따로 만든다 — 쪽 아래 "반 N 번호 N 성명 …"으로 쪽 주인을 가른다 */
+async function build(f) {
+  releaseOut(f);
+  const plan = planFor(f);
+  const groups = f.names.groups;
+  const parts = [], taken = takenNames(f);
+  for (const g of groups) {
+    $("status").textContent = groups.length > 1 ? `${f.name} — ${parts.length + 1}/${groups.length}번째 학생 만드는 중…` : `${f.name} 만드는 중…`;
+    renderBar();
+    const r = await redact(f.doc, plan, { pages: g.pages });
+    const checks = await verify(f, r, g.pages);
+    const name = outName(f, g.name, taken);
+    taken.add(name);
+    parts.push({ name, bytes: r.bytes, size: r.bytes.length, url: URL.createObjectURL(new Blob([r.bytes], { type: "application/pdf" })),
+      checks, total: r.report.glyphs, images: r.report.images, pages: g.pages });
+  }
+  f.out = { parts };
+}
+function releaseOut(f) {
+  for (const p of f.out?.parts || []) if (p.url) URL.revokeObjectURL(p.url);
+  for (const d of f._pjOut || []) { try { d.destroy(); } catch { /* 무시 */ } }
+  f.out = null; f._pjOut = null;
+}
+const allParts = () => S.files.flatMap(x => x.out?.parts || []);
+const takenNames = f => new Set(S.files.filter(x => x !== f).flatMap(x => (x.out?.parts || []).map(p => p.name)));
+async function downloadParts(parts) {
+  /* 여러 개면 브라우저가 여러 파일 내려받기를 한 번 물어볼 수 있습니다 */
+  for (const p of parts) {
+    const el = document.createElement("a"); el.href = p.url; el.download = p.name;
+    document.body.appendChild(el); el.click(); el.remove();
+    if (parts.length > 1) await new Promise(r => setTimeout(r, 400));
+  }
 }
 /* 내려받을 파일 이름은 이름 처리 방식을 따른다 — 기가영 / 기ㅇㅇ / ㅇㅇㅇ + _블라인드.
-   학급 파일이면 첫 학생 뒤에 "외 N명". 학생 이름을 못 찾았으면 원래 파일 이름에서
+   학급 파일도 학생마다 한 파일. 학생 이름을 못 찾았으면 원래 파일 이름에서
    찾은 이름만 같은 방식으로 바꿔 쓴다. 같은 이름이 겹치면 _2, _3을 붙인다. */
-function outName(f) {
-  const students = f.names?.owners || [];
+function outName(f, student, taken = takenNames(f)) {
   let base;
-  if (students.length) {
-    base = maskName(students[0], S.nameMode) + (students.length > 1 ? ` 외 ${students.length - 1}명` : "");
-  } else {
+  if (student) base = maskName(student, S.nameMode);
+  else {
     base = f.name.replace(/\.pdf$/i, "").replace(/\d{6}-?\d{7}/g, "");
-    const others = [...(S.enabled.family ? f.names?.family || [] : []), ...(S.enabled.teacher ? f.names?.teacher || [] : [])];
-    for (const n of others.sort((a, b) => b.length - a.length)) base = base.split(n).join(maskName(n, "remove"));
+    const others = [...(S.nameMode !== "keep" ? f.names?.student || [] : []), ...(S.enabled.family ? f.names?.family || [] : []), ...(S.enabled.teacher ? f.names?.teacher || [] : [])];
+    for (const n of others.sort((x, y) => y.length - x.length)) base = base.split(n).join(maskName(n, "remove"));
   }
   base += "_블라인드";
-  const taken = new Set(S.files.filter(x => x !== f && x.out).map(x => x.out.name));
   let name = base + ".pdf";
   for (let k = 2; taken.has(name); k++) name = `${base}_${k}.pdf`;
   return name;
+}
+/* 미리 보여 줄 파일 이름들 */
+function previewNames(f) {
+  const taken = takenNames(f), out = [];
+  for (const g of f.names?.groups || []) { const n = outName(f, g.name, taken); taken.add(n); out.push(n); }
+  return out;
 }
 function renderBar() {
   const f = S.files[S.cur], bar = $("actbar");
@@ -2018,45 +2084,61 @@ function renderBar() {
     let n = 0;
     f.boxes.forEach((bs, p) => effectiveBoxes(f, p).forEach(e => { if (e.active) n++; }));
     st = `지울 자리 ${n}곳`;
+    const ng = f.names.groups.length;
+    if (ng > 1) st += ` · 학생 ${ng}명`;
     if (f.out) {
-      const bad = f.out.checks.filter(c => !c.ok).length;
-      st += bad ? ` · <a href="#h4s" class="bad">확인 필요 ${bad}가지</a>` : ` · 만듦, 검증 통과 <a href="#h4s">자세히</a>`;
+      const bad = f.out.parts.filter(p => p.checks.some(c => !c.ok)).length;
+      const made = f.out.parts.length > 1 ? `${f.out.parts.length}개 만듦` : "만듦";
+      st += bad ? ` · ${made}, <a href="#h4s" class="bad">확인 필요 ${bad}개</a>` : ` · ${made}, 검증 통과 <a href="#h4s">자세히</a>`;
     } else st += " · 아직 만들지 않음";
   }
   $("abState").innerHTML = st;
-  const made = S.files.filter(x => x.out);
-  const dl = $("abDl");
-  dl.hidden = !f?.out;
-  if (f?.out) { dl.href = f.out.url; dl.download = f.out.name; dl.title = f.out.name; }
+  const made = allParts();
+  const dl = $("abDl"), parts = f?.out?.parts || [];
+  dl.hidden = !parts.length;
+  if (parts.length === 1) { dl.href = parts[0].url; dl.download = parts[0].name; dl.title = parts[0].name; dl.textContent = "내려받기"; dl.onclick = null; }
+  else if (parts.length > 1) {
+    dl.removeAttribute("download"); dl.href = "#"; dl.title = parts.map(p => p.name).join(", ");
+    dl.textContent = `내려받기 (${parts.length}개)`;
+    dl.onclick = e => { e.preventDefault(); downloadParts(parts); };
+  }
   /* 강조 단추는 하나 — 만들기 전엔 만들기, 만든 뒤엔 내려받기 */
   $("mkOne").classList.toggle("main", !f?.out);
   dl.classList.toggle("main", !!f?.out);
   $("mkOne").textContent = f?.out ? "다시 만들기" : "이 파일 만들기";
   $("mkAll").hidden = S.files.filter(x => x.boxes).length < 2;
-  $("abDlAll").hidden = made.length < 2;
-  $("abDlAll").textContent = `모두 내려받기 (${made.length})`;
+  $("abDlAll").hidden = made.length <= parts.length;
+  $("abDlAll").textContent = `모든 파일 내려받기 (${made.length}개)`;
 }
-$("abDlAll").onclick = async () => {
-  /* 브라우저가 여러 파일 내려받기를 한 번 물어볼 수 있습니다 */
-  for (const x of S.files.filter(x => x.out)) {
-    const a = document.createElement("a"); a.href = x.out.url; a.download = x.out.name;
-    document.body.appendChild(a); a.click(); a.remove();
-    await new Promise(r => setTimeout(r, 400));
-  }
-};
+$("abDlAll").onclick = () => downloadParts(allParts());
 function renderResult() {
   const f = S.files[S.cur], host = $("result");
   renderBar();
   if (!f?.out) { host.innerHTML = '<p class="status">아직 만든 결과가 없습니다. 아래 막대의 단추로 만들 수 있습니다.</p>'; return; }
-  const o = f.out;
-  const kb = (o.size / 1024).toFixed(0), kb0 = (f.bytes.length / 1024).toFixed(0);
-  host.innerHTML = `
-    <a class="btn main" href="${o.url}" download="${esc(o.name)}">내려받기 · ${esc(o.name)}</a>
-    <h3>검증 결과</h3>
+  const parts = f.out.parts;
+  const one = p => `
     <ul class="checks">
-      <li>${ICON_OK}<span>글자 <span class="nowrap">${o.total}자</span>와 그림 <span class="nowrap">${o.images}개</span>를 지웠습니다. 파일 크기 <span class="nowrap">${kb0}KB → ${kb}KB</span>.</span></li>
-      ${o.checks.map(c => `<li class="${c.ok ? "" : "bad"}">${c.ok ? ICON_OK : ICON_BAD}<span>${c.ok ? "" : "확인 필요: "}${esc(c.t)}</span></li>`).join("")}
+      <li>${ICON_OK}<span>${p.pages.length}쪽 · 글자 <span class="nowrap">${p.total}자</span>와 그림 <span class="nowrap">${p.images}개</span>를 지웠습니다. <span class="nowrap">${(p.size / 1024).toFixed(0)}KB</span>.</span></li>
+      ${p.checks.map(c => `<li class="${c.ok ? "" : "bad"}">${c.ok ? ICON_OK : ICON_BAD}<span>${c.ok ? "" : "확인 필요: "}${esc(c.t)}</span></li>`).join("")}
     </ul>`;
+  if (parts.length === 1) {
+    const p = parts[0];
+    host.innerHTML = `<a class="btn main" href="${p.url}" download="${esc(p.name)}">내려받기 · ${esc(p.name)}</a><h3>검증 결과</h3>${one(p)}`;
+    return;
+  }
+  const bad = parts.filter(p => p.checks.some(c => !c.ok)).length;
+  host.innerHTML = `
+    <p>학급 파일을 학생 <b>${parts.length}명</b>으로 나눠 학생마다 한 파일씩 만들었습니다. ${bad ? `<span class="bad">확인이 필요한 파일이 ${bad}개 있습니다.</span>` : "모두 검증을 통과했습니다."}</p>
+    <div class="actions"><button type="button" class="btn main" id="dlThis">이 파일의 학생 ${parts.length}명 모두 내려받기</button></div>
+    ${parts.map((p, i) => `
+      <details class="part"${p.checks.some(c => !c.ok) ? " open" : ""}>
+        <summary><span class="pn">${String(i + 1).padStart(2, "0")}</span><span class="pt">${esc(p.name)}</span>
+          <span class="ps ${p.checks.some(c => !c.ok) ? "bad" : ""}">${p.checks.some(c => !c.ok) ? "확인 필요" : "검증 통과"}</span>
+          <a class="btn" href="${p.url}" download="${esc(p.name)}">내려받기</a></summary>
+        ${one(p)}
+      </details>`).join("")}`;
+  $("dlThis").onclick = () => downloadParts(parts);
+  host.querySelectorAll("summary a").forEach(el => el.addEventListener("click", e => e.stopPropagation()));
 }
 async function run(list) {
   const st = $("status");
@@ -2068,7 +2150,8 @@ async function run(list) {
       st.className = "status"; st.textContent = `${f.name} 만드는 중…`; renderBar();
       await build(f);
     }
-    st.textContent = list.length > 1 ? `${list.length}개 파일을 만들었습니다. 아래 막대의 '모두 내려받기'로 한 번에 받을 수 있습니다.` : "만들었습니다. 03의 '만든 결과' 보기로 쪽을 확인할 수 있습니다.";
+    const n = list.reduce((k, f) => k + (f.out?.parts.length || 0), 0);
+    st.textContent = n > 1 ? `학생별로 ${n}개 파일을 만들었습니다. 아래 막대의 내려받기 단추로 한 번에 받을 수 있습니다.` : "만들었습니다. 03의 '만든 결과' 보기로 쪽을 확인할 수 있습니다.";
   } catch (e) {
     st.className = "status err"; st.textContent = "오류: " + (e?.message || e) + " — 이 파일은 만들지 못했습니다. 다른 저장 방식(PDF로 인쇄 등)으로 다시 저장해 넣어 보세요.";
   }
