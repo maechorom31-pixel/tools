@@ -1920,46 +1920,63 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var CP_GROUPS = [['light', '빛'], ['color', '색'], ['split', '색조 분리 (어두운 곳·밝은 곳에 색 입히기)'], ['fx', '효과']];
 
   // 학교에서 사진을 쓰는 장면별로 묶었다. 원본은 모든 묶음 맨 앞에 보인다.
-  var CP_CATS = [['act', '기록·활동'], ['event', '행사'], ['mood', '감성·작품'], ['mono', '흑백'], ['mine', '내 필터']];
+  // 조명 보정 값의 근거 — 백열등·전구색 2700~3200K, 형광등 약 4000K(초록 기운),
+  // 주광 5500K, 흐린 날 약 6500K, 그늘 약 7500K. 형광등 초록빛은 마이너스 그린 필터
+  // (풀 = CC30 마젠타, 1/4 = 약 CC7.5)로 잡는 것이 표준이다. 휴대폰 자동 화이트밸런스가
+  // 이미 일부를 고쳐 두므로, 남은 색 기운의 절반 정도를 빼는 값으로 잡고 나머지는 강도로 맞춘다.
+  var CP_CATS = [['act', '기록·활동'], ['light', '조명 보정'], ['event', '행사'], ['mood', '감성·작품'], ['mono', '흑백'], ['mine', '내 필터']];
   var CPRESETS = [
     { id: 'none', cat: 'all', name: '원본', desc: '보정하지 않은 처음 사진', p: {} },
 
     { id: 'clean',     cat: 'act', name: '깔끔하고 밝게', desc: '활동 사진 기본 — 얼굴과 활동 장면은 환하게, 색은 자연스럽게',
-      p: { exposure: 0.2, contrast: 5, highlights: -15, shadows: 25, whites: 10, vibrance: 15, temp: 3 } },
-    { id: 'classroom', cat: 'act', name: '교실 형광등 보정', desc: '형광등 아래 푸르스름하거나 초록빛이 도는 교실 사진을 본래 색으로',
-      p: { temp: 12, tint: 8, exposure: 0.1, shadows: 15, highlights: -10, vibrance: 10 } },
-    { id: 'dark',      cat: 'act', name: '어두운 실내 살리기', desc: '강당·복도처럼 어둡게 찍힌 사진을 밝히고 그림자 속까지 보이게',
-      p: { exposure: 0.5, shadows: 45, highlights: -25, blacks: 10, contrast: -5, vibrance: 10 } },
+      p: { exposure: 0.35, contrast: 5, highlights: -20, shadows: 25, whites: 5, vibrance: 15 } },
+    { id: 'portrait',  cat: 'act', name: '인물·발표', desc: '발표·면담·단체 사진 — 피부는 부드럽고 화사하게, 그늘진 얼굴은 밝게',
+      p: { exposure: 0.15, contrast: -8, highlights: -20, shadows: 20, vibrance: 8, saturation: -5, temp: 3 } },
     { id: 'lab',       cat: 'act', name: '실험·관찰 기록', desc: '색이 중요한 관찰 기록 — 색감은 건드리지 않고 또렷하게만',
-      p: { contrast: 12, vibrance: 20, whites: 10, blacks: -8, highlights: -10 } },
+      p: { contrast: 12, highlights: -10, whites: 10, blacks: -8, vibrance: 10 } },
     { id: 'doc',       cat: 'act', name: '판서·학습지', desc: '칠판·학습지·게시물 사진의 글씨는 또렷하게, 종이 그늘은 하얗게',
-      p: { exposure: 0.1, whites: 45, blacks: -30, contrast: 30, saturation: -30, shadows: 15 } },
+      p: { exposure: 0.1, whites: 45, blacks: -30, contrast: 30, shadows: 15, saturation: -30 } },
+    { id: 'artwork',   cat: 'act', name: '작품·게시물', desc: '학생 작품·포스터·전시물 — 종이는 희게, 물감과 색지 색은 살아나게',
+      p: { exposure: 0.1, whites: 20, blacks: -10, contrast: 12, highlights: -10, vibrance: 18 } },
+
+    { id: 'tungsten',  cat: 'light', name: '백열등·전구색', desc: '노랗고 주황빛으로 찍힌 사진(백열등·전구색 LED·할로겐, 2700~3200K)을 하얗게 — 남은 노란 기운의 절반쯤을 빼는 값',
+      p: { temp: -40, tint: 3, vibrance: -5 } },
+    { id: 'fluor',     cat: 'light', name: '형광등 초록빛', desc: '형광등 아래 초록빛·누르스름하게 찍힌 사진 — 1/3 마이너스 그린(약 CC10 마젠타) 수준',
+      p: { temp: -8, tint: 33 } },
+    { id: 'coolled',   cat: 'light', name: '주광색 LED 교실', desc: '6500K 주광색 LED·형광등 아래 차갑고 푸르스름하게 찍힌 교실 사진을 따뜻하게',
+      p: { temp: 15, tint: 10, shadows: 10, vibrance: 5 } },
+    { id: 'shade',     cat: 'light', name: '그늘·흐린 날', desc: '그늘(약 7500K)·흐린 날(약 6500K)의 푸른 기운을 덜고 생기 있게',
+      p: { temp: 17, exposure: 0.1, vibrance: 12, shadows: 10 } },
+    { id: 'dark',      cat: 'light', name: '어두운 실내', desc: '강당·복도·저녁 실내처럼 어둡게 찍힌 사진을 밝히고 그림자 속까지 보이게',
+      p: { exposure: 0.5, shadows: 45, highlights: -25, blacks: 10, contrast: -5, vibrance: 10 } },
+    { id: 'backlight', cat: 'light', name: '창가 역광', desc: '창을 등지고 찍어 얼굴이 어두운 사진 — 창밖은 누르고 얼굴은 밝게',
+      p: { exposure: 0.15, highlights: -45, shadows: 50, whites: -10, blacks: 5, vibrance: 8 } },
 
     { id: 'sports',    cat: 'event', name: '체육대회', desc: '운동장 하늘과 반티 색이 살아나게, 생생하고 힘 있게',
-      p: { contrast: 20, vibrance: 40, saturation: 5, highlights: -25, shadows: 10, temp: 3 } },
+      p: { exposure: 0.15, contrast: 20, vibrance: 35, saturation: 5, highlights: -25, shadows: 15, temp: 2 } },
     { id: 'stage',     cat: 'event', name: '축제·공연 무대', desc: '무대 조명의 색은 살리고 하얗게 번진 부분은 눌러서',
-      p: { contrast: 20, blacks: -15, highlights: -35, shadows: 5, vibrance: 25, vignette: -20 } },
+      p: { exposure: 0.1, contrast: 18, blacks: -10, highlights: -30, shadows: 10, vibrance: 25, vignette: -20 } },
     { id: 'ceremony',  cat: 'event', name: '입학·졸업식', desc: '따뜻하고 화사한 기념사진 — 인물 피부가 부드럽게',
-      p: { exposure: 0.15, temp: 10, tint: 4, highlights: -20, shadows: 15, vibrance: 10, fade: 6, highHue: 40, highSat: 12 } },
+      p: { exposure: 0.15, temp: 6, tint: 2, highlights: -20, shadows: 15, vibrance: 10, fade: 6, highHue: 40, highSat: 12 } },
     { id: 'trip',      cat: 'event', name: '체험학습·야외', desc: '하늘은 파랗게, 나무는 푸르게 — 청량한 야외 사진',
-      p: { exposure: 0.1, temp: -6, tint: -2, vibrance: 30, highlights: -20, shadows: 15, contrast: 8 } },
+      p: { exposure: 0.1, temp: -4, vibrance: 30, highlights: -20, shadows: 15, contrast: 8 } },
     { id: 'sunset',    cat: 'event', name: '노을·캠프', desc: '해 질 녘 황금빛과 캠프 불빛을 더 따뜻하게',
-      p: { temp: 30, tint: 8, highHue: 35, highSat: 30, vibrance: 15, contrast: 10 } },
+      p: { temp: 20, tint: 3, highHue: 35, highSat: 25, vibrance: 15, contrast: 10, highlights: -15 } },
 
     { id: 'warm',      cat: 'mood', name: '따뜻한 필름', desc: '필름 카메라 같은 온기와 은은한 입자 — 학급 앨범·추억 영상',
-      p: { temp: 18, tint: 4, contrast: 10, highlights: -20, shadows: 15, saturation: -8, vibrance: 10, fade: 12, grain: 18, highHue: 40, highSat: 15, shadowHue: 200, shadowSat: 8 } },
+      p: { temp: 12, tint: 2, contrast: 10, highlights: -20, shadows: 15, saturation: -8, vibrance: 10, fade: 12, grain: 18, highHue: 40, highSat: 15, shadowHue: 200, shadowSat: 8 } },
     { id: 'pastel',    cat: 'mood', name: '파스텔', desc: '밝고 부드러운 톤 — 교지·포스터 배경으로 글씨를 얹기 좋게',
-      p: { exposure: 0.25, contrast: -25, highlights: -20, shadows: 25, saturation: -15, vibrance: 10, fade: 15, tint: 6 } },
+      p: { exposure: 0.25, contrast: -25, highlights: -20, shadows: 25, saturation: -15, vibrance: 10, fade: 15, tint: 3 } },
     { id: 'cinema',    cat: 'mood', name: '시네마틱', desc: '청록빛 그림자와 주황빛 하이라이트 — 영상 썸네일·홍보 영상',
       p: { contrast: 25, shadows: -10, highlights: -25, saturation: -10, vibrance: 15, shadowHue: 190, shadowSat: 35, highHue: 30, highSat: 30, vignette: -25 } },
     { id: 'autumn',    cat: 'mood', name: '가을 교정', desc: '차분한 갈색 톤 — 가을 풍경, 독서 활동 사진',
-      p: { exposure: -0.1, contrast: 10, highlights: -30, temp: 12, saturation: -20, fade: 15, shadowHue: 30, shadowSat: 20, vignette: -20 } },
+      p: { exposure: -0.1, contrast: 10, highlights: -30, temp: 8, saturation: -20, fade: 15, shadowHue: 30, shadowSat: 20, vignette: -20 } },
     { id: 'green',     cat: 'mood', name: '필름 그린', desc: '초록이 차분하게 가라앉는 필름 톤 — 교정의 나무, 숲 체험',
-      p: { tint: -10, saturation: -10, shadowHue: 160, shadowSat: 20, highHue: 50, highSat: 10, fade: 10, contrast: 10, grain: 15 } },
+      p: { tint: -6, saturation: -10, shadowHue: 160, shadowSat: 20, highHue: 50, highSat: 10, fade: 10, contrast: 10, grain: 15 } },
     { id: 'vintage',   cat: 'mood', name: '빈티지', desc: '빛바랜 옛 앨범 느낌 — 졸업 앨범 회고, 타임캡슐',
-      p: { fade: 30, contrast: -10, saturation: -25, temp: 15, highHue: 45, highSat: 25, shadowHue: 330, shadowSat: 10, grain: 30, vignette: -30 } },
+      p: { fade: 30, contrast: -10, saturation: -25, temp: 10, highHue: 45, highSat: 25, shadowHue: 330, shadowSat: 10, grain: 30, vignette: -30 } },
     { id: 'morning',   cat: 'mood', name: '차가운 아침', desc: '맑고 서늘한 공기 — 등굣길, 겨울 풍경',
-      p: { temp: -20, tint: -4, exposure: 0.1, contrast: -5, saturation: -10, highlights: -15, shadowHue: 210, shadowSat: 15 } },
+      p: { temp: -13, tint: -2, exposure: 0.1, contrast: -5, saturation: -10, highlights: -15, shadowHue: 210, shadowSat: 15 } },
 
     { id: 'bw',        cat: 'mono', name: '흑백', desc: '대비가 또렷한 흑백 — 다큐멘터리 사진전',
       p: { bw: 1, contrast: 25, blacks: -10, whites: 10, grain: 15 } },
@@ -2070,11 +2087,35 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     return cNoiseTile;
   }
 
+  // 흑체 복사 색(켈빈 → RGB) 근사 — Tanner Helland 식, 1000~40000K
+  function cKelvinRgb(k) {
+    var t = k / 100, r, g, b;
+    if (t <= 66) { r = 255; g = 99.4708025861 * Math.log(t) - 161.1195681661; }
+    else { r = 329.698727446 * Math.pow(t - 60, -0.1332047592); g = 288.1221695283 * Math.pow(t - 60, -0.0755148492); }
+    if (t >= 66) b = 255;
+    else if (t <= 19) b = 0;
+    else b = 138.5177312231 * Math.log(t - 10) - 305.0447927307;
+    return [clamp(r, 1, 255), clamp(g, 1, 255), clamp(b, 1, 255)];
+  }
+
+  // 색온도: 5500K(주광) 기준 미레드 이동, ±100 = ±150 미레드 (+ 쪽이 따뜻하게)
+  // 색조: CC 필터 농도, +100 = CC30 마젠타(풀 마이너스 그린), − 쪽은 그린
+  // 밝기가 변하지 않도록 휘도 기준으로 정규화한다.
+  function cWhiteBalance(temp, tint) {
+    var m = 1e6 / 5500 + temp / 100 * 150;
+    var a = cKelvinRgb(1e6 / m), o = cKelvinRgb(5500);
+    var w = [a[0] / o[0], a[1] / o[1], a[2] / o[2]];
+    w[1] *= Math.pow(10, -0.30 * tint / 100);
+    var L = 0.299 * w[0] + 0.587 * w[1] + 0.114 * w[2];
+    return [w[0] / L, w[1] / L, w[2] / L];
+  }
+
   // s → d (같은 배열이어도 된다). 알파는 그대로 둔다.
   function cProcess(s, d, w, h, p) {
     var lut = cBuildLut(p);
-    var t = p.temp / 100, tn = p.tint / 100;
-    var wr = (1 + t * 0.2) * (1 + tn * 0.06), wg = 1 - tn * 0.14, wb = (1 - t * 0.2) * (1 + tn * 0.06);
+    var wb3 = cWhiteBalance(p.temp, p.tint);
+    var wr = wb3[0], wg = wb3[1], wb = wb3[2];
+    var wbOn = Math.abs(wr - 1) + Math.abs(wg - 1) + Math.abs(wb - 1) > 1e-4;
     var sat = p.saturation / 100, vib = p.vibrance / 100, bw = p.bw >= 0.5;
     var split = p.shadowSat > 0 || p.highSat > 0;
     var sv = cHueVec(p.shadowHue, p.shadowSat / 100 * 0.35 * 255);
@@ -2094,7 +2135,16 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     for (y = 0; y < h; y++) {
       var ny = (((y / cell) | 0) & 255) << 8;
       for (x = 0; x < w; x++, i += 4) {
-        var r = s[i] * wr, g = s[i + 1] * wg, b = s[i + 2] * wb;
+        var r = s[i], g = s[i + 1], b = s[i + 2];
+        if (wbOn) {
+          // 세 채널이 모두 하얗게 날아간 부분은 색이 끼지 않도록 보정을 서서히 뺀다
+          // (색이 낀 흰 종이처럼 한 채널만 밝은 곳은 그대로 보정한다)
+          var low = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          if (low > 235) {
+            var q = (low - 235) / 20; q = q * q * (3 - 2 * q);
+            r *= wr + (1 - wr) * q; g *= wg + (1 - wg) * q; b *= wb + (1 - wb) * q;
+          } else { r *= wr; g *= wg; b *= wb; }
+        }
         r = lut[r > 255 ? 255 : r | 0];
         g = lut[g > 255 ? 255 : g | 0];
         b = lut[b > 255 ? 255 : b | 0];
