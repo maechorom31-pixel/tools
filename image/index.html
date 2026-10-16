@@ -293,6 +293,26 @@
     gap: 10px 8px; margin-bottom: 12px;
   }
   .ptile { position: relative; }
+  .cat-seg {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+  }
+  .cat-seg button {
+    flex: 0 0 auto;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    font: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  }
+  .cat-seg button:not(.on):hover { background: var(--amber-soft); }
+  .cat-seg button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .cp-desc {
+    font-size: 12.5px; color: var(--ink-soft); line-height: 1.55;
+    margin: -2px 0 12px; min-height: 1.55em; word-break: keep-all;
+  }
+  .cp-empty {
+    grid-column: 1 / -1;
+    font-size: 12.5px; color: var(--ink-soft); line-height: 1.55;
+    padding: 10px 0; word-break: keep-all;
+  }
   .pbtn {
     display: block; width: 100%;
     border: 0; background: none; padding: 0;
@@ -388,15 +408,10 @@
     }
     body[data-tab="color"] #panel-color { order: 3; }
     body[data-tab="color"] .footnote { order: 4; }
-    .preset-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .preset-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
-    .preset-strip {
-      display: flex; overflow-x: auto; gap: 8px;
-      margin: 0 -16px 12px; padding: 6px 16px 4px;
-      -webkit-overflow-scrolling: touch;
-    }
-    .ptile { flex: 0 0 66px; }
+    .preset-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
 </style>
 </head>
@@ -478,7 +493,9 @@
         <span class="cp-title">필터</span>
         <span class="cp-sub" id="cPresetName">원본</span>
       </div>
+      <div class="cat-seg" id="cCatSeg" aria-label="필터 묶음"></div>
       <div class="preset-strip" id="presetStrip"></div>
+      <p class="cp-desc" id="cPresetDesc">보정하지 않은 처음 사진</p>
       <div class="cp-amt">
         <label for="cAmt">필터 강도</label>
         <input type="range" id="cAmt" min="0" max="150" value="100" disabled>
@@ -809,7 +826,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var FOOTNOTES = {
     mosaic: '붓 모드는 가릴 부분을 문지르고, 사각형 모드는 영역을 드래그, 올가미 모드는 원하는 모양대로 빙 둘러 그리면 그 안쪽만 모자이크 처리됩니다. 되돌리기는 Ctrl+Z로도 됩니다.',
     crop: '주황색 상자를 끌어 위치를 옮기고, 모서리 점을 끌어 크기를 조절한 뒤 「자르기 적용」을 누르세요. 「얼굴 자동 맞춤」을 누르면 사진 속 얼굴을 찾아 증명사진 구도로 상자를 잡아 줍니다(얼굴 인식도 이 컴퓨터 안에서만 처리됩니다). 증명사진·여권 비율 선택 시 표준 규격 픽셀(증명 354×472 / 여권 413×531, 300dpi 기준)로 저장할 수 있고, 옆으로 누운 사진은 회전 버튼으로 바로 세울 수 있습니다.',
-    color: '필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래 슬라이더로 빛·색·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
+    color: '「기록·활동」「행사」「감성·작품」처럼 쓰임새별로 묶인 필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래 슬라이더로 빛·색·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
     save: 'JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
@@ -1902,22 +1919,54 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   ];
   var CP_GROUPS = [['light', '빛'], ['color', '색'], ['split', '색조 분리 (어두운 곳·밝은 곳에 색 입히기)'], ['fx', '효과']];
 
+  // 학교에서 사진을 쓰는 장면별로 묶었다. 원본은 모든 묶음 맨 앞에 보인다.
+  var CP_CATS = [['act', '기록·활동'], ['event', '행사'], ['mood', '감성·작품'], ['mono', '흑백'], ['mine', '내 필터']];
   var CPRESETS = [
-    { id: 'none',     name: '원본',     p: {} },
-    { id: 'warm',     name: '따뜻한 필름', p: { temp: 18, tint: 4, contrast: 10, highlights: -20, shadows: 15, saturation: -8, vibrance: 10, fade: 12, grain: 18, highHue: 40, highSat: 15, shadowHue: 200, shadowSat: 8 } },
-    { id: 'fresh',    name: '청량',     p: { exposure: 0.15, temp: -8, tint: -3, vibrance: 30, highlights: -10, shadows: 15, contrast: 5 } },
-    { id: 'cinema',   name: '시네마틱',  p: { contrast: 25, shadows: -10, highlights: -25, saturation: -10, vibrance: 15, shadowHue: 190, shadowSat: 35, highHue: 30, highSat: 30, vignette: -25 } },
-    { id: 'cafe',     name: '카페 무드', p: { exposure: -0.15, contrast: 10, highlights: -30, temp: 12, saturation: -20, fade: 15, shadowHue: 30, shadowSat: 20, vignette: -20 } },
-    { id: 'pastel',   name: '파스텔',    p: { exposure: 0.25, contrast: -25, highlights: -20, shadows: 25, saturation: -15, vibrance: 10, fade: 15, tint: 6 } },
-    { id: 'vivid',    name: '선명하게',  p: { contrast: 25, vibrance: 35, saturation: 10, highlights: -15, shadows: 10, blacks: -10 } },
-    { id: 'morning',  name: '차가운 아침', p: { temp: -20, tint: -4, exposure: 0.1, contrast: -5, saturation: -10, highlights: -15, shadowHue: 210, shadowSat: 15 } },
-    { id: 'sunset',   name: '노을',     p: { temp: 30, tint: 8, highHue: 35, highSat: 30, vibrance: 15, contrast: 10 } },
-    { id: 'green',    name: '필름 그린', p: { tint: -10, saturation: -10, shadowHue: 160, shadowSat: 20, highHue: 50, highSat: 10, fade: 10, contrast: 10, grain: 15 } },
-    { id: 'vintage',  name: '빈티지',    p: { fade: 30, contrast: -10, saturation: -25, temp: 15, highHue: 45, highSat: 25, shadowHue: 330, shadowSat: 10, grain: 30, vignette: -30 } },
-    { id: 'bw',       name: '흑백',     p: { bw: 1, contrast: 25, blacks: -10, whites: 10, grain: 15 } },
-    { id: 'bwmatte',  name: '흑백 매트', p: { bw: 1, contrast: -5, fade: 30, grain: 25 } },
-    { id: 'sepia',    name: '세피아',    p: { bw: 1, highHue: 35, highSat: 40, shadowHue: 25, shadowSat: 30, fade: 10 } },
-    { id: 'doc',      name: '문서 또렷이', p: { whites: 40, blacks: -30, contrast: 30, saturation: -30, shadows: 10 } }
+    { id: 'none', cat: 'all', name: '원본', desc: '보정하지 않은 처음 사진', p: {} },
+
+    { id: 'clean',     cat: 'act', name: '깔끔하고 밝게', desc: '활동 사진 기본 — 얼굴과 활동 장면은 환하게, 색은 자연스럽게',
+      p: { exposure: 0.2, contrast: 5, highlights: -15, shadows: 25, whites: 10, vibrance: 15, temp: 3 } },
+    { id: 'classroom', cat: 'act', name: '교실 형광등 보정', desc: '형광등 아래 푸르스름하거나 초록빛이 도는 교실 사진을 본래 색으로',
+      p: { temp: 12, tint: 8, exposure: 0.1, shadows: 15, highlights: -10, vibrance: 10 } },
+    { id: 'dark',      cat: 'act', name: '어두운 실내 살리기', desc: '강당·복도처럼 어둡게 찍힌 사진을 밝히고 그림자 속까지 보이게',
+      p: { exposure: 0.5, shadows: 45, highlights: -25, blacks: 10, contrast: -5, vibrance: 10 } },
+    { id: 'lab',       cat: 'act', name: '실험·관찰 기록', desc: '색이 중요한 관찰 기록 — 색감은 건드리지 않고 또렷하게만',
+      p: { contrast: 12, vibrance: 20, whites: 10, blacks: -8, highlights: -10 } },
+    { id: 'doc',       cat: 'act', name: '판서·학습지', desc: '칠판·학습지·게시물 사진의 글씨는 또렷하게, 종이 그늘은 하얗게',
+      p: { exposure: 0.1, whites: 45, blacks: -30, contrast: 30, saturation: -30, shadows: 15 } },
+
+    { id: 'sports',    cat: 'event', name: '체육대회', desc: '운동장 하늘과 반티 색이 살아나게, 생생하고 힘 있게',
+      p: { contrast: 20, vibrance: 40, saturation: 5, highlights: -25, shadows: 10, temp: 3 } },
+    { id: 'stage',     cat: 'event', name: '축제·공연 무대', desc: '무대 조명의 색은 살리고 하얗게 번진 부분은 눌러서',
+      p: { contrast: 20, blacks: -15, highlights: -35, shadows: 5, vibrance: 25, vignette: -20 } },
+    { id: 'ceremony',  cat: 'event', name: '입학·졸업식', desc: '따뜻하고 화사한 기념사진 — 인물 피부가 부드럽게',
+      p: { exposure: 0.15, temp: 10, tint: 4, highlights: -20, shadows: 15, vibrance: 10, fade: 6, highHue: 40, highSat: 12 } },
+    { id: 'trip',      cat: 'event', name: '체험학습·야외', desc: '하늘은 파랗게, 나무는 푸르게 — 청량한 야외 사진',
+      p: { exposure: 0.1, temp: -6, tint: -2, vibrance: 30, highlights: -20, shadows: 15, contrast: 8 } },
+    { id: 'sunset',    cat: 'event', name: '노을·캠프', desc: '해 질 녘 황금빛과 캠프 불빛을 더 따뜻하게',
+      p: { temp: 30, tint: 8, highHue: 35, highSat: 30, vibrance: 15, contrast: 10 } },
+
+    { id: 'warm',      cat: 'mood', name: '따뜻한 필름', desc: '필름 카메라 같은 온기와 은은한 입자 — 학급 앨범·추억 영상',
+      p: { temp: 18, tint: 4, contrast: 10, highlights: -20, shadows: 15, saturation: -8, vibrance: 10, fade: 12, grain: 18, highHue: 40, highSat: 15, shadowHue: 200, shadowSat: 8 } },
+    { id: 'pastel',    cat: 'mood', name: '파스텔', desc: '밝고 부드러운 톤 — 교지·포스터 배경으로 글씨를 얹기 좋게',
+      p: { exposure: 0.25, contrast: -25, highlights: -20, shadows: 25, saturation: -15, vibrance: 10, fade: 15, tint: 6 } },
+    { id: 'cinema',    cat: 'mood', name: '시네마틱', desc: '청록빛 그림자와 주황빛 하이라이트 — 영상 썸네일·홍보 영상',
+      p: { contrast: 25, shadows: -10, highlights: -25, saturation: -10, vibrance: 15, shadowHue: 190, shadowSat: 35, highHue: 30, highSat: 30, vignette: -25 } },
+    { id: 'autumn',    cat: 'mood', name: '가을 교정', desc: '차분한 갈색 톤 — 가을 풍경, 독서 활동 사진',
+      p: { exposure: -0.1, contrast: 10, highlights: -30, temp: 12, saturation: -20, fade: 15, shadowHue: 30, shadowSat: 20, vignette: -20 } },
+    { id: 'green',     cat: 'mood', name: '필름 그린', desc: '초록이 차분하게 가라앉는 필름 톤 — 교정의 나무, 숲 체험',
+      p: { tint: -10, saturation: -10, shadowHue: 160, shadowSat: 20, highHue: 50, highSat: 10, fade: 10, contrast: 10, grain: 15 } },
+    { id: 'vintage',   cat: 'mood', name: '빈티지', desc: '빛바랜 옛 앨범 느낌 — 졸업 앨범 회고, 타임캡슐',
+      p: { fade: 30, contrast: -10, saturation: -25, temp: 15, highHue: 45, highSat: 25, shadowHue: 330, shadowSat: 10, grain: 30, vignette: -30 } },
+    { id: 'morning',   cat: 'mood', name: '차가운 아침', desc: '맑고 서늘한 공기 — 등굣길, 겨울 풍경',
+      p: { temp: -20, tint: -4, exposure: 0.1, contrast: -5, saturation: -10, highlights: -15, shadowHue: 210, shadowSat: 15 } },
+
+    { id: 'bw',        cat: 'mono', name: '흑백', desc: '대비가 또렷한 흑백 — 다큐멘터리 사진전',
+      p: { bw: 1, contrast: 25, blacks: -10, whites: 10, grain: 15 } },
+    { id: 'bwmatte',   cat: 'mono', name: '흑백 매트', desc: '부드럽게 바랜 흑백 — 회고·추모 분위기',
+      p: { bw: 1, contrast: -5, fade: 30, grain: 25 } },
+    { id: 'sepia',     cat: 'mono', name: '옛 사진', desc: '갈색으로 바랜 세피아 — 역사 수업 자료, 근현대 재현 활동',
+      p: { bw: 1, highHue: 35, highSat: 40, shadowHue: 25, shadowSat: 30, fade: 10 } }
   ];
 
   var colorCtx = colorCv.getContext('2d', { willReadFrequently: true });
@@ -1928,6 +1977,9 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var cAmtInput = document.getElementById('cAmt');
   var cAmtVal = document.getElementById('cAmtVal');
   var cPresetNameEl = document.getElementById('cPresetName');
+  var cPresetDescEl = document.getElementById('cPresetDesc');
+  var cCatSeg = document.getElementById('cCatSeg');
+  var cCat = 'act';
 
   var cBase = cMerge({});      // 고른 필터의 값
   var cDelta = cZeros();       // 그 위에 사용자가 움직인 만큼
@@ -2177,7 +2229,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   }
   function cAllPresets() {
     return CPRESETS.concat(cLoadMine().map(function (x) {
-      return { id: x.id, name: x.name, p: x.p, mine: true };
+      return { id: x.id, cat: 'mine', name: x.name, desc: '직접 저장한 필터', p: x.p, mine: true };
     }));
   }
 
@@ -2214,11 +2266,39 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
         });
         tile.appendChild(del);
       }
+      tile.setAttribute('data-cat', pr.cat);
       presetStrip.appendChild(tile);
       cThumbCv[pr.id] = c;
     });
+    var empty = document.createElement('p');
+    empty.className = 'cp-empty';
+    empty.setAttribute('data-cat', 'mine-empty');
+    empty.textContent = '아직 저장한 필터가 없어요. 슬라이더로 조정한 뒤 「내 필터로 저장」을 눌러 보세요.';
+    presetStrip.appendChild(empty);
+    cShowCat();
     cMarkActive();
   }
+
+  function cShowCat() {
+    var hasMine = cLoadMine().length > 0;
+    presetStrip.querySelectorAll('[data-cat]').forEach(function (el) {
+      var c = el.getAttribute('data-cat');
+      var show = c === 'all' || c === cCat || (c === 'mine-empty' && cCat === 'mine' && !hasMine);
+      el.style.display = show ? '' : 'none';
+    });
+    cCatSeg.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-cat') === cCat);
+    });
+  }
+
+  CP_CATS.forEach(function (ct) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('data-cat', ct[0]);
+    b.textContent = ct[1];
+    b.addEventListener('click', function () { cCat = ct[0]; cShowCat(); });
+    cCatSeg.appendChild(b);
+  });
 
   function cMarkActive() {
     presetStrip.querySelectorAll('.pbtn').forEach(function (b) {
@@ -2235,6 +2315,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     cAmtInput.disabled = pr.id === 'none';
     cPresetId = pr.id;
     cPresetNameEl.textContent = pr.name;
+    cPresetDescEl.textContent = pr.desc || '';
     cMarkActive();
     cSyncInputs();
     cRender();
@@ -2386,7 +2467,9 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     if (!cSaveMineList(mine)) { alert('이 브라우저에서는 필터를 저장할 수 없어요 (저장 공간이 막혀 있음).'); return; }
     cBuildStrip();
     cRenderThumbs();
-    cSelectPreset({ id: item.id, name: item.name, p: item.p, mine: true });
+    cCat = 'mine';
+    cShowCat();
+    cSelectPreset({ id: item.id, cat: 'mine', name: item.name, desc: '직접 저장한 필터', p: item.p, mine: true });
     toast('「' + name + '」 필터를 저장했어요');
   });
 
