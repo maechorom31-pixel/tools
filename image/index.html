@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>이미지 도구 — 모자이크·자르기·압축</title>
+<title>이미지 도구 — 모자이크·자르기·색감·압축</title>
 <style>
   :root {
     --bg: #FAFAF9;
@@ -54,6 +54,7 @@
 
   /* ── 편집 영역 ── */
   #editor { display: none; }
+  #editor.show { display: block; }
 
   .tabbar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
@@ -263,6 +264,140 @@
     white-space: nowrap;
   }
   .est b { color: var(--amber); font-weight: 700; }
+
+  /* ── 색감 (필터·보정) ── */
+  #colorCv {
+    display: none;
+    max-width: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none; user-select: none;
+    background: repeating-conic-gradient(#EDEBE8 0% 25%, transparent 0% 50%) 0 0 / 20px 20px;
+  }
+  body[data-tab="color"] #cv { display: none; }
+  body[data-tab="color"] #colorCv { display: inline-block; }
+  #panel-color.on { display: block; padding: 16px; }
+  .cp-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 8px; margin-bottom: 8px;
+  }
+  .cp-title { font-size: 13px; font-weight: 700; }
+  .cp-sub { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  #histCv {
+    display: block; width: 100%; height: 52px;
+    background: #F5F5F4; border-radius: 8px; margin-bottom: 14px;
+  }
+  .preset-strip {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px 8px; margin-bottom: 12px;
+  }
+  .ptile { position: relative; }
+  .pbtn {
+    display: block; width: 100%;
+    border: 0; background: none; padding: 0;
+    font: inherit; color: var(--ink-soft); text-align: center; cursor: pointer;
+  }
+  .pbtn canvas {
+    display: block; width: 100%; height: auto;
+    border-radius: 8px; border: 2px solid transparent;
+    background: #F5F5F4;
+  }
+  .pbtn span {
+    display: block; margin-top: 4px;
+    font-size: 11.5px; font-weight: 600; line-height: 1.3;
+    word-break: keep-all;
+  }
+  .pbtn:hover canvas { border-color: #D6D3D1; }
+  .pbtn.on canvas { border-color: var(--amber); }
+  .pbtn.on span { color: var(--amber); }
+  .pdel {
+    position: absolute; top: -6px; right: -6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    font: inherit; font-size: 13px; line-height: 1; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  }
+  .pdel:hover { color: var(--ink); }
+  .cp-amt { display: flex; align-items: center; gap: 10px; }
+  .cp-amt label { font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+  .cp-amt output { font-size: 12.5px; font-weight: 600; min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+  #panel-color input[type="range"] {
+    width: 100%; height: 24px;
+    background: linear-gradient(var(--line), var(--line)) center / 100% 4px no-repeat;
+  }
+  #panel-color input[type="range"].hue {
+    background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) center / 100% 6px no-repeat;
+  }
+  .cp-amt input[type="range"] { flex: 1; }
+  .adj-group h3 {
+    font-size: 12px; font-weight: 700; color: var(--ink-soft);
+    margin: 16px 0 2px;
+  }
+  .adj {
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: center; gap: 0 8px; padding: 2px 0;
+  }
+  .adj label {
+    font-size: 13px; color: var(--ink);
+    -webkit-user-select: none; user-select: none;
+  }
+  .adj output {
+    font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .adj output.chg { color: var(--amber); }
+  .adj input[type="range"] { grid-column: 1 / -1; }
+  .adj.toggle { padding: 8px 0 4px; }
+  .cp-actions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+  .cp-actions .btn.primary { margin-left: auto; }
+  #cmpBtn { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; }
+
+  /* 넓은 화면: 사진 옆에 보정 패널 */
+  @media (min-width: 980px) {
+    body[data-tab="color"] #editor.show {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      grid-template-rows: auto auto auto 1fr;
+      column-gap: 16px;
+      align-items: start;
+    }
+    body[data-tab="color"] .tabbar { grid-column: 1 / -1; }
+    body[data-tab="color"] .status { grid-column: 1; grid-row: 2; }
+    body[data-tab="color"] .canvas-holder { grid-column: 1; grid-row: 3; }
+    body[data-tab="color"] .footnote { grid-column: 1; grid-row: 4; }
+    body[data-tab="color"] #panel-color {
+      grid-column: 2; grid-row: 2 / 5;
+      position: sticky; top: 16px;
+      max-height: calc(100vh - 32px); overflow-y: auto;
+      margin-bottom: 0;
+    }
+  }
+  /* 좁은 화면: 사진을 위에 붙여 두고 슬라이더는 아래에서 */
+  @media (max-width: 979px) {
+    body[data-tab="color"] #editor.show { display: flex; flex-direction: column; }
+    body[data-tab="color"] .tabbar { order: 0; }
+    body[data-tab="color"] .status { order: 1; }
+    body[data-tab="color"] .canvas-holder {
+      order: 2; position: sticky; top: 0; z-index: 5;
+      margin-bottom: 14px; padding: 10px;
+      box-shadow: 0 6px 16px rgba(28,25,23,.08);
+    }
+    body[data-tab="color"] #panel-color { order: 3; }
+    body[data-tab="color"] .footnote { order: 4; }
+    .preset-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .preset-strip {
+      display: flex; overflow-x: auto; gap: 8px;
+      margin: 0 -16px 12px; padding: 6px 16px 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ptile { flex: 0 0 66px; }
+  }
 </style>
 </head>
 <body data-tab="mosaic">
@@ -275,7 +410,7 @@
   <div id="dropzone">
     <p>사진을 여기로 끌어다 놓거나, 클릭해서 선택하세요</p>
     <p>캡처한 화면은 <kbd>Ctrl</kbd> + <kbd>V</kbd> 로 바로 붙여넣을 수 있습니다<br>
-       모자이크(개인정보 가림) · 자르기(증명사진/여권 비율) · AI 배경 지우기(누끼) · 크기 조절 · 용량 압축</p>
+       모자이크(개인정보 가림) · 자르기(증명사진/여권 비율) · 색감 필터·보정 · AI 배경 지우기(누끼) · 크기 조절 · 용량 압축</p>
   </div>
   <input type="file" id="fileInput" accept="image/*" hidden>
 
@@ -283,6 +418,7 @@
     <div class="tabbar">
       <button class="tab on" data-tab="mosaic" type="button">🟫 모자이크</button>
       <button class="tab" data-tab="crop" type="button">✂️ 자르기</button>
+      <button class="tab" data-tab="color" type="button">🎨 색감</button>
       <button class="tab" data-tab="bg" type="button">🪄 배경 지우기</button>
       <button class="tab" data-tab="resize" type="button">📐 크기 조절</button>
       <button class="tab" data-tab="save" type="button">💾 저장·압축</button>
@@ -333,6 +469,28 @@
         <button class="btn small" id="rotR" type="button" title="오른쪽으로 90° 회전">회전 ↻</button>
       </div>
       <button class="btn primary" id="applyCropBtn" type="button">자르기 적용</button>
+    </div>
+
+    <!-- 색감 (필터·보정) -->
+    <div class="toolbar panel" id="panel-color">
+      <canvas id="histCv" width="256" height="64" aria-label="히스토그램"></canvas>
+      <div class="cp-head">
+        <span class="cp-title">필터</span>
+        <span class="cp-sub" id="cPresetName">원본</span>
+      </div>
+      <div class="preset-strip" id="presetStrip"></div>
+      <div class="cp-amt">
+        <label for="cAmt">필터 강도</label>
+        <input type="range" id="cAmt" min="0" max="150" value="100" disabled>
+        <output id="cAmtVal">100%</output>
+      </div>
+      <div id="adjList"></div>
+      <div class="cp-actions">
+        <button class="btn small" id="cmpBtn" type="button" title="누르고 있는 동안 보정 전 모습을 보여 줍니다">원본 비교</button>
+        <button class="btn small" id="cResetBtn" type="button">초기화</button>
+        <button class="btn small" id="cSaveMineBtn" type="button">내 필터로 저장</button>
+        <button class="btn primary" id="cApplyBtn" type="button">보정 적용</button>
+      </div>
     </div>
 
     <!-- 배경 지우기 -->
@@ -400,6 +558,7 @@
 
     <div class="canvas-holder">
       <canvas id="cv" class="brushmode"></canvas>
+      <canvas id="colorCv" title="누르고 있으면 보정 전 모습이 보입니다"></canvas>
       <div id="brushCursor"></div>
       <div id="rectPreview"></div>
       <canvas id="lassoPreview"></canvas>
@@ -650,6 +809,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var FOOTNOTES = {
     mosaic: '붓 모드는 가릴 부분을 문지르고, 사각형 모드는 영역을 드래그, 올가미 모드는 원하는 모양대로 빙 둘러 그리면 그 안쪽만 모자이크 처리됩니다. 되돌리기는 Ctrl+Z로도 됩니다.',
     crop: '주황색 상자를 끌어 위치를 옮기고, 모서리 점을 끌어 크기를 조절한 뒤 「자르기 적용」을 누르세요. 「얼굴 자동 맞춤」을 누르면 사진 속 얼굴을 찾아 증명사진 구도로 상자를 잡아 줍니다(얼굴 인식도 이 컴퓨터 안에서만 처리됩니다). 증명사진·여권 비율 선택 시 표준 규격 픽셀(증명 354×472 / 여권 413×531, 300dpi 기준)로 저장할 수 있고, 옆으로 누운 사진은 회전 버튼으로 바로 세울 수 있습니다.',
+    color: '필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래 슬라이더로 빛·색·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
     save: 'JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
@@ -677,6 +837,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var modeRectBtn = document.getElementById('modeRect');
   var modeLassoBtn = document.getElementById('modeLasso');
   var lassoCv = document.getElementById('lassoPreview');
+  var colorCv = document.getElementById('colorCv');
   var brushSizeGroup = document.getElementById('brushSizeGroup');
   var brushSizeInput = document.getElementById('brushSize');
   var brushSizeVal = document.getElementById('brushSizeVal');
@@ -747,7 +908,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     crop = null;
     updateUndoBtn();
     dropzone.style.display = 'none';
-    editor.style.display = 'block';
+    editor.classList.add('show');
     origSizeTxt.textContent = origFileSize ? ' · 원본 파일 ' + fmtSize(origFileSize) : '';
     afterImageChange();
   }
@@ -798,10 +959,17 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var availW = holder.clientWidth - 34;
     var absTop = holder.getBoundingClientRect().top + window.scrollY;
     var availH = Math.max(280, window.innerHeight - absTop - 46);
+    if (activeTab === 'color' && window.innerWidth < 980) {
+      // 좁은 화면의 색감 탭은 사진을 위에 붙여 두므로 슬라이더가 보일 만큼만 차지한다
+      availW = holder.clientWidth - 22;
+      availH = Math.max(180, Math.round(window.innerHeight * 0.42));
+    }
     if (availW <= 0) return;
     var s = Math.min(availW / cv.width, availH / cv.height, 4);
     cv.style.width = Math.round(cv.width * s) + 'px';
     cv.style.height = 'auto';
+    colorCv.style.width = cv.style.width;
+    colorCv.style.height = 'auto';
   }
 
   function afterImageChange() {
@@ -810,6 +978,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     fitDisplay();
     syncResizeInputs();
     if (activeTab === 'crop') { initCropBox(); }
+    if (activeTab === 'color') { initColor(); }
     if (activeTab === 'save') { scheduleEstimate(); }
   }
 
@@ -827,12 +996,15 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   /* ── 탭 전환 ── */
 
   function setTab(t) {
+    var prev = activeTab;
     activeTab = t;
+    // 색감 탭을 떠날 때 조정해 둔 값은 원본 해상도로 적용해 다음 작업에 이어지게 한다
+    if (prev === 'color' && t !== 'color') applyColor(true);
     document.body.setAttribute('data-tab', t);
     document.querySelectorAll('.tabbar .tab').forEach(function (b) {
       b.classList.toggle('on', b.getAttribute('data-tab') === t);
     });
-    ['mosaic', 'crop', 'bg', 'resize', 'save'].forEach(function (k) {
+    ['mosaic', 'crop', 'color', 'bg', 'resize', 'save'].forEach(function (k) {
       document.getElementById('panel-' + k).classList.toggle('on', k === t);
     });
     footnote.textContent = FOOTNOTES[t];
@@ -840,6 +1012,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     cropOverlay.style.display = t === 'crop' ? 'block' : 'none';
     fitDisplay(); // 탭마다 툴바 높이가 달라 표시 배율을 다시 맞춘다
     if (t === 'crop') initCropBox();
+    if (t === 'color' && prev !== 'color') initColor();
     if (t === 'resize') syncResizeInputs();
     if (t === 'save') scheduleEstimate();
   }
@@ -1166,7 +1339,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     cropSizeInfo.textContent = '선택: ' + Math.round(crop.w) + ' × ' + Math.round(crop.h) + ' px';
   }
   window.addEventListener('resize', function () {
-    if (editor.style.display !== 'block') return;
+    if (!editor.classList.contains('show')) return;
     fitDisplay();
     renderCropBox();
   });
@@ -1698,6 +1871,529 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     });
   });
 
+  /* ── 색감 (필터·보정) ──
+     미리보기는 긴 변 1280px 사본으로 실시간 처리하고,
+     「보정 적용」(또는 탭 이동) 때 원본 해상도 캔버스에 같은 계산을 한 번 더 한다. */
+
+  var COLOR_PREVIEW_MAX = 1280;
+  var MY_PRESET_KEY = 'imagetool-color-presets-v1';
+
+  // fixed: 필터 강도에 비례하지 않는 값 (색상 각도, 흑백 여부)
+  var CP = [
+    { k: 'exposure',   g: 'light', label: '노출',         min: -2,   max: 2,   step: 0.05, dec: 2 },
+    { k: 'contrast',   g: 'light', label: '대비',         min: -100, max: 100 },
+    { k: 'highlights', g: 'light', label: '밝은 영역',     min: -100, max: 100 },
+    { k: 'shadows',    g: 'light', label: '어두운 영역',   min: -100, max: 100 },
+    { k: 'whites',     g: 'light', label: '흰색 계열',     min: -100, max: 100 },
+    { k: 'blacks',     g: 'light', label: '검정 계열',     min: -100, max: 100 },
+    { k: 'temp',       g: 'color', label: '색온도',        min: -100, max: 100 },
+    { k: 'tint',       g: 'color', label: '색조',          min: -100, max: 100 },
+    { k: 'vibrance',   g: 'color', label: '생동감',        min: -100, max: 100 },
+    { k: 'saturation', g: 'color', label: '채도',          min: -100, max: 100 },
+    { k: 'shadowHue',  g: 'split', label: '어두운 쪽 색상', min: 0,    max: 360, def: 210, fixed: true, hue: true },
+    { k: 'shadowSat',  g: 'split', label: '어두운 쪽 세기', min: 0,    max: 100 },
+    { k: 'highHue',    g: 'split', label: '밝은 쪽 색상',   min: 0,    max: 360, def: 40, fixed: true, hue: true },
+    { k: 'highSat',    g: 'split', label: '밝은 쪽 세기',   min: 0,    max: 100 },
+    { k: 'balance',    g: 'split', label: '균형',          min: -100, max: 100 },
+    { k: 'fade',       g: 'fx',    label: '페이드(매트)',   min: 0,    max: 100 },
+    { k: 'vignette',   g: 'fx',    label: '비네트',        min: -100, max: 100 },
+    { k: 'grain',      g: 'fx',    label: '필름 그레인',    min: 0,    max: 100 },
+    { k: 'bw',         g: 'fx',    label: '흑백으로',       min: 0,    max: 1, fixed: true, toggle: true }
+  ];
+  var CP_GROUPS = [['light', '빛'], ['color', '색'], ['split', '색조 분리 (어두운 곳·밝은 곳에 색 입히기)'], ['fx', '효과']];
+
+  var CPRESETS = [
+    { id: 'none',     name: '원본',     p: {} },
+    { id: 'warm',     name: '따뜻한 필름', p: { temp: 18, tint: 4, contrast: 10, highlights: -20, shadows: 15, saturation: -8, vibrance: 10, fade: 12, grain: 18, highHue: 40, highSat: 15, shadowHue: 200, shadowSat: 8 } },
+    { id: 'fresh',    name: '청량',     p: { exposure: 0.15, temp: -8, tint: -3, vibrance: 30, highlights: -10, shadows: 15, contrast: 5 } },
+    { id: 'cinema',   name: '시네마틱',  p: { contrast: 25, shadows: -10, highlights: -25, saturation: -10, vibrance: 15, shadowHue: 190, shadowSat: 35, highHue: 30, highSat: 30, vignette: -25 } },
+    { id: 'cafe',     name: '카페 무드', p: { exposure: -0.15, contrast: 10, highlights: -30, temp: 12, saturation: -20, fade: 15, shadowHue: 30, shadowSat: 20, vignette: -20 } },
+    { id: 'pastel',   name: '파스텔',    p: { exposure: 0.25, contrast: -25, highlights: -20, shadows: 25, saturation: -15, vibrance: 10, fade: 15, tint: 6 } },
+    { id: 'vivid',    name: '선명하게',  p: { contrast: 25, vibrance: 35, saturation: 10, highlights: -15, shadows: 10, blacks: -10 } },
+    { id: 'morning',  name: '차가운 아침', p: { temp: -20, tint: -4, exposure: 0.1, contrast: -5, saturation: -10, highlights: -15, shadowHue: 210, shadowSat: 15 } },
+    { id: 'sunset',   name: '노을',     p: { temp: 30, tint: 8, highHue: 35, highSat: 30, vibrance: 15, contrast: 10 } },
+    { id: 'green',    name: '필름 그린', p: { tint: -10, saturation: -10, shadowHue: 160, shadowSat: 20, highHue: 50, highSat: 10, fade: 10, contrast: 10, grain: 15 } },
+    { id: 'vintage',  name: '빈티지',    p: { fade: 30, contrast: -10, saturation: -25, temp: 15, highHue: 45, highSat: 25, shadowHue: 330, shadowSat: 10, grain: 30, vignette: -30 } },
+    { id: 'bw',       name: '흑백',     p: { bw: 1, contrast: 25, blacks: -10, whites: 10, grain: 15 } },
+    { id: 'bwmatte',  name: '흑백 매트', p: { bw: 1, contrast: -5, fade: 30, grain: 25 } },
+    { id: 'sepia',    name: '세피아',    p: { bw: 1, highHue: 35, highSat: 40, shadowHue: 25, shadowSat: 30, fade: 10 } },
+    { id: 'doc',      name: '문서 또렷이', p: { whites: 40, blacks: -30, contrast: 30, saturation: -30, shadows: 10 } }
+  ];
+
+  var colorCtx = colorCv.getContext('2d', { willReadFrequently: true });
+  var histCv = document.getElementById('histCv');
+  var histCtx = histCv.getContext('2d');
+  var presetStrip = document.getElementById('presetStrip');
+  var adjList = document.getElementById('adjList');
+  var cAmtInput = document.getElementById('cAmt');
+  var cAmtVal = document.getElementById('cAmtVal');
+  var cPresetNameEl = document.getElementById('cPresetName');
+
+  var cBase = cMerge({});      // 고른 필터의 값
+  var cDelta = cZeros();       // 그 위에 사용자가 움직인 만큼
+  var cAmt = 1;                // 필터 강도
+  var cPresetId = 'none';
+  var cSrc = null, cOut = null; // 미리보기 원본 / 결과
+  var cShowOrig = false;
+  var cRaf = 0;
+  var cInputs = {};
+  var cThumbCv = {};
+  var cThumbSrc = null;
+  var cNoiseTile = null;
+
+  function cZeros() {
+    var o = {};
+    CP.forEach(function (d) { o[d.k] = 0; });
+    return o;
+  }
+  function cMerge(p) {
+    var o = {};
+    CP.forEach(function (d) { o[d.k] = (p && typeof p[d.k] === 'number') ? p[d.k] : (d.def || 0); });
+    return o;
+  }
+  function cScaledBase(d) {
+    if (d.k === 'bw') return cAmt > 0 ? cBase.bw : 0;
+    return d.fixed ? cBase[d.k] : cBase[d.k] * cAmt;
+  }
+  function cEff() {
+    var o = {};
+    CP.forEach(function (d) { o[d.k] = clamp(cScaledBase(d) + cDelta[d.k], d.min, d.max); });
+    return o;
+  }
+  function cIsDirty(p) {
+    p = p || cEff();
+    for (var i = 0; i < CP.length; i++) {
+      var d = CP[i];
+      if (d.fixed) continue;
+      if (Math.abs(p[d.k]) > 1e-6) return true;
+    }
+    return p.bw >= 0.5;
+  }
+
+  /* 톤 곡선: 노출·흰색/검정·밝은/어두운 영역·대비·페이드를 256칸 표 하나로 */
+  function cBuildLut(p) {
+    var lut = new Float32Array(256);
+    var ev = Math.pow(2, p.exposure);
+    var hl = p.highlights / 100, sh = p.shadows / 100;
+    var bp = -p.blacks / 100 * 0.12, wp = 1 - p.whites / 100 * 0.15;
+    var c = p.contrast / 100;
+    var k = c >= 0 ? 1 + c * 1.4 : 1 + c * 0.55;
+    var fade = p.fade / 100;
+    for (var i = 0; i < 256; i++) {
+      var x = i / 255;
+      if (ev !== 1) {
+        var lin = x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        lin *= ev;
+        // 밝게 올릴 때 하이라이트가 하얗게 뭉개지지 않도록 부드럽게 눌러 준다
+        if (ev > 1 && lin > 0.8) lin = 0.8 + 0.2 * (1 - Math.exp(-(lin - 0.8) / 0.2));
+        if (lin > 1) lin = 1;
+        x = lin <= 0.0031308 ? lin * 12.92 : 1.055 * Math.pow(lin, 1 / 2.4) - 0.055;
+      }
+      x = clamp((x - bp) / (wp - bp), 0, 1);
+      x += sh * 0.35 * x * (1 - x) * (1 - x) * 6.75;   // 1/3 지점에서 가장 크게
+      x += hl * 0.35 * x * x * (1 - x) * 6.75;         // 2/3 지점에서 가장 크게
+      x = clamp(x, 0, 1);
+      if (k !== 1) x = x < 0.5 ? 0.5 * Math.pow(2 * x, k) : 1 - 0.5 * Math.pow(2 - 2 * x, k);
+      x = fade * 0.2 + x * (1 - fade * 0.28);
+      lut[i] = clamp(x, 0, 1) * 255;
+    }
+    return lut;
+  }
+
+  // 색상 각도 → 회색 기준 RGB 치우침 (색조 분리용)
+  function cHueVec(h, amp) {
+    function f(n) {
+      var kk = (n + h / 30) % 12;
+      return 0.5 - 0.5 * Math.max(-1, Math.min(kk - 3, 9 - kk, 1));
+    }
+    var r = f(0), g = f(8), b = f(4), m = (r + g + b) / 3;
+    return [(r - m) * amp, (g - m) * amp, (b - m) * amp];
+  }
+
+  function cNoise() {
+    if (!cNoiseTile) {
+      cNoiseTile = new Float32Array(65536);
+      for (var i = 0; i < 65536; i++) cNoiseTile[i] = Math.random() + Math.random() - 1;
+    }
+    return cNoiseTile;
+  }
+
+  // s → d (같은 배열이어도 된다). 알파는 그대로 둔다.
+  function cProcess(s, d, w, h, p) {
+    var lut = cBuildLut(p);
+    var t = p.temp / 100, tn = p.tint / 100;
+    var wr = (1 + t * 0.2) * (1 + tn * 0.06), wg = 1 - tn * 0.14, wb = (1 - t * 0.2) * (1 + tn * 0.06);
+    var sat = p.saturation / 100, vib = p.vibrance / 100, bw = p.bw >= 0.5;
+    var split = p.shadowSat > 0 || p.highSat > 0;
+    var sv = cHueVec(p.shadowHue, p.shadowSat / 100 * 0.35 * 255);
+    var hv = cHueVec(p.highHue, p.highSat / 100 * 0.35 * 255);
+    var bal = p.balance / 100;
+    var vg = p.vignette / 100, gr = p.grain / 100 * 42;
+    var tile = gr ? cNoise() : null;
+    var cell = Math.max(1, Math.round(Math.max(w, h) / 1280));   // 해상도가 달라도 그레인 굵기가 비슷하게
+    var vx = null, vy = null, x, y, a;
+    if (vg) {
+      var cx = w / 2, cy = h / 2;
+      vx = new Float32Array(w); vy = new Float32Array(h);
+      for (x = 0; x < w; x++) { a = (x + 0.5 - cx) / cx; vx[x] = a * a * 0.5; }
+      for (y = 0; y < h; y++) { a = (y + 0.5 - cy) / cy; vy[y] = a * a * 0.5; }
+    }
+    var i = 0;
+    for (y = 0; y < h; y++) {
+      var ny = (((y / cell) | 0) & 255) << 8;
+      for (x = 0; x < w; x++, i += 4) {
+        var r = s[i] * wr, g = s[i + 1] * wg, b = s[i + 2] * wb;
+        r = lut[r > 255 ? 255 : r | 0];
+        g = lut[g > 255 ? 255 : g | 0];
+        b = lut[b > 255 ? 255 : b | 0];
+        var L = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (bw) {
+          r = g = b = L;
+        } else if (sat !== 0 || vib !== 0) {
+          var mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+          var mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+          // 생동감은 이미 진한 색은 덜, 흐린 색은 더 올린다
+          var f = 1 + sat + vib * (1 - (mx - mn) / 255) * (vib > 0 ? 1.3 : 1);
+          if (f < 0) f = 0;
+          r = L + (r - L) * f; g = L + (g - L) * f; b = L + (b - L) * f;
+        }
+        if (split) {
+          var ln = L / 255;
+          var ws = (1 - ln) * (1 - ln) * (1 - bal), wh = ln * ln * (1 + bal);
+          r += sv[0] * ws + hv[0] * wh;
+          g += sv[1] * ws + hv[1] * wh;
+          b += sv[2] * ws + hv[2] * wh;
+        }
+        if (vg) {
+          var tt = (Math.sqrt(vx[x] + vy[y]) - 0.3) / 0.75;
+          if (tt > 0) {
+            if (tt > 1) tt = 1;
+            var m = tt * tt * (3 - 2 * tt) * vg;
+            if (m < 0) { var kk = 1 + m * 0.85; r *= kk; g *= kk; b *= kk; }
+            else { r += (255 - r) * m * 0.8; g += (255 - g) * m * 0.8; b += (255 - b) * m * 0.8; }
+          }
+        }
+        if (gr) {
+          var n = tile[ny + (((x / cell) | 0) & 255)] * gr * (1 - Math.abs(L / 127.5 - 1) * 0.6);
+          r += n; g += n; b += n;
+        }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = s[i + 3];
+      }
+    }
+  }
+
+  /* 미리보기 */
+
+  function initColor() {
+    var w = cv.width, h = cv.height;
+    var sc = Math.min(1, COLOR_PREVIEW_MAX / Math.max(w, h));
+    var pw = Math.max(1, Math.round(w * sc)), ph = Math.max(1, Math.round(h * sc));
+    var src = sc < 1 ? drawScaled(cv, 0, 0, w, h, pw, ph) : cv;
+    colorCv.width = pw; colorCv.height = ph;
+    colorCtx.clearRect(0, 0, pw, ph);
+    colorCtx.drawImage(src, 0, 0);
+    cSrc = colorCtx.getImageData(0, 0, pw, ph);
+    cOut = colorCtx.createImageData(pw, ph);
+    colorCv.style.width = cv.style.width;
+
+    // 필터 썸네일용 정사각 사본
+    var side = Math.min(pw, ph), T = 120;
+    var tc = document.createElement('canvas');
+    tc.width = T; tc.height = T;
+    var tctx = tc.getContext('2d');
+    tctx.imageSmoothingEnabled = true;
+    tctx.imageSmoothingQuality = 'high';
+    tctx.drawImage(colorCv, (pw - side) / 2, (ph - side) / 2, side, side, 0, 0, T, T);
+    cThumbSrc = tctx.getImageData(0, 0, T, T);
+    cRenderThumbs();
+    cRenderNow();
+  }
+
+  function cRenderNow() {
+    if (!cSrc) return;
+    if (cShowOrig) {
+      colorCtx.putImageData(cSrc, 0, 0);
+      cDrawHist(cSrc);
+      return;
+    }
+    cProcess(cSrc.data, cOut.data, cSrc.width, cSrc.height, cEff());
+    colorCtx.putImageData(cOut, 0, 0);
+    cDrawHist(cOut);
+  }
+  function cRender() {
+    if (cRaf) return;
+    cRaf = requestAnimationFrame(function () { cRaf = 0; cRenderNow(); });
+  }
+
+  function cRenderThumbs() {
+    if (!cThumbSrc) return;
+    var T = cThumbSrc.width;
+    cAllPresets().forEach(function (pr) {
+      var c = cThumbCv[pr.id];
+      if (!c) return;
+      var tctx = c.getContext('2d');
+      var out = tctx.createImageData(T, T);
+      cProcess(cThumbSrc.data, out.data, T, T, cMerge(pr.p));
+      tctx.putImageData(out, 0, 0);
+    });
+  }
+
+  function cDrawHist(id) {
+    var d = id.data, n = d.length;
+    var hr = new Uint32Array(256), hg = new Uint32Array(256), hb = new Uint32Array(256);
+    var step = Math.max(1, Math.floor(n / 4 / 60000)) * 4;
+    for (var i = 0; i < n; i += step) {
+      if (d[i + 3] < 8) continue;
+      hr[d[i]]++; hg[d[i + 1]]++; hb[d[i + 2]]++;
+    }
+    var mx = 1;
+    for (var j = 1; j < 255; j++) mx = Math.max(mx, hr[j], hg[j], hb[j]);
+    var W = histCv.width, H = histCv.height;
+    histCtx.clearRect(0, 0, W, H);
+    histCtx.globalCompositeOperation = 'multiply';
+    [[hr, 'rgba(224,49,49,.55)'], [hg, 'rgba(47,158,68,.55)'], [hb, 'rgba(51,85,216,.55)']].forEach(function (ch) {
+      histCtx.fillStyle = ch[1];
+      histCtx.beginPath();
+      histCtx.moveTo(0, H);
+      for (var x = 0; x < 256; x++) histCtx.lineTo(x * W / 255, H - Math.min(1, ch[0][x] / mx) * (H - 2));
+      histCtx.lineTo(W, H);
+      histCtx.closePath();
+      histCtx.fill();
+    });
+    histCtx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 필터 목록 */
+
+  function cLoadMine() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(MY_PRESET_KEY) || '[]');
+      return Array.isArray(arr) ? arr.filter(function (x) { return x && x.id && x.p; }) : [];
+    } catch (e) { return []; }
+  }
+  function cSaveMineList(arr) {
+    try { localStorage.setItem(MY_PRESET_KEY, JSON.stringify(arr)); return true; }
+    catch (e) { return false; }
+  }
+  function cAllPresets() {
+    return CPRESETS.concat(cLoadMine().map(function (x) {
+      return { id: x.id, name: x.name, p: x.p, mine: true };
+    }));
+  }
+
+  function cBuildStrip() {
+    presetStrip.innerHTML = '';
+    cThumbCv = {};
+    cAllPresets().forEach(function (pr) {
+      var tile = document.createElement('div');
+      tile.className = 'ptile';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pbtn';
+      b.setAttribute('data-id', pr.id);
+      var c = document.createElement('canvas');
+      c.width = 120; c.height = 120;
+      var sp = document.createElement('span');
+      sp.textContent = pr.name;
+      b.appendChild(c); b.appendChild(sp);
+      b.addEventListener('click', function () { cSelectPreset(pr); });
+      tile.appendChild(b);
+      if (pr.mine) {
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'pdel';
+        del.textContent = '×';
+        del.title = '이 필터 지우기';
+        del.setAttribute('aria-label', pr.name + ' 필터 지우기');
+        del.addEventListener('click', function () {
+          if (!confirm('「' + pr.name + '」 필터를 지울까요?')) return;
+          cSaveMineList(cLoadMine().filter(function (x) { return x.id !== pr.id; }));
+          if (cPresetId === pr.id) { cPresetId = 'custom'; cPresetNameEl.textContent = '직접 조정'; }
+          cBuildStrip();
+          cRenderThumbs();
+        });
+        tile.appendChild(del);
+      }
+      presetStrip.appendChild(tile);
+      cThumbCv[pr.id] = c;
+    });
+    cMarkActive();
+  }
+
+  function cMarkActive() {
+    presetStrip.querySelectorAll('.pbtn').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-id') === cPresetId);
+    });
+  }
+
+  function cSelectPreset(pr) {
+    cBase = cMerge(pr.p);
+    cDelta = cZeros();
+    cAmt = 1;
+    cAmtInput.value = 100;
+    cAmtVal.textContent = '100%';
+    cAmtInput.disabled = pr.id === 'none';
+    cPresetId = pr.id;
+    cPresetNameEl.textContent = pr.name;
+    cMarkActive();
+    cSyncInputs();
+    cRender();
+  }
+
+  /* 슬라이더 */
+
+  function cFmt(d, v) {
+    if (d.hue) return Math.round(v) + '°';
+    var str = d.dec ? v.toFixed(d.dec) : String(Math.round(v));
+    if (d.min < 0 && v > 0) str = '+' + str;
+    return str;
+  }
+
+  function cBuildAdjustments() {
+    CP_GROUPS.forEach(function (gr) {
+      var box = document.createElement('div');
+      box.className = 'adj-group';
+      var h3 = document.createElement('h3');
+      h3.textContent = gr[1];
+      box.appendChild(h3);
+      CP.forEach(function (d) {
+        if (d.g !== gr[0]) return;
+        var row = document.createElement('div');
+        row.className = 'adj' + (d.toggle ? ' toggle' : '');
+        var id = 'c_' + d.k;
+        if (d.toggle) {
+          var lab = document.createElement('label');
+          lab.className = 'chk';
+          var chk = document.createElement('input');
+          chk.type = 'checkbox';
+          chk.id = id;
+          lab.appendChild(chk);
+          lab.appendChild(document.createTextNode(' ' + d.label));
+          row.appendChild(lab);
+          chk.addEventListener('change', function () {
+            cDelta.bw = (chk.checked ? 1 : 0) - cScaledBase(d);
+            cAfterManual();
+          });
+          cInputs[d.k] = { input: chk };
+        } else {
+          var label = document.createElement('label');
+          label.setAttribute('for', id);
+          label.textContent = d.label;
+          label.title = '두 번 누르면 처음 값으로';
+          var out = document.createElement('output');
+          var rg = document.createElement('input');
+          rg.type = 'range';
+          rg.id = id;
+          rg.min = d.min; rg.max = d.max; rg.step = d.step || 1;
+          if (d.hue) rg.className = 'hue';
+          row.appendChild(label); row.appendChild(out); row.appendChild(rg);
+          rg.addEventListener('input', function () {
+            var v = parseFloat(rg.value);
+            cDelta[d.k] = v - cScaledBase(d);
+            out.textContent = cFmt(d, v);
+            out.classList.toggle('chg', Math.abs(v - (d.def || 0)) > 1e-6);
+            cAfterManual();
+          });
+          label.addEventListener('dblclick', function () {
+            cDelta[d.k] = (d.def || 0) - cScaledBase(d);
+            cSyncInputs();
+            cAfterManual();
+          });
+          cInputs[d.k] = { input: rg, out: out };
+        }
+        box.appendChild(row);
+      });
+      adjList.appendChild(box);
+    });
+  }
+
+  function cAfterManual() {
+    if (cPresetId === 'none') { cPresetNameEl.textContent = '직접 조정'; }
+    else if (cPresetId !== 'custom') {
+      var pr = cAllPresets().filter(function (x) { return x.id === cPresetId; })[0];
+      cPresetNameEl.textContent = (pr ? pr.name : '필터') + ' + 직접 조정';
+    }
+    cRender();
+  }
+
+  function cSyncInputs() {
+    var p = cEff();
+    CP.forEach(function (d) {
+      var it = cInputs[d.k];
+      if (!it) return;
+      if (d.toggle) { it.input.checked = p[d.k] >= 0.5; return; }
+      it.input.value = p[d.k];
+      it.out.textContent = cFmt(d, p[d.k]);
+      it.out.classList.toggle('chg', Math.abs(p[d.k] - (d.def || 0)) > 1e-6);
+    });
+  }
+
+  /* 원본 해상도에 적용 */
+
+  function applyColor(auto) {
+    var p = cEff();
+    if (!cIsDirty(p) || !editor.classList.contains('show')) return;
+    pushSnapshot();
+    var w = cv.width, h = cv.height;
+    var id = ctx.getImageData(0, 0, w, h);
+    cProcess(id.data, id.data, w, h, p);
+    ctx.putImageData(id, 0, 0);
+    cSelectPreset(CPRESETS[0]);
+    afterImageChange();
+    toast(auto ? '색감 보정 적용됨 · 되돌리기 가능' : '색감 보정을 적용했어요');
+  }
+
+  cAmtInput.addEventListener('input', function () {
+    cAmt = parseInt(cAmtInput.value, 10) / 100;
+    cAmtVal.textContent = cAmtInput.value + '%';
+    cSyncInputs();
+    cRender();
+  });
+
+  // 누르고 있는 동안 원본 보기
+  function cHold(on) {
+    if (cShowOrig === on) return;
+    cShowOrig = on;
+    cRenderNow();
+  }
+  [colorCv, document.getElementById('cmpBtn')].forEach(function (el) {
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+      cHold(true);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (t) {
+      el.addEventListener(t, function () { cHold(false); });
+    });
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+
+  document.getElementById('cResetBtn').addEventListener('click', function () { cSelectPreset(CPRESETS[0]); });
+  document.getElementById('cApplyBtn').addEventListener('click', function () {
+    if (!cIsDirty()) { toast('아직 조정한 값이 없어요'); return; }
+    toast('적용 중…');
+    setTimeout(function () { applyColor(false); }, 30);
+  });
+  document.getElementById('cSaveMineBtn').addEventListener('click', function () {
+    var p = cEff();
+    if (!cIsDirty(p)) { toast('아직 조정한 값이 없어요'); return; }
+    var mine = cLoadMine();
+    var name = prompt('필터 이름을 정해 주세요', '내 필터 ' + (mine.length + 1));
+    if (name === null) return;
+    name = name.trim().slice(0, 12) || ('내 필터 ' + (mine.length + 1));
+    var item = { id: 'my' + Date.now(), name: name, p: p };
+    mine.push(item);
+    if (!cSaveMineList(mine)) { alert('이 브라우저에서는 필터를 저장할 수 없어요 (저장 공간이 막혀 있음).'); return; }
+    cBuildStrip();
+    cRenderThumbs();
+    cSelectPreset({ id: item.id, name: item.name, p: item.p, mine: true });
+    toast('「' + name + '」 필터를 저장했어요');
+  });
+
+  cBuildStrip();
+  cBuildAdjustments();
+  cSyncInputs();
+
   /* ── 상단 버튼 ── */
 
   undoBtn.addEventListener('click', undo);
@@ -1712,7 +2408,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   });
 
   newBtn.addEventListener('click', function () {
-    editor.style.display = 'none';
+    editor.classList.remove('show');
     dropzone.style.display = 'block';
     history = [];
     updateUndoBtn();
