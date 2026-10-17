@@ -1992,7 +1992,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     { id: 'none', cat: 'all', name: '원본', desc: '보정하지 않은 처음 사진', p: {} },
 
     { id: 'clean',     cat: 'act', name: '깔끔하고 밝게', desc: '활동 사진 기본 — 얼굴과 활동 장면은 환하게, 색은 자연스럽게',
-      p: { exposure: 0.35, contrast: 5, highlights: -20, shadows: 25, whites: 5, vibrance: 15, clarity: 8 } },
+      p: { exposure: 0.25, contrast: 5, highlights: -25, shadows: 25, whites: 5, vibrance: 15, clarity: 8 } },
     { id: 'portrait',  cat: 'act', name: '인물·발표', desc: '발표·면담·단체 사진 — 피부는 부드럽고 화사하게, 그늘진 얼굴은 밝게',
       p: { exposure: 0.15, contrast: -8, highlights: -20, shadows: 20, vibrance: 8, saturation: -5, temp: 3, clarity: -8, mx_o_s: -8, mx_o_l: 6 } },
     { id: 'lab',       cat: 'act', name: '실험·관찰 기록', desc: '색이 중요한 관찰 기록 — 색감은 건드리지 않고 또렷하게만',
@@ -3112,7 +3112,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     // 화이트밸런스: 측정된 치우침의 80%만 (휴대폰이 이미 어느 정도 맞춰 두었고, 저녁빛 같은 분위기는 조금 남긴다)
     if (a.cast && a.castWeight > 0.3) {
       var wb = cSolveWb(a.cast);
-      var t = Math.round(wb[0] * 0.8 * a.castWeight), n = Math.round(wb[1] * 0.8 * a.castWeight);
+      var t = clamp(Math.round(wb[0] * 0.8 * a.castWeight), -40, 40), n = clamp(Math.round(wb[1] * 0.8 * a.castWeight), -30, 30);
       if (Math.abs(t) >= 3) { p.temp = t; notes.push('색온도 ' + (t > 0 ? '+' : '') + t); }
       if (Math.abs(n) >= 3) { p.tint = n; notes.push('색조 ' + (n > 0 ? '+' : '') + n); }
     }
@@ -3121,11 +3121,13 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var whites = clamp(Math.round((249 - a.p995) / 255 / 0.15 * 100 * 0.7), -15, 30);
     if (Math.abs(blacks) >= 3) { p.blacks = blacks; notes.push('검정 ' + (blacks > 0 ? '+' : '') + blacks); }
     if (Math.abs(whites) >= 3) { p.whites = whites; notes.push('흰색 ' + (whites > 0 ? '+' : '') + whites); }
-    // 노출: 레벨 뒤 중앙값이 118 근처가 되도록
+    // 노출: 어두운 사진은 중앙값이 118 근처가 되도록 올린다.
+    // 밝은 사진(흰 벽 교실·눈밭)은 원래 밝은 것이므로, 하이라이트가 실제로 날아갔을 때만 조금 내린다
     var bp = -blacks / 100 * 0.12, wp = 1 - whites / 100 * 0.15;
     var med = clamp((a.med / 255 - bp) / (wp - bp), 0.02, 0.98);
-    var ev = clamp(Math.log(0.46 / med) / Math.LN2 * 0.7, -0.8, 0.8);
-    ev = Math.round(ev * 20) / 20;
+    var ev = Math.log(0.46 / med) / Math.LN2 * 0.7;
+    if (ev < 0) ev = (a.p95 >= 250 && a.p5 > 70) ? Math.max(ev, -0.3) : 0;   // 그림자까지 다 밝은, 진짜 과노출만
+    ev = Math.round(clamp(ev, -0.3, 0.8) * 20) / 20;
     if (Math.abs(ev) >= 0.1) { p.exposure = ev; notes.push('노출 ' + (ev > 0 ? '+' : '') + ev.toFixed(2)); }
     // 그림자·하이라이트: 양끝이 뭉쳐 있으면 펴 준다
     if (a.p5 < 18) { p.shadows = 25; notes.push('어두운 영역 +25'); }
