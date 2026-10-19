@@ -2169,6 +2169,257 @@ window.addEventListener("resize", () => {
 });
 renderKinds();
 lastW = $("pages").clientWidth;
+/* ═══════ 면접 준비용 가린 텍스트 ═══════
+   결과 PDF와 같은 상자(effectiveBoxes)를 따르되, 학생 이름은 이름 처리 방식과 상관없이
+   통째로 토큰으로 바꾼다 — 이 글은 분석에 쓰이므로 성 한 글자도 남기지 않는다.
+   쪽 안의 줄은 위에서 아래, 학생별 쪽 묶음(f.names.groups)은 블라인드 파일 분할과 같다. */
+const MASK_TOKEN = { name: "[이름]", rrn: "[주민번호]", addr: "[주소·연락처]", birth: "[생년월일]", family: "[보호자]",
+  teacher: "[교사]", school: "[학교]", printed: "[출력정보]", classno: "[학번]", manual: "[가림]", photo: "" };
+function maskedLines(f, p) {
+  const page = f.pages[p];
+  const lines = page.lines || (page.lines = buildLines(page.glyphs));
+  const hide = new Map();                       // 글자 id → 종류
+  for (const x of effectiveBoxes(f, p)) {
+    const b = x.b, r = b.kind === "name" ? b : x.r;
+    if (b.kind === "name" ? !b.on : !x.active) continue;
+    if (r.glyphs?.length) { for (const id of r.glyphs) hide.set(id, b.kind); continue; }
+    for (const g of page.glyphs) { const [cx, cy] = ctr(g); if (g.ch.trim() && inRect(r, cx, cy)) hide.set(g.id, b.kind); }
+  }
+  return lines.map(ln => {
+    let s = "", last = null;
+    for (const ch of ln.chars) {
+      const k = ch.g ? hide.get(ch.g.id) : undefined;
+      if (!ch.g) { s += ch.c; continue; }       // 띄어쓰기는 그대로, 가린 흐름도 끊지 않는다
+      if (k) { if (last !== k) s += MASK_TOKEN[k] ?? "[가림]"; last = k; }
+      else { s += ch.c; last = null; }
+    }
+    return { text: s.replace(/\s+/g, " ").trim(), by: ln.by, size: ln.size };
+  }).filter(l => l.text);
+}
+/* 학생별로 가린 글을 모은다. 이름은 돌려주지 않고 반·번호 라벨만 준다. */
+function extractStudents(f) {
+  const groups = f.names?.groups?.length ? f.names.groups : [{ key: "", pages: f.pages.map((_, i) => i) }];
+  return groups.map(g => {
+    const [ban, no] = g.key.split("|");
+    const pages = g.pages.map(p => maskedLines(f, p));
+    return { label: ban && no ? `${ban}-${no}` : "", pages: g.pages, lines: pages.flat().map(l => l.text),
+      text: pages.map(ls => ls.map(l => l.text).join("\n")).join("\n\n") };
+  });
+}
+/* 가린 글을 점검실 파서가 읽는 꼴(줄·조각·칸)로 만든다. 조각은 글자 사이가
+   글자 크기의 0.45배 넘게 벌어지면 나뉜다 — 표의 칸이 바뀌는 자리다. */
+function maskedPartLines(f, p) {
+  const page = f.pages[p];
+  const lines = page.lines || (page.lines = buildLines(page.glyphs));
+  const hide = new Map();
+  for (const x of effectiveBoxes(f, p)) {
+    const b = x.b, r = b.kind === "name" ? b : x.r;
+    if (b.kind === "name" ? !b.on : !x.active) continue;
+    if (r.glyphs?.length) { for (const id of r.glyphs) hide.set(id, b.kind); continue; }
+    for (const g of page.glyphs) { const [cx, cy] = ctr(g); if (g.ch.trim() && inRect(r, cx, cy)) hide.set(g.id, b.kind); }
+  }
+  const out = [];
+  for (const ln of lines) {
+    const parts = [];
+    let cur = null, prev = null, last = null;
+    for (const ch of ln.chars) {
+      if (!ch.g) { if (cur) cur.text += ch.c; continue; }
+      const g = ch.g, k = hide.get(g.id);
+      if (!cur || (prev && g.x0 - prev.x1 > Math.max(g.size, prev.size) * 0.45)) { cur = { x: g.x0, size: g.size, text: "" }; parts.push(cur); last = null; }
+      if (k) { if (last !== k) cur.text += MASK_TOKEN[k] ?? "[가림]"; last = k; }
+      else { cur.text += ch.c; last = null; }
+      prev = g;
+    }
+    for (const pt of parts) pt.text = pt.text.replace(/\s+/g, " ").trim();
+    const live = parts.filter(pt => pt.text);
+    if (!live.length) continue;
+    out.push({ y: ln.by, x0: live[0].x, x1: live[live.length - 1].x, parts: live, text: live.map(pt => pt.text).join(" ") });
+  }
+  return out;
+}
+
+/* ═══════ 영역별 기록 — 생기부 점검실의 NEIS 출력물 해석기를 옮겨 왔다 ═══════
+   창체는 학년(x<70) · 영역(x~90) · 본문(x>150) 칸, 행특은 학년 · 본문, 세특은 한 칸에
+   "(1학기)국어:"처럼 과목이 적힌다. 표 칸(사각형)이 잡히면 그 칸의 세로 범위로,
+   안 잡히는 판형이면 표시 사이 중간선으로 행을 가른다. 학생 구분은 블라인드가
+   이미 해 두었으므로 쪽 아래 성명 줄은 쓰지 않는다(가린 글이라 성명이 없기도 하다). */
+const REC_SECTION = /^([1-9])\s*\.\s*(인적|출결|수상|자격증|학교폭력|창의적|교과학습|독서활동|행동특성)/;
+const REC_GRADE_BLOCK = /^\[\s*([1-3])\s*학년\s*\]/;
+const REC_AREA = /자율·자치활동|자율활동|자치활동|동아리활동|진로활동|봉사활동/;
+const REC_SETUK_HDR = /^과\s*목\s+세부능력/;
+const REC_HOPE = /^희\s*망\s*분\s*야\s*[:：]?\s*/;
+const REC_FOOTER = /반\s*(\d+|\[학번\])\s*번\s*호\s*(\d+|\[학번\])\s*성\s*명|\[출력정보\]|\d{4}\s*\.\s*\d{2}\s*\.\s*\d{2}\s*\d{1,2}\s*:\s*\d{2}|\*\*\*/;
+const REC_BONGSA = /^봉\s*사\s*활\s*동\s*실\s*적/;
+const REC_SKIP = /^(창의적\s*체험활동상황|학년|영역\s*시간\s*특기사항|학년\s+행동특성|학년\s+과목|해당\s*사항\s*없음|해당\s*학년의\s*자료가\s*없습니다|학기\s+교과)/;
+const REC_MIDDOT = /[·･ㆍ‧․∙⋅]/g;
+function parseRecords(pages) {
+  const bucket = {}, hopes = {}, setuk = {}, attend = [], unparsed = [];
+  let section = null, grade = null, inSetuk = false;
+  const put = (g, label, t) => { if (g && label && t) { const k = g + "|" + label; bucket[k] = (bucket[k] || "") + t; } };
+  for (const pg of pages) {
+    const lines = pg.lines, cells = pg.cells || [];
+    const cellAt = (x, y) => {
+      let best = null, area = Infinity;
+      for (const c of cells) {
+        if (x < c.x0 - 1 || x > c.x1 + 1 || y < c.y0 - 1 || y > c.y1 + 1) continue;
+        const a = (c.x1 - c.x0) * (c.y1 - c.y0);
+        if (a < area) { area = a; best = c; }
+      }
+      return best;
+    };
+    const areaMarks = [], gradeMarks = [];
+    for (const ln of lines) {
+      const head = ln.parts.filter(p => p.x < 160);
+      if (!head.length) continue;
+      const ht = head.map(p => p.text).join("").replace(/\s+/g, "").replace(REC_MIDDOT, "·");
+      const am = ht.match(REC_AREA);
+      if (am) {
+        const lead = head.find(p => { const s = p.text.replace(/\s+/g, "").replace(REC_MIDDOT, "·"); return s.length >= 2 && am[0].startsWith(s); }) || head[0];
+        areaMarks.push({ y: ln.y, area: am[0], cell: cellAt(lead.x + 2, ln.y + 2) });
+      }
+      for (const part of head) {
+        const t = part.text.replace(/\s+/g, "");
+        if (/^[1-3]$/.test(t) && part.x < 70) gradeMarks.push({ y: ln.y, grade: +t, cell: cellAt(part.x + 2, ln.y + 2) });
+      }
+    }
+    const vet = list => { for (const m of list) m.cellOk = !!m.cell && list.filter(o => o.y >= m.cell.y0 - 1 && o.y <= m.cell.y1 + 1).length === 1; };
+    vet(areaMarks); vet(gradeMarks);
+    let bodyX0 = 150;
+    const acell = areaMarks.find(m => m.cellOk)?.cell;
+    if (acell) { const xs = cells.filter(c => c.x1 - c.x0 > 200 && c.x0 > acell.x1 - 1).map(c => c.x0); if (xs.length) bodyX0 = Math.min(...xs) - 1; }
+    const band = (list, y) => {
+      if (!list.length) return null;
+      const ms = list.slice().sort((a, b) => b.y - a.y);
+      for (let i = 0; i < ms.length; i++) {
+        const hi = i === 0 ? Infinity : (ms[i - 1].y + ms[i].y) / 2, lo = i === ms.length - 1 ? -Infinity : (ms[i].y + ms[i + 1].y) / 2;
+        if (y <= hi && y > lo) return ms[i];
+      }
+      return ms[ms.length - 1];
+    };
+    const pick = (list, y) => { const inCell = list.filter(m => m.cellOk && y >= m.cell.y0 - 1 && y <= m.cell.y1 + 1); return inCell.length ? inCell[0] : band(list, y); };
+
+    for (const ln of lines) {
+      const t = ln.text.trim();
+      if (!t) continue;
+      const sec = t.match(REC_SECTION);
+      if (sec) { section = +sec[1]; grade = null; inSetuk = false; continue; }
+      if (REC_BONGSA.test(t)) { section = null; continue; }
+      if (REC_SKIP.test(t) || REC_FOOTER.test(t)) continue;
+      const gb = t.match(REC_GRADE_BLOCK);
+      if (gb) { grade = +gb[1]; inSetuk = false; continue; }
+      if (REC_SETUK_HDR.test(t)) { inSetuk = true; continue; }
+      if (section === 2) { attend.push(t); continue; }
+      if (section === 6) {
+        if (REC_HOPE.test(t)) { const gm = pick(gradeMarks, ln.y); const v = t.replace(REC_HOPE, "").trim(); if (gm && v && !hopes[gm.grade]) hopes[gm.grade] = v; continue; }
+        const body = ln.parts.filter(p => p.x >= bodyX0);
+        if (!body.length) continue;
+        const mk = pick(areaMarks, ln.y), gm = pick(gradeMarks, ln.y);
+        if (!mk || !gm) { unparsed.push(t.slice(0, 60)); continue; }
+        put(gm.grade, mk.area, body.map(p => p.text).join(""));
+      } else if (section === 7) {
+        if (!inSetuk || !grade) continue;
+        if (/^<[^>]{1,20}>/.test(t) || /^이수학점\s*합계/.test(t)) continue;
+        const c0 = ln.parts.length ? cellAt(ln.parts[0].x + 2, ln.y + 2) : null;
+        if (c0 && c0.x1 - c0.x0 < 400) continue;
+        if (/\d+\/\d+(\.\d+)?\(/.test(t)) continue;
+        setuk[grade] = (setuk[grade] || "") + ln.parts.map(p => p.text).join("");
+      } else if (section === 9) {
+        const body = ln.parts.filter(p => p.x >= 70);
+        if (!body.length) continue;
+        const gm = pick(gradeMarks, ln.y) || (grade ? { grade } : null);
+        if (!gm) { unparsed.push(t.slice(0, 60)); continue; }
+        grade = gm.grade;
+        put(gm.grade, "행동특성 및 종합의견", body.map(p => p.text).join(""));
+      }
+    }
+  }
+  const records = [];
+  for (const [k, t] of Object.entries(bucket)) {
+    const g = +k.split("|")[0], area = k.split("|")[1];
+    if (t.trim()) records.push({ grade: g, area, text: t.trim(), hope: area === "진로활동" ? hopes[g] || "" : "" });
+  }
+  return { records, setuk, attendance: attend.join("\n"), unparsed };
+}
+
+/* 세특 본문을 과목 조각으로 — "(1학기)국어:", "독서:" 라벨 기준. 점검실과 같은 규칙. */
+const SUBJ_BOUND = /(?=\(\d학기\)[^:\n]{1,20}:|(?<=[.함임됨움짐냄듦씀킴큼])\s*[가-힣A-Za-zⅠⅡⅢ][가-힣A-Za-zⅠⅡⅢ·\s0-9]{1,17}:)/;
+const SUBJ_LABEL = /^(?:\((\d)학기\))?\s*([가-힣A-Za-zⅠⅡⅢ][가-힣A-Za-zⅠⅡⅢ·\s0-9]{0,19}):\s*/;
+const SOLO_MARK = /(?:학교\s*)?자율적?\s*교육\s*과정|학교\s*자율\s*과정/g;
+const SOLO_OPENERS = /[('‘"“[<《〈]/;
+const SOLO_LABEL = "개인별 세특", SETUK_LIMIT = 1500;
+const ONE_BYTE = /[\x20-\x7E·‘’“”]/;
+function neisBytes(t) { let n = 0; for (const ch of t) n += ch === "\n" ? 1 : ONE_BYTE.test(ch) ? 1 : 3; return n; }
+function peelSolo(body) {
+  if (neisBytes(body) <= SETUK_LIMIT) return { body, solo: "" };
+  SOLO_MARK.lastIndex = 0;
+  let m;
+  while ((m = SOLO_MARK.exec(body)) !== null) {
+    let cut = m.index;
+    while (cut > 0 && (SOLO_OPENERS.test(body[cut - 1]) || /\s/.test(body[cut - 1]))) cut--;
+    if (cut === 0) return { body: "", solo: body };
+    if (!/[.。]$/.test(body.slice(0, cut))) continue;
+    return { body: body.slice(0, cut), solo: body.slice(cut) };
+  }
+  return { body, solo: "" };
+}
+function reSplit(piece, lex) {
+  if (!lex || !lex.size || neisBytes(piece.body) <= SETUK_LIMIT) return [piece];
+  const out = [];
+  let cur = piece;
+  for (let guard = 0; guard < 12; guard++) {
+    let at = -1, name = "";
+    for (const n of lex) { const i = cur.body.indexOf(n + ":"); if (i > 0 && (at < 0 || i < at)) { at = i; name = n; } }
+    if (at < 0) break;
+    out.push({ ...cur, body: cur.body.slice(0, at) });
+    cur = { subject: name, sem: "", body: cur.body.slice(at + name.length + 1).replace(/^\s+/, "") };
+  }
+  out.push(cur);
+  return out;
+}
+function splitSubjects(text, lex) {
+  const out = [];
+  for (const raw of text.split(SUBJ_BOUND)) {
+    const p = raw.trim();
+    if (!p) continue;
+    const m = p.match(SUBJ_LABEL);
+    if (m) out.push({ subject: m[2].trim(), sem: m[1] || "", body: p.slice(m[0].length) });
+    else if (out.length) out[out.length - 1].body += p;
+    else out.push({ subject: "(미분류)", sem: "", body: p });
+  }
+  const res = [];
+  for (const s0 of out) for (const s of reSplit(s0, lex)) {
+    const { body, solo } = peelSolo(s.body);
+    if (body.trim()) res.push({ ...s, body });
+    if (solo.trim()) res.push({ subject: SOLO_LABEL, sem: "", body: solo.trim(), solo: true });
+  }
+  return res;
+}
+function subjectLexicon(texts) {
+  const lex = new Set();
+  for (const t of texts) for (const s of splitSubjects(t)) if (!s.solo && s.subject !== "(미분류)" && s.subject.length >= 2) lex.add(s.subject);
+  return lex;
+}
+
+/* 학생별 — 가린 글 전체 + 영역별 기록 + 과목별 세특. 이름은 돌려주지 않는다. */
+function parseStudents(f) {
+  const groups = f.names?.groups?.length ? f.names.groups : [{ key: "", pages: f.pages.map((_, i) => i) }];
+  const prelim = groups.map(g => {
+    const pages = g.pages.map(p => ({ lines: maskedPartLines(f, p), cells: f.pages[p].cells }));
+    const parsed = parseRecords(pages);
+    const [ban, no] = g.key.split("|");
+    return { label: ban && no ? `${ban}-${no}` : "", pages: g.pages, parsed,
+      text: pages.map(pg => pg.lines.map(l => l.text).join("\n")).join("\n\n") };
+  });
+  const lex = subjectLexicon(prelim.flatMap(s => Object.values(s.parsed.setuk)));
+  return prelim.map(s => ({
+    label: s.label, pages: s.pages, text: s.text,
+    records: s.parsed.records.sort((a, b) => a.grade - b.grade),
+    setuk: Object.entries(s.parsed.setuk).flatMap(([g, t]) => splitSubjects(t, lex).map(x => ({ grade: +g, ...x }))),
+    attendance: s.parsed.attendance, unparsed: s.parsed.unparsed,
+  }));
+}
+/* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents };
 </script>
 </body>
 </html>
