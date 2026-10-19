@@ -6326,8 +6326,8 @@ function printJesimun(st, a, s, withAnswer) {
 function jesimunStudentItems(a, n0) {
   const out = []; let n = n0;
   (a.jesimun || []).forEach((s, i) => {
-    out.push({ k: `jes:${s.id}:p`, n: ++n, section: "제시문 면접", secKey: "jesimun", star: false, teacher: false, q: `〔제시문 읽기〕 ${s.title}`, intent: s.map || "", hint: "", passages: s.passages.map(p => ({ label: p.label.replace(/[()]/g, ""), text: p.text })), prep: s.prepMinutes || 10, answerMin: s.answerMinutes || 5 });
-    s.questions.forEach((q, j) => out.push({ k: `jes:${s.id}:q${j}`, n: ++n, section: "제시문 면접", secKey: "jesimun", star: false, teacher: false, q: q.q, intent: "제시문의 문장을 근거로 선택과 이유를 둘 이상, 반대쪽의 장단점까지 말합니다.", hint: "", answerMin: s.answerMinutes || 5 }));
+    out.push({ k: `jes:${s.id}:p`, n: ++n, section: "제시문 면접", secKey: "jesimun", g: "제시문", star: false, teacher: false, q: `〔제시문 읽기〕 ${s.title}`, intent: s.map || "", hint: "", passages: s.passages.map(p => ({ label: p.label.replace(/[()]/g, ""), text: p.text })), prep: s.prepMinutes || 10, answerMin: s.answerMinutes || 5 });
+    s.questions.forEach((q, j) => out.push({ k: `jes:${s.id}:q${j}`, n: ++n, section: "제시문 면접", secKey: "jesimun", g: "제시문", star: false, teacher: false, q: q.q, intent: "제시문의 문장을 근거로 선택과 이유를 둘 이상, 반대쪽의 장단점까지 말합니다.", hint: "", answerMin: s.answerMinutes || 5 }));
   });
   return out;
 }
@@ -6371,16 +6371,17 @@ function studentQuestions(a) {
   const out = []; let n = 0;
   if (!a.qset) return jesimunStudentItems(a, 0);
   const ex = a.qset.data.extras;
-  if (ex?.intro?.text && handoutOn(a, "extras")) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
+  if (ex?.intro?.text && handoutOn(a, "extras")) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", g: "자기소개·마지막 말", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
   const stH = HUB.students.find(x => x.applications.includes(a)) || stuOf(HUB.cur);
   for (const sec of arrOf(a.qset.data.sections)) arrOf(sec.items).forEach((it, i) => {
     if (it.deleted || !(it.q || "").trim()) return;
-    if (stH && !handoutOn(a, handoutKeyOf(stH, sec, it))) return;
-    const base = { section: SECTION_KO[sec.key] || sec.title, secKey: sec.key, star: !!it.star, teacher: sec.key === "teacher" };
+    const hk = stH ? handoutKeyOf(stH, sec, it) : (sec.key === "teacher" ? "teacher" : "공통");
+    if (stH && !handoutOn(a, hk)) return;
+    const base = { section: SECTION_KO[sec.key] || sec.title, secKey: sec.key, star: !!it.star, teacher: sec.key === "teacher", g: handoutLabel(hk) };
     out.push({ ...base, k: `${sec.key}:${i}`, n: ++n, q: it.q.trim(), intent: it.intent || "", hint: it.answerHint || "" });
     (it.followUps || []).forEach((f, j) => { if ((f || "").trim()) out.push({ ...base, k: `${sec.key}:${i}f${j}`, n: ++n, q: "↳ " + f.trim(), intent: it.intent || "", hint: "" }); });
   });
-  if (ex?.last?.text && handoutOn(a, "extras")) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
+  if (ex?.last?.text && handoutOn(a, "extras")) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", g: "자기소개·마지막 말", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
   out.push(...jesimunStudentItems(a, n));
   return out;
 }

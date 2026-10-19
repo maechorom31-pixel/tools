@@ -55,6 +55,11 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
 .mode .d{display:block;font-size:13px;color:var(--mid);margin-left:26px;line-height:1.5}
 .mode .cnt{float:right;font-variant-numeric:tabular-nums;color:var(--amber-dark);font-weight:600;font-size:14px}
 .interim{font-size:14px;color:var(--mid);margin-top:6px;min-height:20px}
+.groups{display:-webkit-box;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-top:6px}
+.chip{display:-webkit-inline-box;display:inline-flex;-webkit-box-align:center;align-items:center;min-height:40px;padding:0 12px;margin:0 8px 8px 0;border:1px solid var(--line);border-radius:20px;background:var(--card);font-size:15px;cursor:pointer}
+.chip.on{border-color:var(--amber-dark);background:var(--amber-soft)}
+.chip input{margin-right:6px;width:16px;height:16px}
+.chip span{color:var(--mid);font-size:13px;margin-left:4px;font-variant-numeric:tabular-nums}
 .psgs{margin-top:10px}
 .psg{font-size:15px;line-height:1.7;padding:10px 12px;background:var(--sub);border-radius:8px;margin-top:8px}
 .psg b{color:var(--amber-dark)}
@@ -109,7 +114,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
 (function () {
   var token = "<?!= token ?>";
   var $ = function (id) { return document.getElementById(id); };
-  var set = null, all = [], qs = [], cur = 0, answers = [], tick = null, t0 = 0, acc = 0, mode = "all", doneKeys = {};
+  var set = null, all = [], qs = [], cur = 0, answers = [], tick = null, t0 = 0, acc = 0, mode = "all", doneKeys = {}, groupsOff = {};
   var EXAM_RANK = { common: 0, intro: 0, core: 1, concept: 2, report: 3, reading: 4, defense: 5, truth: 6, weak: 7, teacher: 8, last: 9 };
   document.addEventListener("touchstart", function () {}, { passive: true });
   function show(id) { ["intro", "qcard", "finish", "thanks"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
@@ -119,21 +124,27 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
   if (!token) { fail("연습 링크에 토큰이 없습니다. 선생님이 주신 QR이나 링크로 다시 들어와 주세요."); return; }
 
   /* ---- 연습 모드: 전체 / 중요 표시만 / 아직 안 한 문항 / 실전 순서 ---- */
+  function inScope(q) { return !groupsOff[q.g || "기타"]; }
   function pick(m) {
-    if (m === "star") return all.filter(function (q) { return q.star; });
-    if (m === "undone") return all.filter(function (q) { return !doneKeys[q.k]; });
+    if (m === "star") return all.filter(function (q) { return q.star && inScope(q); });
+    if (m === "undone") return all.filter(function (q) { return !doneKeys[q.k] && inScope(q); });
     if (m === "exam") {
-      var main = all.filter(function (q) { return !q.follow && q.secKey !== "jesimun"; });
+      var main = all.filter(function (q) { return !q.follow && q.secKey !== "jesimun" && inScope(q); });
       var ranked = main.slice().sort(function (a, b) { return (EXAM_RANK[a.secKey] === undefined ? 5 : EXAM_RANK[a.secKey]) - (EXAM_RANK[b.secKey] === undefined ? 5 : EXAM_RANK[b.secKey]) || (b.star ? 1 : 0) - (a.star ? 1 : 0) || a.n - b.n; });
       var out = [], perSec = {};
       ranked.forEach(function (q) { var c = perSec[q.secKey] || 0; var cap = q.secKey === "core" ? 4 : q.secKey === "common" ? 2 : 1; if (q.star || c < cap) { out.push(q); perSec[q.secKey] = c + 1; } });
       return out.slice(0, 10);
     }
-    return all.slice();
+    return all.filter(inScope);
+  }
+  function groupList() { var g = {}, order = []; all.forEach(function (q) { var k = q.g || "기타"; if (!g[k]) { g[k] = 0; order.push(k); } g[k]++; }); return order.map(function (k) { return { k: k, n: g[k] }; }); }
+  function groupHtml() {
+    var gs = groupList(); if (gs.length < 2) return "";
+    return '<div class="lbl" style="margin-top:14px">범위 <span>(선생님이 준 범위 안에서 다시 고를 수 있어요)</span></div><div class="groups">' + gs.map(function (g) { return '<label class="chip' + (groupsOff[g.k] ? "" : " on") + '"><input type="checkbox" data-g="' + esc(g.k) + '"' + (groupsOff[g.k] ? "" : " checked") + '>' + esc(g.k) + ' <span>' + g.n + '</span></label>'; }).join("") + '</div>';
   }
   function modeHtml() {
     var defs = [
-      ["all", "전체 문항", "선생님이 만든 순서대로", all.length],
+      ["all", "전체 문항", "선생님이 만든 순서대로", pick("all").length],
       ["exam", "실전 순서 10문항", "지원 동기 → 생기부 확인 → 개념·방어 → 약점 → 마지막 말", pick("exam").length],
       ["star", "중요 표시한 문항", "선생님이 별표 친 문항만", pick("star").length],
       ["undone", "아직 연습 안 한 문항", "지난 회차에 답하지 않은 문항부터", pick("undone").length]
@@ -141,9 +152,12 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     return defs.map(function (d) { return '<label class="mode' + (mode === d[0] ? " on" : "") + '"><input type="radio" name="mode" value="' + d[0] + '"' + (mode === d[0] ? " checked" : "") + (d[3] ? "" : " disabled") + '><b>' + d[1] + '</b><span class="cnt">' + d[3] + '문항</span><span class="d">' + d[2] + '</span></label>'; }).join("");
   }
   function renderModes() {
-    $("modes").innerHTML = modeHtml();
-    var inputs = $("modes").querySelectorAll("input");
+    $("modes").innerHTML = groupHtml() + modeHtml();
+    var inputs = $("modes").querySelectorAll("input[name=mode]");
     for (var i = 0; i < inputs.length; i++) inputs[i].onchange = function () { mode = this.value; renderModes(); };
+    var gs = $("modes").querySelectorAll("input[data-g]");
+    for (var j = 0; j < gs.length; j++) gs[j].onchange = function () { if (this.checked) delete groupsOff[this.getAttribute("data-g")]; else groupsOff[this.getAttribute("data-g")] = true; renderModes(); };
+    $("startAll").disabled = !pick(mode).length;
   }
 
   google.script.run.withSuccessHandler(function (r) {
