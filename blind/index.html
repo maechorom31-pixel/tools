@@ -209,6 +209,15 @@ body.print-share .share .qr{width:220px;height:220px;margin:0 auto}
 .qi.star .no::after{content:"★";color:var(--amber);font-size:11px;display:block;line-height:1}
 .qi.del{opacity:.4}
 .qi.del .q textarea{text-decoration:line-through}
+.extras{margin-top:10px}
+.extra{margin-top:8px}
+.extra .lab{font-size:13px;font-weight:600}
+.extra .lab .hint{font-weight:400;margin-left:8px}
+.extra textarea{width:100%;font:inherit;font-size:14px;line-height:1.6;border:1px solid transparent;border-radius:6px;padding:6px 8px;background:var(--sub);resize:vertical;min-height:40px;color:var(--ink)}
+.extra textarea:focus{border-color:var(--amber-dark);background:var(--card);outline:none;box-shadow:0 0 0 3px var(--amber-soft)}
+.qs select[data-pkind]{font:inherit;font-size:13px;min-height:36px;padding:0 8px;border:1px solid #D9D5CE;border-radius:8px;background:var(--card);margin-right:8px}
+body.print-q .extra textarea{border:0;padding:0;background:none;resize:none;overflow:hidden;height:auto}
+body.print-q.mode-examiner .extras{display:none!important}
 .gloss{font-size:14px;line-height:1.6;margin-top:8px}
 .gloss dt{font-weight:600;margin-top:6px}
 .gloss dd{margin:0;color:var(--ink)}
@@ -5814,8 +5823,9 @@ function qsetHtml(st, a) {
   const d = a.qset.data, u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
   const blindRule = `<div class="blindrule student-only print-only">블라인드 면접 규칙: 이름·출신 고교명·고교 유형, 부모의 직업이나 사회경제적 지위를 암시하는 표현은 말하지 않습니다(실격 사유가 될 수 있습니다). 교복·명찰 없이 단정한 사복, 수험표·신분증 지참, 휴대폰은 대학 규정대로. 이 자료는 외우는 자료가 아니라 질문의 '확인 의도'를 준비하는 자료입니다 — 같은 의도의 질문은 표현이 달라도 한 답으로 통합니다.</div>`;
   let h = `<div class="print-only"><h3 style="font-size:18px">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · ${fmtDate(a.date, true)}` : ""}</h3><div class="hint">${esc(adm ? [adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · ") : "")}${adm?.criteria?.length ? " · " + adm.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · <span class="student-only">학생 배부본</span><span class="examiner-only">면접관용</span></div></div>${blindRule}`;
-  h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button><button class="btn main" type="button" data-share="${a.id}">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button></div>`;
+  h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-intro="${a.id}">${a.qset.data.extras?.intro ? "자기소개·마지막 말 다시" : "자기소개·마지막 말 초안"}</button><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button><select data-pkind aria-label="다른 인쇄물"><option value="">다른 인쇄물…</option>${Object.entries(PRINT_KINDS).map(([k, v]) => `<option value="${k}">${esc(v[0])}</option>`).join("")}</select><button class="btn main" type="button" data-share="${a.id}">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button></div>`;
   if (d.axes?.length) h += `<div class="axes"><b>서사 축</b> — ${d.axes.map(x => `<b>${esc(x.title)}</b>: ${esc(x.why)}`).join(" / ")}</div>`;
+  h += extrasHtml(a);
   let n = 0;
   for (const sec of d.sections) {
     h += `<h5>${esc(SECTION_KO[sec.key] || sec.title)}<span class="n">${sec.items.length}</span></h5>`;
@@ -5850,6 +5860,9 @@ function bindQset(st, a) {
   });
   host.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { const sec = d.sections.find(x => x.key === b.dataset.add); sec.items.push({ q: "", intent: "", criterion: "", refs: [], followUps: [], source: "교사", answerHint: "" }); save(); renderApps(); });
   host.querySelectorAll("[data-print]").forEach(b => b.onclick = () => printQset(a.id, b.dataset.print));
+  host.querySelectorAll("[data-pkind]").forEach(sel => sel.onchange = () => { const k = sel.value; sel.value = ""; if (k) printKind(a.id, k); });
+  host.querySelectorAll("[data-intro]").forEach(b => b.onclick = () => genIntro(b.dataset.intro));
+  bindExtras(st, a);
   host.querySelectorAll("[data-share]").forEach(b => b.onclick = () => publishShare(a.id));
 }
 function printQset(appId, mode) {
@@ -5858,6 +5871,159 @@ function printQset(appId, mode) {
   const done = () => { document.body.classList.remove("print-q", "mode-student", "mode-examiner"); art.classList.remove("printing"); window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done); window.print(); setTimeout(done, 3000);
 }
+/* ═══════ 2단계 — 자기소개·마지막 말 초안, 인쇄물(활동 개요 카드·답변 구성 워크시트·전략 카드·모의면접 평가표) ═══════ */
+const INTRO_SCHEMA = { type: "object", properties: {
+  intro: { type: "object", properties: { text: { type: "string" }, structure: { type: "string" }, refs: { type: "array", items: { type: "string" } }, blanks: { type: "array", items: { type: "string" } } }, required: ["text", "structure", "refs", "blanks"] },
+  short: { type: "object", properties: { text: { type: "string" } }, required: ["text"] },
+  last: { type: "object", properties: { text: { type: "string" }, refs: { type: "array", items: { type: "string" } } }, required: ["text", "refs"] },
+  notes: { type: "array", items: { type: "string" } } }, required: ["intro", "short", "last", "notes"] };
+function introPrompt(st, a) {
+  const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
+  const blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const axes = a.qset?.data?.axes?.length ? a.qset.data.axes : st.ai?.axes || [];
+  const tagged = blocks.flatMap(b => b.sents.filter(sn => effTags(st, b, sn).length).map(sn => `[${refId(b, sn.i)}] (${b.grade}학년 ${b.title}) ${sn.t} 〔${effTags(st, b, sn).map(t => TAG_BY[t]?.name).filter(Boolean).join(", ")}〕`));
+  const system = `당신은 한국 고등학교 3학년 담임교사를 돕는 대입 면접 지도 보조입니다. 가린 생기부의 증거 문장과 서사 축으로 학생의 '1분 자기소개'와 '마지막으로 하고 싶은 말' 초안을 만듭니다. 이 초안은 외울 문장이 아니라 구조 예시입니다.
+규칙:
+1. 자기소개는 서류 요약이 아니라 도입입니다. 생기부 문장을 그대로 읽지 않고, 서사 축 하나를 '궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점' 순서로 잇습니다. 첫 문장은 결론(어떤 학생인지 한 문장)입니다.
+2. 길이: intro는 1분(450~500자) 상한, short는 20~30초(150~200자), last는 15초(70~100자). 마지막 말은 새 이야기가 아니라 앞에서 말한 활동이 모이는 자리이며, "그 뒤로 ~합니다"처럼 지금의 습관으로 닫습니다.
+3. 장면·대화·숫자는 생기부에 있는 것만 씁니다. 없으면 본문에 〔장면: 무엇을 적을지〕 빈칸으로 두고 blanks에 그 빈칸이 무엇인지 적습니다. 지어 넣지 않습니다.
+4. 역할·성과 서술어는 생기부와 같은 수위("참여함"을 "주도함"으로 올리지 않음). 숫자는 가장 의외인 것 하나만.
+5. 블라인드: 이름·학교명·고교 유형·부모 직업·사회경제적 지위를 암시하는 표현을 넣지 않습니다. 학과 인재상 문구를 그대로 읊지 않습니다.
+6. 말투는 "~했습니다/~합니다" 하십시오체, 한 문장 30자 안팎. structure에는 문장별 역할(결론/궁금증/한 일/달라진 것/연결)을 한 줄로 적습니다. refs에 근거 문장 번호(대괄호 안 값 그대로)를 적습니다. notes에는 확인이 필요한 것("확인 필요: …")을 적습니다. 출력은 JSON만, 한국어.`;
+  const user = `# 지원\n${u ? u.name : a.univText} · ${adm ? adm.name : a.admText || ""} · ${a.unit || ""}${a.major ? `\n전공 관련 과목(교사 지정): ${a.major}` : ""}${a.profile ? `\n교사 메모: ${a.profile}` : ""}
+# 서사 축\n${axes.map(x => `- ${x.title}: ${x.why} [${(x.refs || []).join(", ")}]`).join("\n") || "(없음 — 증거 문장에서 고르세요)"}
+${st.ai?.summary ? `# 1차 분석 요약\n${st.ai.summary}\n` : ""}# 증거 문장 (문장 번호 · 태그)\n${tagged.join("\n") || recordText(st, blocks).slice(0, 12000)}`;
+  return { system, user };
+}
+async function genIntro(appId) {
+  const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a?.qset) return;
+  const msg = $(`genMsg-${appId}`);
+  if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
+  const ex = a.qset.data.extras;
+  if (ex?.intro && !confirm("이미 만든 자기소개·마지막 말 초안이 있습니다. 새로 만들면 고친 내용까지 바뀝니다. 계속할까요?")) return;
+  msg.textContent = `${AI.model}로 자기소개·마지막 말 초안을 만드는 중…`;
+  try {
+    const { system, user } = introPrompt(st, a);
+    const d = await callAI(system, user, INTRO_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `자기소개·마지막 말 초안 만드는 중… ${n.toLocaleString()}자 받음`; });
+    a.qset.data.extras = { ...(a.qset.data.extras || {}), intro: d.intro, short: d.short, last: d.last, introNotes: d.notes || [], introAt: new Date().toISOString(), introModel: AI.model };
+    await dbPut(st); renderApps();
+    $(`genMsg-${appId}`).textContent = `자기소개·마지막 말 초안을 만들었습니다 — 구조 예시이니 학생 말로 고쳐 쓰게 하세요${d.intro.blanks?.length ? ` (채울 빈칸 ${d.intro.blanks.length}개)` : ""}.`;
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
+}
+function extrasHtml(a) {
+  const ex = a.qset?.data?.extras; if (!ex?.intro) return "";
+  const box = (k, label, sub, t) => `<div class="extra" data-x="${k}"><div class="lab">${label}<span class="hint">${sub}</span></div><textarea data-xf="${k}" rows="2">${esc(t)}</textarea></div>`;
+  return `<div class="extras"><h5>자기소개 · 마지막 말<span class="n">구조 예시 · ${esc(ex.introModel || "")} · 눌러서 고치기</span></h5>
+    ${box("intro", "1분 자기소개", ex.intro.structure ? "구조: " + esc(ex.intro.structure) : "", ex.intro.text)}
+    ${box("short", "짧은 자기소개 (20~30초)", "", ex.short?.text || "")}
+    ${box("last", "마지막으로 하고 싶은 말 (15초)", "", ex.last?.text || "")}
+    ${ex.intro.blanks?.length ? `<p class="hint">채울 빈칸: ${ex.intro.blanks.map(esc).join(" / ")}</p>` : ""}${ex.introNotes?.length ? `<p class="hint">${ex.introNotes.map(esc).join(" / ")}</p>` : ""}</div>`;
+}
+function bindExtras(st, a) {
+  const host = $(`qs-${a.id}`), ex = a.qset?.data?.extras; if (!host || !ex) return;
+  host.querySelectorAll("textarea[data-xf]").forEach(ta => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; ex[ta.dataset.xf] = { ...(ex[ta.dataset.xf] || {}), text: ta.value }; dbPut(st); }); });
+}
+
+/* ---------- 인쇄물: 별도 문서를 숨은 iframe에 그려 인쇄 (허브 화면과 섞이지 않게) ---------- */
+const PRINT_CSS = `@page{size:A4;margin:16mm 15mm}*{box-sizing:border-box}body{margin:0;font:11.5pt/1.6 Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#1F1F1C;word-break:keep-all}
+h1{font-size:16pt;margin:0 0 2pt;font-weight:700}h2{font-size:12.5pt;margin:14pt 0 6pt;font-weight:700}h3{font-size:11.5pt;margin:10pt 0 4pt;font-weight:700}
+.meta{font-size:9.5pt;color:#6B6B6B;margin-bottom:10pt}.rule{font-size:9.5pt;line-height:1.6;border:1px solid #E8E6E2;padding:7pt 9pt;margin:8pt 0 12pt}
+.card{border:1px solid #D9D5CE;border-radius:4pt;padding:9pt 11pt;margin:0 0 10pt;page-break-inside:avoid}.card .t{font-weight:700;font-size:11.5pt}.card .t .no{color:#B45309;margin-right:6pt}
+.ev{font-size:10pt;color:#333;border-left:2pt solid #FCD68A;padding-left:7pt;margin:5pt 0}.ev .tg{color:#B45309;font-size:9pt;margin-left:4pt}
+table{width:100%;border-collapse:collapse;font-size:10pt}th,td{border:1px solid #D9D5CE;padding:4pt 6pt;vertical-align:top;text-align:left}th{background:#F3F1ED;font-weight:600;font-size:9.5pt}
+.cells{display:grid;grid-template-columns:1fr 1fr;gap:6pt;margin-top:6pt}.cell{border:1px solid #E8E6E2;min-height:52pt;padding:4pt 6pt;font-size:9.5pt;color:#6B6B6B}.cell.w{grid-column:1/3;min-height:40pt}
+.line{border-bottom:1px dashed #BBB;height:20pt}.kw{font-size:9.5pt;color:#6B6B6B;margin-top:5pt}
+.q{page-break-inside:avoid;margin:0 0 12pt}.q .qt{font-weight:600}.q .qt .no{color:#B45309;margin-right:6pt}.q .it{font-size:9.5pt;color:#6B6B6B}
+.step{display:grid;grid-template-columns:62pt 1fr;gap:4pt 8pt;margin-top:5pt;font-size:10pt}.step b{font-weight:600;color:#B45309}.step .l{border-bottom:1px dashed #BBB;min-height:20pt}.step .tpl{font-size:9pt;color:#6B6B6B;grid-column:2}
+.box5{display:inline-block;width:9.5pt;height:9.5pt;border:1px solid #888;margin:0 0.5pt;vertical-align:middle}td.sc{white-space:nowrap;text-align:center}.small{font-size:9.5pt;color:#6B6B6B}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12pt}.two>div{page-break-inside:avoid}ul{margin:4pt 0 0 16pt;padding:0}li{margin:2pt 0}.amber{color:#B45309;font-weight:600}
+.foot{font-size:8.5pt;color:#999;margin-top:14pt;border-top:1px solid #E8E6E2;padding-top:4pt}`;
+function printDoc(title, body) {
+  const fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0";
+  fr.srcdoc = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${PRINT_CSS}</style></head><body>${body}<div class="foot">생기부 블라인드 · 면접 준비 — 개인정보를 가린 생기부로 만든 자료 · ${esc(title)}</div></body></html>`;
+  document.body.appendChild(fr);
+  fr.onload = () => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } finally { setTimeout(() => fr.remove(), 60000); } };
+  return fr;
+}
+const BLIND_RULE_TXT = "블라인드 면접 규칙: 이름·출신 고교명·고교 유형, 부모의 직업이나 사회경제적 지위를 암시하는 표현은 말하지 않습니다(실격 사유가 될 수 있습니다). 교복·명찰 없이 단정한 사복, 수험표·신분증 지참, 휴대폰은 대학 규정대로.";
+function docHead(st, a, kind, who) {
+  const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
+  return `<h1>${esc(kind)}</h1><div class="meta">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · 면접 ${fmtDate(a.date, true)} (${ddayText(dday(a.date))})` : ""}${adm ? ` · ${esc([adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · "))}` : ""}${adm?.criteria?.length ? " · " + adm.criteria.map(c => esc(c.name) + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · ${who}</div>`;
+}
+/* 질문 세트의 본 질문(지운 것·빈 것 제외) — 섹션 순서대로 */
+function mainItems(a, keys) {
+  const out = []; let n = 0;
+  for (const sec of a.qset?.data?.sections || []) { if (keys && !keys.includes(sec.key)) continue; for (const it of sec.items) { if (it.deleted || !(it.q || "").trim()) continue; out.push({ n: ++n, sec: sec.key, secName: SECTION_KO[sec.key] || sec.title, it }); } }
+  return out;
+}
+/* 태그가 붙은 문장이 있는 기록 단위 → 활동 개요 카드 재료 */
+function activityUnits(st, a) {
+  const blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const resolve = refResolver(blocks), byRef = {}; for (const b of blocks) for (const sn of b.sents) byRef[refId(b, sn.i)] = b;
+  const units = [];
+  for (const b of blocks) {
+    const ev = b.sents.filter(sn => effTags(st, b, sn).length).map(sn => ({ t: sn.t, tags: effTags(st, b, sn).map(t => TAG_BY[t]?.name).filter(Boolean), id: refId(b, sn.i) }));
+    if (!ev.length) continue;
+    units.push({ b, ev, score: ev.length, qs: [] });
+  }
+  const axes = a.qset?.data?.axes?.length ? a.qset.data.axes : st.ai?.axes || [];
+  for (const x of axes) for (const r of x.refs || []) { const id = resolve(r), b = id && byRef[id]; const u = b && units.find(u => u.b === b); if (u) u.score += 3; }
+  for (const { it } of mainItems(a)) for (const r of it.refs || []) { const id = resolve(r), b = id && byRef[id]; const u = b && units.find(u => u.b === b); if (u && !u.qs.includes(it.q)) u.qs.push(it.q); }
+  return units.sort((p, q) => q.score - p.score || p.b.grade - q.b.grade).slice(0, 8);
+}
+function printCards(st, a) {
+  const units = activityUnits(st, a);
+  if (!units.length) { alert("태그가 붙은 문장이 없습니다. 형광펜을 칠하거나 ‘AI로 읽기’를 먼저 하세요."); return; }
+  const body = docHead(st, a, "활동 개요 카드", "학생용 — 활동마다 한 장, 스스로 채우는 카드") + `<div class="rule">${BLIND_RULE_TXT} 생기부 숙지는 지금 다시 탐구하는 것이 아니라 그때 상황을 생생히 기억해 내는 것입니다. 기록과 기억이 다르거나 기억이 나지 않는 활동은 과장해 메우지 말고 답변 재료에서 뺍니다. 카드 하나가 30~40초 핵심 답변 하나와 꼬리질문 2~3개의 재료가 됩니다.</div>` +
+    units.map((u, i) => `<div class="card"><div class="t"><span class="no">${i + 1}</span>${u.b.grade}학년 ${esc(u.b.title)}${u.b.hope ? ` <span class="small">희망분야 ${esc(u.b.hope)}</span>` : ""}</div>
+      ${u.ev.map(e => `<div class="ev">${esc(e.t)}<span class="tg">${e.tags.join(" · ")}</span></div>`).join("")}
+      <div class="cells"><div class="cell">동기 — 왜 시작했나</div><div class="cell">내용·과정 — 무엇을 어떻게</div><div class="cell">역할 — 내가 맡은 것(직책이 아니라 실제 한 일)</div><div class="cell">결과 — 전후 차이로</div><div class="cell">배운 점 — 그 뒤로 지금 하는 것</div><div class="cell">전공·진로 연결</div></div>
+      ${u.qs.length ? `<div class="kw"><span class="amber">예상 질문</span> ${u.qs.slice(0, 4).map(esc).join(" / ")}</div>` : `<div class="kw"><span class="amber">예상 질문 키워드</span> 그때 무슨 일이 있었나 / 왜 그 방법이었나 / 다시 한다면 / 지금은</div>`}</div>`).join("");
+  printDoc(`활동 개요 카드 · ${st.alias}`, body);
+}
+const FIRST_LINES = [["질문을 못 알아들었을 때", "“질문을 ~로 이해했는데 맞을까요?”"], ["정리할 시간이 필요할 때", "“잠시 정리하고 말씀드리겠습니다.”"], ["생기부에 적힌 개념인데 정의가 흐릿할 때", "“정확한 정의는 흐릿하지만, 제가 확인한 범위는 ~까지입니다.”"], ["생기부 밖 지식을 물었을 때", "“그 부분은 정확히 알지 못합니다. 다만 관련해 ~는 ~라고 생각합니다.”"], ["과장이 드러났을 때", "“제가 과하게 말씀드렸습니다. 정확히는 ~를 맡았습니다.”"], ["종료 신호가 울렸을 때", "“마지막으로 한 문장만 말씀드리겠습니다. ~”"], ["정말 모르거나 기억나지 않을 때", "“죄송합니다. 잘 기억이 나지 않습니다.”"]];
+function printWorksheet(st, a) {
+  const items = mainItems(a, ["core", "report", "reading", "weak", "common", "teacher"]).slice(0, 12);
+  if (!items.length) { alert("워크시트로 만들 질문이 없습니다."); return; }
+  const tpl = { core: "저는 ~할 때 ~이 궁금해 ~를 해 봤습니다.", report: "~를 알아보려고 ~를 ~로 조사했습니다.", reading: "~을 읽고 ~라는 부분에서 ~를 생각했습니다.", weak: "~이 안 됐습니다. 그래서 ~를 바꿨습니다.", common: "저는 ~한 학생입니다. ~를 하면서 ~를 알게 됐습니다.", teacher: "그때 ~했습니다. 정확히는 ~를 맡았습니다." };
+  const body = docHead(st, a, "답변 구성 워크시트", "학생용 — 한 질문에 네 칸, 결론을 첫 문장에") + `<div class="rule">한 답변의 뼈대는 결론·장면·변화 세 문장입니다. 결론을 첫 문장에 두고, 장면은 하나만, 마지막은 "그 뒤로 ~합니다"처럼 지금의 습관으로 닫습니다. 숫자는 가장 의외인 것 하나만. 어떤 답변도 1분(450~500자)을 넘기지 않습니다. 모범 답변을 외우지 말고 구조만 가져가 자기 말로 말합니다.</div>` +
+    items.map(({ n, it, sec, secName }) => `<div class="q"><div class="qt"><span class="no">${n}</span>${esc(it.q)}</div><div class="it">${esc(secName)}${it.intent ? ` · 확인 의도: ${esc(it.intent)}` : ""}${it.answerHint ? ` · 흐름: ${esc(it.answerHint)}` : ""}</div>
+      <div class="step"><b>결론</b><div class="l"></div><b>경험·장면</b><div><div class="l"></div><div class="l"></div></div><b>배운 점·변화</b><div class="l"></div><b>전공 연결</b><div class="l"></div><div class="tpl">첫 문장 틀: ${esc(tpl[sec] || tpl.core)}</div></div></div>`).join("");
+  printDoc(`답변 구성 워크시트 · ${st.alias}`, body);
+}
+function printScoreSheet(st, a) {
+  const items = mainItems(a).filter(x => x.sec !== "teacher" || true).slice(0, 14);
+  if (!items.length) { alert("평가표로 만들 질문이 없습니다."); return; }
+  const five = `<span class="box5"></span><span class="box5"></span><span class="box5"></span><span class="box5"></span><span class="box5"></span>`;
+  const body = docHead(st, a, "모의면접 평가표", "교사용 — 문항별 4축 5단계, 메모는 면접관 평가표 메모 추정 한 줄") + `<p class="small">4축: 두괄식(주장→이유→근거, 1분 안) / 생기부 실증(하나를 깊게, 본인 역할, 전후 차이) / 서사(1·2·3학년 연결, 학과 선택의 필연성) / 전달·태도(외운 티, 용어 풀어 말하기, 질문 의도). 왼쪽 상자가 낮음, 오른쪽이 높음. 점수는 추정이며 합격·불합격을 판단하지 않습니다.</p>
+    <table><thead><tr><th style="width:4%">#</th><th>질문</th><th style="width:12%">두괄식</th><th style="width:12%">실증</th><th style="width:12%">서사</th><th style="width:12%">전달</th><th style="width:20%">평가표 메모(추정)</th></tr></thead><tbody>${items.map(({ n, it, secName }) => `<tr><td>${n}</td><td>${esc(it.q)}<div class="small">${esc(secName)}</div></td><td class="sc">${five}</td><td class="sc">${five}</td><td class="sc">${five}</td><td class="sc">${five}</td><td></td></tr>`).join("")}</tbody></table>
+    <h2>태도·전달 점검 (관찰된 것만 표시)</h2><table><tbody>${[["입실·착석 전 인사", "목소리 크기", "시선(질문한 면접관 6 : 나머지 4)"], ["질문 직후 2~3초 정리하고 시작", "하십시오체 유지·추임새(어, 음, 그게)", "말끝을 분명히 맺음"], ["한 문장 30자 안팎", "답변 길이 1분 안", "준비 안 된 질문에 아는 활동으로 연결"], ["질문 의도 확인", "마지막 말 마무리", "퇴장 태도"]].map(r => `<tr>${r.map(c => `<td><span class="box5"></span> ${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    <h2>종합 — 다음 연습까지 세 가지</h2><div class="line"></div><div class="line"></div><div class="line"></div>
+    <p class="small">오류 영역: 질문 이해 / 논리 구조 / 내용 깊이 / 태도·표현 / 시간 관리 / 일관성 — 회차마다 한 줄씩 적어 반복되는 패턴을 봅니다.</p>`;
+  printDoc(`모의면접 평가표 · ${st.alias}`, body);
+}
+function printStrategy(st, a) {
+  const d = a.qset?.data, blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const axes = d?.axes?.length ? d.axes : st.ai?.axes || [];
+  const L = autoLists(st, blocks);
+  const cnt = {}; for (const b of blocks) for (const sn of b.sents) for (const t of effTags(st, b, sn)) cnt[t] = (cnt[t] || 0) + 1;
+  const strengths = Object.entries(cnt).sort((p, q) => q[1] - p[1]).slice(0, 4).map(([t, n]) => `${TAG_BY[t]?.g} · ${TAG_BY[t]?.name} (${n}문장)`);
+  const defense = mainItems(a, ["defense", "weak", "truth"]).slice(0, 6);
+  const n = a.date ? dday(a.date) : null;
+  const plan = [["D-14 이전", "빨강(설명할 자신이 없는 곳) 해결과 장면·변화 채우기. 같은 답을 세 번 녹음해 듣기(1회 그냥 / 2회 결론을 첫 문장에 / 3회 문장 끝마다 한 박자)."], ["D-7", "고치기로 한 세 가지가 고쳐졌는지 녹음으로 확인. 마지막 말 15초 완성. 막혔을 때 쓰는 첫 문장 7종 암기. 당일 체크리스트."], ["D-3 이내", "새 공부를 시작하지 않습니다. 빨강만 다시 보고 첫 문장·결론 문장을 소리 내어 확인합니다."]];
+  const body = docHead(st, a, "면접 전략 카드", "학생·교사 공용 — 한 장") + `<div class="rule">${BLIND_RULE_TXT}</div>
+    <div class="two"><div><h2>서사 축 — 면접 전체를 꿰는 활동</h2>${axes.length ? `<ul>${axes.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.why)}</li>`).join("")}</ul>` : `<p class="small">아직 없음 — ‘AI로 읽기’나 ‘예상 질문 만들기’ 뒤에 채워집니다.</p>`}
+      ${st.ai?.summary ? `<p class="small">${esc(st.ai.summary)}</p>` : ""}
+      <h2>내세울 강점 (증거 문장이 많은 항목)</h2>${strengths.length ? `<ul>${strengths.map(s => `<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="small">형광펜을 칠하면 채워집니다.</p>`}
+      <h2>개념·용어 — 물으면 자기 말로</h2><p class="small">${(d?.glossary || []).slice(0, 10).map(g => esc(g.term)).join(" · ") || L.concepts.slice(0, 10).map(x => esc(x.w)).join(" · ") || "—"}</p></div>
+    <div><h2>파고들 수 있는 약점과 방어</h2>${L.weak.length ? `<ul>${L.weak.slice(0, 5).map(x => `<li>${esc(x.w.slice(0, 70))}</li>`).join("")}</ul>` : ""}${defense.length ? `<ul>${defense.map(({ it }) => `<li>${esc(it.q)}${it.answerHint ? ` <span class="small">— ${esc(it.answerHint)}</span>` : ""}</li>`).join("")}</ul>` : `<p class="small">방어·약점 질문이 아직 없습니다.</p>`}
+      <h2>면접일까지 우선순위${n !== null ? ` (${ddayText(n)})` : ""}</h2><ul>${plan.map(([k, v]) => `<li><b>${k}</b> — ${esc(v)}</li>`).join("")}</ul></div></div>
+    <h2>막혔을 때 쓰는 첫 문장 7종 (외워 두는 유일한 문장)</h2><table><tbody>${FIRST_LINES.map(([k, v]) => `<tr><td style="width:36%">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table>`;
+  printDoc(`면접 전략 카드 · ${st.alias}`, body);
+}
+const PRINT_KINDS = { cards: ["활동 개요 카드 (학생용)", printCards], worksheet: ["답변 구성 워크시트 (학생용)", printWorksheet], strategy: ["면접 전략 카드 (학생·교사)", printStrategy], score: ["모의면접 평가표 (교사용)", printScoreSheet] };
+function printKind(appId, kind) { const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a || !PRINT_KINDS[kind]) return; PRINT_KINDS[kind][1](st, a); }
+
 aiLoad();
 
 
@@ -5892,12 +6058,15 @@ const newToken = () => { const a = new Uint8Array(24); crypto.getRandomValues(a)
 /* 질문 세트 → 학생용 질문 목록 (지운 것·빈 것 제외, 꼬리질문은 뒤따르는 항목으로) */
 function studentQuestions(a) {
   const out = []; let n = 0;
+  const ex = a.qset.data.extras;
+  if (ex?.intro?.text) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
   for (const sec of a.qset.data.sections) sec.items.forEach((it, i) => {
     if (it.deleted || !(it.q || "").trim()) return;
     const base = { section: SECTION_KO[sec.key] || sec.title, secKey: sec.key, star: !!it.star, teacher: sec.key === "teacher" };
     out.push({ ...base, k: `${sec.key}:${i}`, n: ++n, q: it.q.trim(), intent: it.intent || "", hint: it.answerHint || "" });
     (it.followUps || []).forEach((f, j) => { if ((f || "").trim()) out.push({ ...base, k: `${sec.key}:${i}f${j}`, n: ++n, q: "↳ " + f.trim(), intent: it.intent || "", hint: "" }); });
   });
+  if (ex?.last?.text) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
   return out;
 }
 async function publishShare(appId) {
@@ -6212,7 +6381,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
