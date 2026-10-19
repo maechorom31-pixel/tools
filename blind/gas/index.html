@@ -115,7 +115,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
   var token = "<?!= token ?>";
   var $ = function (id) { return document.getElementById(id); };
   var set = null, all = [], qs = [], cur = 0, answers = [], tick = null, t0 = 0, acc = 0, mode = "all", doneKeys = {}, groupsOff = {};
-  var EXAM_RANK = { common: 0, intro: 0, core: 1, concept: 2, report: 3, reading: 4, defense: 5, truth: 6, weak: 7, teacher: 8, last: 9 };
+  var EXAM_RANK = { common: 0, intro: 0, core: 1, concept: 2, glossary: 2, report: 3, reading: 4, defense: 5, truth: 6, weak: 7, teacher: 8, last: 9 };
   document.addEventListener("touchstart", function () {}, { passive: true });
   function show(id) { ["intro", "qcard", "finish", "thanks"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
   function fmt(s) { var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
@@ -129,7 +129,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     if (m === "star") return all.filter(function (q) { return q.star && inScope(q); });
     if (m === "undone") return all.filter(function (q) { return !doneKeys[q.k] && inScope(q); });
     if (m === "exam") {
-      var main = all.filter(function (q) { return !q.follow && q.secKey !== "jesimun" && inScope(q); });
+      var main = all.filter(function (q) { return !q.follow && q.secKey !== "jesimun" && q.secKey !== "glossary" && inScope(q); });
       var ranked = main.slice().sort(function (a, b) { return (EXAM_RANK[a.secKey] === undefined ? 5 : EXAM_RANK[a.secKey]) - (EXAM_RANK[b.secKey] === undefined ? 5 : EXAM_RANK[b.secKey]) || (b.star ? 1 : 0) - (a.star ? 1 : 0) || a.n - b.n; });
       var out = [], perSec = {};
       ranked.forEach(function (q) { var c = perSec[q.secKey] || 0; var cap = q.secKey === "core" ? 4 : q.secKey === "common" ? 2 : 1; if (q.star || c < cap) { out.push(q); perSec[q.secKey] = c + 1; } });
@@ -233,7 +233,8 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     if (q.passages && q.passages.length) { $("psgs").hidden = false; $("psgs").innerHTML = q.passages.map(function (p) { return '<div class="psg"><b>(' + esc(p.label) + ')</b> ' + esc(p.text) + '</div>'; }).join(""); }
     else { $("psgs").hidden = true; $("psgs").innerHTML = ""; }
     var lim = limitOf(q);
-    $("intent").innerHTML = (q.passages ? "<b>준비 시간</b> " + q.prep + "분 — 문항을 먼저 읽고 제시문에서 정의·예시·한계 문장을 찾습니다. " : "<b>확인 의도</b> ") + esc(q.intent || "") + (q.hint ? "<br><b>답의 흐름</b> " + esc(q.hint) : "") + (q.answerMin && !q.passages ? "<br><b>답변 시간</b> " + q.answerMin + "분" : "");
+    $("intent").innerHTML = (q.passages ? "<b>준비 시간</b> " + q.prep + "분 — 문항을 먼저 읽고 제시문에서 정의·예시·한계 문장을 찾습니다. " : "<b>확인 의도</b> ") + esc(q.intent || "") + (q.hint ? (q.reveal ? '<br><button class="btn sm" id="reveal" type="button">뜻 보기</button><span id="revealT" hidden><b>뜻</b> ' + esc(q.hint) + "</span>" : "<br><b>답의 흐름</b> " + esc(q.hint)) : "") + (q.answerMin && !q.passages ? "<br><b>답변 시간</b> " + q.answerMin + "분" : "");
+    if (q.reveal && q.hint) $("reveal").onclick = function () { $("revealT").hidden = false; $("reveal").hidden = true; };
     $("qcard").querySelector(".timer .hint").innerHTML = q.passages ? "‘시작’을 누르고 제시문을 읽으며 메모하세요.<br>" + q.prep + "분이 넘으면 색이 바뀝니다." : "‘시작’을 누르고 소리 내어 답해 보세요.<br>" + (lim === 60 ? "1분" : Math.round(lim / 60) + "분") + "이 넘으면 색이 바뀝니다.";
     var s = acc; $("timer").textContent = fmt(s); $("timer").className = "t" + (s > lim ? " over" : "");
     $("ans").value = a.answer;
