@@ -5681,12 +5681,13 @@ async function callAI(system, user, schema, maxTokens = CLAUDE_MAX_OUT, onProgre
   const cap = AI.caps?.[AI.model]; if (cap && maxTokens > cap) maxTokens = cap;
   const body = { model: AI.model, max_tokens: maxTokens, stream: true, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
   const post = () => fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
+  AI.lastWarn = "";
   let r = await post();
   for (let tries = 0; r.status === 400 && tries < 2; tries++) {
     const t = await r.text();
     const mt = t.match(/max_tokens[^0-9]{0,40}(\d{4,6})[^0-9]{1,30}(\d{4,6})/);   // "max_tokens: 128000 > 64000, which is the maximum allowed"
     if (mt) { const lim = Math.min(+mt[1], +mt[2]); body.max_tokens = lim; AI.caps[AI.model] = lim; r = await post(); continue; }
-    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await post(); continue; }   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
+    if (/output_config|format|effort/.test(t)) { AI.lastWarn = `이 모델이 구조화 출력을 받지 않아 자유 JSON으로 받았습니다(${t.replace(/\s+/g, " ").slice(0, 140)}). 틀이 달라도 적응해 읽습니다.`; delete body.output_config; r = await post(); continue; }   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
     throw new Error(`Anthropic 응답 400: ${t.slice(0, 300)}`);
   }
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`Anthropic 응답 ${r.status}: ${j.error?.message || ""}`); }
@@ -5864,14 +5865,16 @@ async function generateQuestions(appId) {
   try {
     const bank = await loadBank();
     const { system, user } = buildPrompt(st, app, bank);
-    const raw = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
+    let raw;
+    try { raw = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; }); }
+    catch (e) { const salvage = AI.lastText && pluckJson(AI.lastText); if (!salvage || typeof salvage !== "object") throw e; raw = salvage; }   // 틀은 달라도 JSON이면 적응기로 읽는다
     const fresh = normalizeQset(raw);
     const { data, kept } = mergeQset(st, app, fresh, onKeys, partial);
     app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data, scopeKeys: onKeys };
     await dbPut(st);   // 그리기에서 무슨 일이 나도 받은 응답은 남는다
     const count = fresh.sections.reduce((n, s) => n + s.items.length, 0);
     try { renderApps(); } catch (e2) { console.error(e2); msg.textContent = `저장은 했지만 화면을 그리지 못했습니다 (${e2?.message || e2}). 새로 고침해 보세요.`; return; }
-    $(`genMsg-${appId}`).textContent = `만들었습니다 — 새 질문 ${count}개${kept ? ` (이전 것 ${kept}개는 그대로 둠)` : ""}. 문장을 눌러 바로 고칠 수 있습니다.`;
+    $(`genMsg-${appId}`).textContent = `만들었습니다 — 새 질문 ${count}개${kept ? ` (이전 것 ${kept}개는 그대로 둠)` : ""}. 문장을 눌러 바로 고칠 수 있습니다.${AI.lastWarn ? ` ※ ${AI.lastWarn}` : ""}`;
   } catch (e) {
     console.error(e);
     msg.textContent = "오류: " + (e?.message || e) + (AI.lastText ? " — 받은 응답은 ‘프롬프트 꾸러미’의 ‘마지막 AI 응답 들여오기’로 다시 읽을 수 있습니다." : "");
@@ -5881,7 +5884,33 @@ async function generateQuestions(appId) {
 /* 응답 모양을 바로잡는다 — 섹션에 items가 없거나 문자열이 배열 자리에 오는 것처럼, 모델이 조금 다르게 돌려줘도 화면이 터지지 않게 */
 const strOf = v => v == null ? "" : typeof v === "string" ? v : typeof v === "object" ? (v.text || v.q || JSON.stringify(v)) : String(v);
 const arrOf = v => Array.isArray(v) ? v : v == null || v === "" ? [] : typeof v === "object" ? Object.values(v) : [v];
+/* 모델이 자기 틀(meta·활동별 체인·step/question/intentType 등)로 돌려줘도 질문을 찾아 섹션으로 옮긴다 */
+const SEC_HINT = [[/^core$|chain|서사|핵심|활동|narrative/i, "core"], [/concept|개념|용어/i, "concept"], [/defen|방어/i, "defense"], [/truth|진위|verif|authentic/i, "truth"], [/report|탐구|보고|research/i, "report"], [/read|독서|book/i, "reading"], [/weak|약점|공백|gap/i, "weak"], [/common|공통|general|motiv|지원/i, "common"], [/teacher|선생님/i, "teacher"]];
+const secHint = str => { for (const [re, k] of SEC_HINT) if (re.test(str)) return k; return null; };
+function adaptQset(raw) {
+  if (raw && typeof raw === "object" && Array.isArray(raw.sections) && raw.sections.some(sec => sec && (Array.isArray(sec.items) || Array.isArray(sec.questions)))) return raw;
+  const found = {}; const push = (k, it) => (found[k] = found[k] || []).push(it);
+  const walk = (node, path) => {
+    if (Array.isArray(node)) { node.forEach(x => walk(x, path)); return; }
+    if (!node || typeof node !== "object") return;
+    const q = node.q ?? node.question ?? node.prompt;
+    if (typeof q === "string" && q.trim()) {
+      const self = [node.section, node.sectionKey, node.key, node.type, node.category, node.kind].filter(x => typeof x === "string").join(" ");
+      const k = secHint(self) || secHint(path.slice().reverse().join(" ")) || (arrOf(node.refs).length ? "core" : "common");
+      const subs = arrOf(node.followUps ?? node.followups ?? node.follow_ups ?? node.steps ?? node.chain);
+      push(k, { q, intent: [...new Set([node.intent, node.step, node.intentType, node.stage].filter(x => typeof x === "string" && x.trim()).map(x => x.trim()))].join(" · "), criterion: node.criterion, refs: node.refs, followUps: subs.map(x => typeof x === "string" ? x : strOf(x?.q ?? x?.question ?? "")).filter(Boolean), source: node.source, answerHint: node.answerHint ?? node.hint ?? node.answerDirection, star: !!node.star });
+      subs.forEach(x => { if (x && typeof x === "object" && arrOf(x.refs).length) walk(x, path.concat("chain")); });   // 근거가 따로 있는 꼬리는 제 질문으로도 둔다
+      return;
+    }
+    for (const [key, v] of Object.entries(node)) if (v && typeof v === "object") walk(v, path.concat(key));
+  };
+  walk(raw, []);
+  const d = raw && typeof raw === "object" ? raw : {};
+  const sections = Object.entries(found).map(([key, items]) => ({ key, title: SECTION_KO[key] || key, items: items.filter((it, i, arr) => arr.findIndex(x => x.q === it.q) === i) }));
+  return { axes: d.axes ?? d.narrativeAxes ?? d.storylines ?? d.meta?.axes ?? [], sections, glossary: d.glossary ?? d.concepts ?? d.terms ?? d.conceptDictionary ?? [], notes: d.notes ?? d.checks ?? d.toVerify ?? [] };
+}
 function normalizeQset(raw) {
+  raw = adaptQset(raw);
   const d = raw && typeof raw === "object" ? raw : {};
   const secs = arrOf(d.sections).map((sec, i) => {
     const o = sec && typeof sec === "object" ? sec : { items: arrOf(sec) };
@@ -6614,7 +6643,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
