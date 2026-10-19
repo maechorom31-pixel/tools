@@ -159,6 +159,12 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     if (fresh) { $("teacherNew").hidden = false; $("teacherNew").innerHTML = "선생님이 지난 답변을 보고 남긴 질문이 <b>" + fresh + "</b>개 있습니다. 문항 머리에 ‘선생님 질문’이라고 표시됩니다."; }
     if (r.nextRound > 1 && pick("undone").length && pick("undone").length < all.length) mode = "undone";
     renderModes();
+    var draft = loadDraft();
+    if (draft) {
+      var done = draft.answers.filter(function (a) { return (a.answer || "").replace(/\s/g, "") || a.seconds > 0; }).length;
+      if (done) { $("teacherNew").hidden = false; $("teacherNew").innerHTML += (($("teacherNew").innerHTML ? "<br>" : "") + "제출하지 않은 연습 기록이 있습니다(" + done + "문항). <button class=\"btn sm\" id=\"resume\" type=\"button\">이어서 하기</button>"); $("resume").onclick = function () { mode = draft.mode || "all"; qs = pick(mode); if (!qs.length) qs = all.slice(); answers = qs.map(function (q) { var o = null; for (var i = 0; i < draft.answers.length; i++) if (draft.answers[i].k === q.k) o = draft.answers[i]; return { k: q.k, n: q.n, section: q.section, q: q.q, answer: o ? o.answer : "", seconds: o ? o.seconds : 0 }; }); cur = Math.min(draft.cur || 0, qs.length - 1); acc = answers[cur].seconds || 0; render(); show("qcard"); }; }
+      else dropDraft();
+    }
     show("intro");
   }).withFailureHandler(function (e) { fail((e && e.message) || "서버에 닿지 못했습니다. 잠시 뒤 다시 열어 주세요."); }).getSet(token);
 
@@ -220,8 +226,12 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     $("prev").disabled = cur === 0;
     $("next").textContent = cur === qs.length - 1 ? "마치기" : "다음";
   }
-  function save() { answers[cur].answer = $("ans").value; answers[cur].seconds = acc; }
-  function go(i) { save(); stopTimer(); stopDictate(); if (synth) try { synth.cancel(); } catch (e) { /* 무시 */ } cur = i; acc = answers[cur].seconds || 0; render(); show("qcard"); }
+  var DRAFT = "mj-draft-" + token;
+  function keepDraft() { try { localStorage.setItem(DRAFT, JSON.stringify({ at: Date.now(), mode: mode, cur: cur, answers: answers })); } catch (e) { /* 저장 못 해도 진행 */ } }
+  function loadDraft() { try { var d = JSON.parse(localStorage.getItem(DRAFT) || "null"); return d && d.answers && d.answers.length && Date.now() - d.at < 3 * 86400000 ? d : null; } catch (e) { return null; } }
+  function dropDraft() { try { localStorage.removeItem(DRAFT); } catch (e) { /* 무시 */ } }
+  function save() { answers[cur].answer = $("ans").value; answers[cur].seconds = acc; keepDraft(); }
+  function go(i) { save(); stopTimer(); stopDictate(); if (synth) try { synth.cancel(); } catch (e) { /* 무시 */ } cur = i; acc = answers[cur].seconds || 0; render(); show("qcard"); keepDraft(); }
   function begin() {
     qs = pick(mode); if (!qs.length) qs = all.slice();
     answers = qs.map(function (q) { return { k: q.k, n: q.n, section: q.section, q: q.q, answer: "", seconds: 0 }; });
@@ -229,6 +239,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
   }
   $("startAll").onclick = begin;
   $("tStart").onclick = function () { t0 = Date.now(); $("tStart").disabled = true; $("tStop").disabled = false; var lim = limitOf(qs[cur]); tick = setInterval(function () { var s = acc + Math.round((Date.now() - t0) / 1000); $("timer").textContent = fmt(s); $("timer").className = "t" + (s > lim ? " over" : ""); }, 500); };
+  $("ans").addEventListener("input", function () { answers[cur].answer = $("ans").value; keepDraft(); });
   $("tStop").onclick = stopTimer;
   $("prev").onclick = function () { if (cur > 0) go(cur - 1); };
   $("next").onclick = function () {
@@ -246,6 +257,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     google.script.run.withSuccessHandler(function (r) {
       $("thanksMsg").textContent = (r && r.round ? r.round + "회차 " : "") + "연습을 제출했습니다. 수고했어요. 선생님이 보고 이야기해 줄 거예요.";
       answers.forEach(function (a) { if (a.answer.replace(/\s/g, "") || a.seconds > 0) doneKeys[a.k] = true; });
+      dropDraft();
       if (set) set.nextRound = (r && r.round ? r.round : set.nextRound) + 1;
       show("thanks");
       b.disabled = false; b.textContent = "선생님께 제출";

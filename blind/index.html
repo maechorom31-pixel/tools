@@ -5014,7 +5014,7 @@ function dbOpen() {
 }
 const dbReq = (mode, fn) => dbOpen().then(db => new Promise((res, rej) => { const q = fn(db.transaction(DB.store, mode).objectStore(DB.store)); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }));
 const dbAll = () => dbReq("readonly", st => st.getAll());
-const dbPut = o => dbReq("readwrite", st => st.put(o));
+const dbPut = o => dbReq("readwrite", st => st.put(o)).catch(e => { const el = document.getElementById("status"); const t = "저장 실패: " + (e?.message || e) + " — 브라우저 저장 공간이나 시크릿 모드인지 확인하세요. 화면의 내용은 새로 고침하면 사라질 수 있습니다."; if (el) { el.className = "status err"; el.textContent = t; } console.error(e); throw e; });
 const dbDel = id => dbReq("readwrite", st => st.delete(id));
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
@@ -5762,6 +5762,8 @@ function recordText(st, blocks) {
   }
   return out.join("\n");
 }
+const RESOLVERS = new WeakMap();   // 블록 배열별 해석기 — 학생 객체에 함수를 붙이면 IndexedDB에 저장이 안 되므로 따로 둔다
+function resolveRef(st, r) { const blocks = st._blocks || (st._blocks = sentenceBlocks(st)); let f = RESOLVERS.get(blocks); if (!f) { f = refResolver(blocks); RESOLVERS.set(blocks, f); } return f(r); }
 function sentById(st, id) {
   for (const b of st._blocks || sentenceBlocks(st)) for (const sn of b.sents) if (refId(b, sn.i) === id) return sn.t;
   return "";
@@ -5802,7 +5804,8 @@ function scopeHtml(st, a) {
   const gs = scopeGroups(st); if (!gs.length) return "";
   const on = gs.filter(g => scopeOn(a, g.key)), tot = tokEst(on.reduce((n, g) => n + g.chars, 0)), all = tokEst(gs.reduce((n, g) => n + g.chars, 0));
   const fmtK = n => n >= 1000 ? `${(n / 1000).toFixed(1)}천` : String(Math.round(n));
-  return `<details class="scope"><summary>생기부 범위: ${on.length === gs.length ? "전체" : `${on.length}/${gs.length} 묶음`} · 약 ${fmtK(tot)} 토큰${on.length === gs.length ? "" : ` (전체 ${fmtK(all)})`} — 눌러서 고르기</summary>
+  let extra = 0; try { if (bankCache) { const u = HUB.cards?.universities.find(x => x.id === a.univId), bk = bankFor(bankCache, u, a.unit), adm = findAdm(u, a.admId); extra = tokEst(bk.qs.reduce((n, q) => n + (q.q || "").length + (q.followUp || "").length + 20, 0) + bk.tips.reduce((n, t) => n + (t.text || "").length, 0) + (adm?.sampleQuestions || []).reduce((n, q) => n + (q.q || "").length + 20, 0) + (a.profile || "").length + 1800); } } catch { /* 어림이므로 무시 */ }
+  return `<details class="scope"><summary>생기부 범위: ${on.length === gs.length ? "전체" : `${on.length}/${gs.length} 묶음`} · 생기부 약 ${fmtK(tot)} 토큰${on.length === gs.length ? "" : ` (전체 ${fmtK(all)})`}${extra ? ` + 대학 자료·지시문 약 ${fmtK(extra)}` : ""} — 눌러서 고르기</summary>
     <p class="hint">질문 생성·자기소개 초안에 넣을 부분만 켭니다. 지원 학과와 먼 과목이나 1학년 기록을 빼면 비용이 줄고, 서사 축은 켠 범위 안에서만 잡힙니다. 대학 카드·질문 은행은 범위와 상관없이 들어갑니다.</p>
     <div class="scopes">${gs.map(g => `<label class="sc${scopeOn(a, g.key) ? " on" : ""}"><input type="checkbox" data-scope="${esc(g.key)}"${scopeOn(a, g.key) ? " checked" : ""}><b>${esc(g.label)}</b><span class="t">≈ ${fmtK(tokEst(g.chars))} 토큰${g.tagged ? ` · 태그 ${g.tagged}문장` : ""}</span><span class="d">${esc(g.detail)}</span></label>`).join("")}</div>
     <div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-scope-all="on" style="min-height:30px;font-size:13px">모두 켜기</button><button class="btn" type="button" data-scope-all="3" style="min-height:30px;font-size:13px">3학년만</button><button class="btn" type="button" data-scope-all="23" style="min-height:30px;font-size:13px">2·3학년만</button><button class="btn" type="button" data-scope-all="tag" style="min-height:30px;font-size:13px">태그 있는 묶음만</button></div></details>`;
@@ -5995,7 +5998,7 @@ function qsetHtml(st, a) {
   const d = a.qset.data, u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
   const blindRule = `<div class="blindrule student-only print-only">블라인드 면접 규칙: 이름·출신 고교명·고교 유형, 부모의 직업이나 사회경제적 지위를 암시하는 표현은 말하지 않습니다(실격 사유가 될 수 있습니다). 교복·명찰 없이 단정한 사복, 수험표·신분증 지참, 휴대폰은 대학 규정대로. 이 자료는 외우는 자료가 아니라 질문의 '확인 의도'를 준비하는 자료입니다 — 같은 의도의 질문은 표현이 달라도 한 답으로 통합니다.</div>`;
   let h = `<div class="print-only"><h3 style="font-size:18px">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · ${fmtDate(a.date, true)}` : ""}</h3><div class="hint">${esc(adm ? [adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · ") : "")}${adm?.criteria?.length ? " · " + adm.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · <span class="student-only">학생 배부본</span><span class="examiner-only">면접관용</span></div></div>${blindRule}`;
-  h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-intro="${a.id}">${a.qset.data.extras?.intro ? "자기소개·마지막 말 다시" : "자기소개·마지막 말 초안"}</button><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button><select data-pkind aria-label="다른 인쇄물"><option value="">다른 인쇄물…</option>${Object.entries(PRINT_KINDS).map(([k, v]) => `<option value="${k}">${esc(v[0])}</option>`).join("")}</select><button class="btn main" type="button" data-share="${a.id}">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button></div>`;
+  h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-intro="${a.id}">${a.qset.data.extras?.intro ? "자기소개·마지막 말 다시" : "자기소개·마지막 말 초안"}</button><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button><select data-pkind aria-label="다른 인쇄물"><option value="">다른 인쇄물…</option>${Object.entries(PRINT_KINDS).map(([k, v]) => `<option value="${k}">${esc(v[0])}</option>`).join("")}</select><button class="btn main" type="button" data-share="${a.id}">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button>${a.share && a.share.status !== "off" && (a.qset.updatedAt || a.qset.createdAt) > a.share.publishedAt ? `<span class="hint" style="color:var(--amber-dark);font-weight:600">배포 뒤 고친 내용이 있습니다 — 다시 배포해야 학생 화면에 반영됩니다.</span>` : ""}</div>`;
   if (d.axes?.length) h += `<div class="axes"><b>서사 축</b> — ${d.axes.map(x => `<b>${esc(x.title)}</b>: ${esc(x.why)}`).join(" / ")}</div>`;
   h += extrasHtml(a);
   let n = 0;
@@ -6009,7 +6012,7 @@ function qsetHtml(st, a) {
         <div class="act"><button type="button" data-a="star" title="중요 표시 — 학생 화면의 ‘중요 표시한 문항’ 모드와 실전 순서에서 먼저 나옵니다">${it.star ? "★ 중요" : "☆ 중요"}</button><button type="button" data-a="fu" title="꼬리질문 추가">+꼬리</button><button type="button" data-a="del">${it.deleted ? "되살림" : "지움"}</button></div>
         <div class="it"><span class="hint">확인 의도</span> <textarea data-f="intent" rows="1">${esc(it.intent)}</textarea></div>
         ${(it.followUps || []).map((f, j) => `<div class="fu${(f || "").trim() ? "" : " empty"}"><textarea data-f="fu" data-j="${j}" rows="1">${esc(f)}</textarea></div>`).join("")}
-        ${(it.refs || []).map(r => { const t = sentById(st, r); return t ? `<div class="ref"><mark>[${esc(r)}]</mark> ${esc(t)}</div>` : ""; }).join("")}
+        ${(it.refs || []).map(r => { const id = resolveRef(st, r), t = id ? sentById(st, id) : ""; return t ? `<div class="ref"><mark>[${esc(id)}]</mark> ${esc(t)}</div>` : r ? `<div class="ref"><mark>[${esc(r)}]</mark> <span class="hint">근거 문장을 찾지 못함</span></div>` : ""; }).join("")}
         <div class="meta">${it.criterion ? `<span class="crit">${esc(it.criterion)}</span>` : ""}${it.source ? `<span>출처: ${esc(it.source)}</span>` : ""}${it.answerHint ? `<span class="student-only">답변 방향: ${esc(it.answerHint)}</span>` : ""}</div>
         <div class="student-only print-only"><div class="answer-line"></div><div class="answer-line"></div></div></div>`;
     });
@@ -6021,7 +6024,7 @@ function qsetHtml(st, a) {
 }
 function bindQset(st, a) {
   const host = $(`qs-${a.id}`), d = a.qset.data;
-  const save = () => dbPut(st);
+  const save = () => { a.qset.updatedAt = new Date().toISOString(); return dbPut(st); };
   const fit = ta => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; };
   host.querySelectorAll("textarea").forEach(fit);
   host.querySelectorAll(".qi").forEach(el => {
@@ -6074,6 +6077,7 @@ async function genIntro(appId) {
   if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
   const ex = a.qset.data.extras;
   if (ex?.intro && !confirm("이미 만든 자기소개·마지막 말 초안이 있습니다. 새로 만들면 고친 내용까지 바뀝니다. 계속할까요?")) return;
+  const ib = document.querySelector(`[data-intro="${appId}"]`); if (ib) { if (ib.disabled) return; ib.disabled = true; }
   msg.textContent = `${AI.model}로 자기소개·마지막 말 초안을 만드는 중…`;
   try {
     const { system, user } = introPrompt(st, a);
@@ -6083,7 +6087,7 @@ async function genIntro(appId) {
     a.qset.data.extras = { ...(a.qset.data.extras || {}), intro: d.intro, short: d.short, last: d.last, introNotes: d.notes, introAt: new Date().toISOString(), introModel: AI.model };
     await dbPut(st); renderApps();
     $(`genMsg-${appId}`).textContent = `자기소개·마지막 말 초안을 만들었습니다 — 구조 예시이니 학생 말로 고쳐 쓰게 하세요${d.intro.blanks?.length ? ` (채울 빈칸 ${d.intro.blanks.length}개)` : ""}.`;
-  } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); if (ib) ib.disabled = false; }
 }
 function extrasHtml(a) {
   const ex = a.qset?.data?.extras; if (!ex?.intro) return "";
@@ -6228,6 +6232,7 @@ async function genJesimun(appId) {
   const msg = $(`jesMsg-${appId}`);
   if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
   const field = prompt("제시문 계열을 적어 주세요(예: 교육 / 인문 / 사회 / 자연·공학 / 의약·보건 / 예체능).", jesField(a.unit) || ""); if (field === null) return;
+  const jb = document.querySelector(`[data-jes="${appId}"]`); if (jb) { if (jb.disabled) return; jb.disabled = true; }
   msg.textContent = `${AI.model}로 제시문 세트를 만드는 중…`;
   try {
     const { system, user } = jesimunPrompt(st, a, field.trim());
@@ -6241,7 +6246,7 @@ async function genJesimun(appId) {
     (a.jesimun = a.jesimun || []).push(d);
     await dbPut(st); renderApps();
     $(`jesMsg-${appId}`).textContent = `제시문 세트를 만들었습니다 — 제시문 ${d.passages.length}개, 문항 ${d.questions.length}개. 해설은 교사용이며 사실·용어는 확인이 필요합니다.`;
-  } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); if (jb) jb.disabled = false; }
 }
 function jesimunHtml(st, a) {
   const sets = a.jesimun || [], on = isJesimun(a);
@@ -6564,6 +6569,11 @@ function coarseChunks(lines) {
   }
   return chunks.length ? chunks : [{ from: 1, to: lines.length }];
 }
+const SYNTH_SYS = major => `당신은 대입 면접 지도 보조입니다. 아래는 한 학생의 생기부에서 평가요소 증거가 있다고 판단된 문장들입니다(번호·학년·영역·태그 포함). 이것만으로 다음을 냅니다.
+- axes: 면접 전체를 꿸 서사 축 후보 2~3개. 기준: 학생이 직접 한 행동 동사와 궁금증·문제의식이 있고 여러 학년·영역에 걸쳐 이어지는 활동. refs에 근거 문장 번호 2~4개(대괄호 안 값 그대로).
+- summary: 세 문장 안쪽 — 어떤 학생인지, 지원 전공과 맞닿는 지점, 면접에서 가장 먼저 확인할 것.
+- notes: 확인이 필요한 것("확인 필요: …").
+블라인드: 이름·학교·부모를 추정하지 않습니다. 출력은 JSON만, 한국어.${major ? ` 전공 관련 과목(교사 지정): ${major}` : ""}`;
 const SYNTH_SCHEMA = { type: "object", properties: { summary: { type: "string" }, axes: { type: "array", items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" }, refs: { type: "array", items: { type: "string" } } }, required: ["title", "why", "refs"] } }, notes: { type: "array", items: { type: "string" } } }, required: ["summary", "axes", "notes"] };
 async function aiRead(force) {
   const st = stuOf(HUB.cur); if (!st) return;
@@ -6615,20 +6625,21 @@ async function aiRead(force) {
       }
       for (const k of Object.keys(lists)) lists[k].push(...(d[k] || []).filter(x => x && x.w).map(fixRef));
       notes.push(...(d.notes || []));
+      // 학년 하나가 끝날 때마다 저장 — 다음 학년이나 3단계에서 실패해도 여기까지는 남는다
+      st.ai = { ...(st.ai || {}), createdAt: new Date().toISOString(), model: AI.model, summary: st.ai?.summary || "", axes: st.ai?.axes || [], tags, lists, notes: notes.slice(), partial: gi + 1 < grades.length ? `${g}학년까지` : "종합 전" };
+      await dbPut(st);
     }
-    /* 3단계 — 종합: 태그 달린 문장만 모아 서사 축·요약 */
+    /* 3단계 — 종합: 태그 달린 문장만 모아 서사 축·요약 (실패해도 2단계 결과는 남긴다) */
     say(`3단계 종합 — ${AI.model}`);
     const digest = blocks.flatMap(b => b.sents.filter(sn => tags[refId(b, sn.i)]).map(sn => `[${refId(b, sn.i)}] (${b.grade}학년 ${b.title}) ${sn.t} 〔${tags[refId(b, sn.i)].tags.map(t => TAG_BY[t].name).join(", ")}〕`)).join("\n");
     const major = [...majorSet(st)].join(", ");
-    const synth = await callAI(`당신은 대입 면접 지도 보조입니다. 아래는 한 학생의 생기부에서 평가요소 증거가 있다고 판단된 문장들입니다(번호·학년·영역·태그 포함). 이것만으로 다음을 냅니다.
-- axes: 면접 전체를 꿸 서사 축 후보 2~3개. 기준: 학생이 직접 한 행동 동사와 궁금증·문제의식이 있고 여러 학년·영역에 걸쳐 이어지는 활동. refs에 근거 문장 번호 2~4개(대괄호 안 값 그대로).
-- summary: 세 문장 안쪽 — 어떤 학생인지, 지원 전공과 맞닿는 지점, 면접에서 가장 먼저 확인할 것.
-- notes: 확인이 필요한 것("확인 필요: …").
-블라인드: 이름·학교·부모를 추정하지 않습니다. 출력은 JSON만, 한국어.${major ? ` 전공 관련 과목(교사 지정): ${major}` : ""}`, digest || "(증거 문장 없음)", SYNTH_SCHEMA);
+
+    let synth = null, synthErr = "";
+    try { synth = await callAI(SYNTH_SYS(major), digest || "(증거 문장 없음)", SYNTH_SCHEMA); } catch (e) { synthErr = e?.message || String(e); }
     st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: synth?.summary || "", axes: (synth?.axes || []).filter(a => a.title).map(a => ({ ...a, refs: (a.refs || []).map(resolve).filter(Boolean) })), tags, lists, notes: [...notes, ...(synth?.notes || [])] };
     await dbPut(st);
     renderRecords();
-    $("aiReadMsg").textContent = `읽었습니다 — ${grades.length}개 학년, 태그 ${Object.keys(tags).length}문장, 개념 ${lists.concepts.length}, 방어 ${lists.praise.length}, 진위 ${lists.vague.length}, 약점 ${lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림: ${badRefs.join(", ")})` : ""}.`;
+    $("aiReadMsg").textContent = `${synthErr ? `종합 단계는 실패했지만(${synthErr.slice(0, 80)}) 태그는 저장했습니다 — ` : "읽었습니다 — "}${grades.length}개 학년, 태그 ${Object.keys(tags).length}문장, 개념 ${lists.concepts.length}, 방어 ${lists.praise.length}, 진위 ${lists.vague.length}, 약점 ${lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림: ${badRefs.join(", ")})` : ""}.`;
   } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
   b1.disabled = b2.disabled = false;
 }
@@ -6653,7 +6664,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, resolveRef, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
