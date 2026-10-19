@@ -443,9 +443,14 @@ function mergeNewLinks(saved) {
   const seen = new Set(Array.isArray(saved.seenDefaults)
     ? saved.seenDefaults
     : DEFAULT_DATA.links.map(l => l.url).filter(u => !NEW_DEFAULT_URLS.includes(u)));
+  /* 이미 즐겨찾기를 골라 둔 저장본에는 새 링크를 즐겨찾기 없이 넣는다 —
+     기본값의 fav: true가 사용자가 정한 즐겨찾기 목록을 바꾸지 않도록. 기존 링크의 fav는 어디서도 손대지 않는다. */
+  const hasFav = saved.links.some(x => x.fav);
   DEFAULT_DATA.links.forEach(l => {
     if (have.has(l.url) || seen.has(l.url)) return;
-    saved.links.push(JSON.parse(JSON.stringify(l)));
+    const copy = JSON.parse(JSON.stringify(l));
+    if (hasFav) copy.fav = false;
+    saved.links.push(copy);
     if (!saved.categories.includes(l.cat)) saved.categories.push(l.cat);
   });
   saved.seenDefaults = DEFAULT_DATA.links.map(l => l.url);
