@@ -225,6 +225,11 @@ body.print-q .qi{border-bottom:1px solid #E8E6E2}
 .blindrule{font-size:13px;line-height:1.7;border:1px solid #E8E6E2;padding:10px 12px;margin:10px 0 14px}
 .answer-line{border-bottom:1px dashed #BBB;height:22px;margin:4px 0 0 38px}
 /* ═══════ 형광펜 ═══════ */
+.sent .tg.ai{color:var(--amber-dark)}
+.sent .tg.rule{color:var(--mid);font-weight:600}
+.srcnote{font-size:13px;color:var(--mid);margin-top:8px}
+.srcnote b{color:var(--ink);font-weight:600}
+
 .sent{cursor:pointer;border-radius:3px;padding:1px 0}
 .sent.on{background:var(--amber-soft)}
 .sent .tg{font-size:12px;font-weight:700;color:var(--amber-dark);margin-right:4px;white-space:nowrap;vertical-align:1px}
@@ -394,33 +399,33 @@ h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
 
 <main id="viewHub" hidden>
 <section class="step keybox" aria-labelledby="hs0">
-<h2 id="hs0"><span class="no">00</span>AI 연결 <span class="hint" style="font-weight:400;font-size:14px;margin-left:8px">(선택 — 예상 질문을 만들 때만 씁니다)</span></h2>
-<p class="desc">선생님 각자의 API 키로 브라우저에서 그 회사에 바로 보냅니다. 중간 서버는 없습니다. 키는 이 탭을 닫으면 사라집니다(sessionStorage). 키를 채팅이나 다른 곳에 올리지 마세요.</p>
+<h2 id="hs0"><span class="no">00</span>AI 연결 <span class="hint" style="font-weight:400;font-size:14px;margin-left:8px">(선택 — 생기부 읽기와 예상 질문에 씁니다. 없으면 규칙 밑그림만)</span></h2>
+<p class="desc">선생님 각자의 API 키로 브라우저에서 그 회사에 바로 보냅니다. 중간 서버는 없습니다. 키는 이 컴퓨터의 이 브라우저에만 저장되고 어디로도 보내지 않습니다. 키를 채팅이나 다른 곳에 올리지 마세요.</p>
 <div class="grid2">
 <div class="field"><label for="keyIn">API 키 <span class="hint">(Gemini는 AIza…, Claude는 sk-ant-… — 붙여 넣으면 회사를 알아봅니다)</span></label><input id="keyIn" type="password" autocomplete="off" placeholder="키 붙여 넣기"></div>
 <div class="field"><label for="modelIn">모델</label><select id="modelIn"><option value="">— 키를 넣고 ‘연결 확인’ —</option></select><span class="hint" id="modelHint"></span></div>
 </div>
-<div class="toolrow"><button class="btn main" type="button" id="keyCheck">연결 확인</button><button class="btn" type="button" id="keyClear">키 지우기</button><span class="hint" id="keyMsg" role="status" aria-live="polite"></span></div>
-<div class="warn"><b>보내는 것</b>: 예상 질문을 만들 때 그 학생의 가린 생기부 글(이름·학교·연락처 없음)과 지원 대학·학과, 형광펜 메모가 그 회사(Google 또는 Anthropic)로 갑니다. 실제 학생 자료는 학생·보호자 동의 뒤에 쓰세요.<br>
+<div class="toolrow"><button class="btn main" type="button" id="keyCheck">연결 확인</button><button class="btn" type="button" id="keyClear">키 지우기</button><label class="kind" style="min-height:40px"><input type="checkbox" id="keyRemember" checked> 이 컴퓨터에 기억 <span class="hint">(공용 컴퓨터면 끄세요 — 탭을 닫으면 사라집니다)</span></label><span class="hint" id="keyMsg" role="status" aria-live="polite"></span></div>
+<div class="warn"><b>보내는 것</b>: ‘AI로 읽기’나 예상 질문을 만들 때 그 학생의 가린 생기부 글(이름·학교·연락처 없음)과 지원 대학·학과, 형광펜 메모가 그 회사(Google 또는 Anthropic)로 갑니다. 실제 학생 자료는 학생·보호자 동의 뒤에 쓰세요.<br>
 <b>무료 Gemini 키</b>로 보낸 내용은 Google이 서비스 개선에 쓸 수 있습니다. 유료 API(Claude, 결제 등록한 Gemini)는 약관상 기본적으로 학습에 쓰이지 않습니다.<br>
 <b>비용</b>: 학생 1명·1회 질문 세트에 Gemini Flash는 거의 0원, Claude Sonnet 5.5는 150원 안팎, Opus 5.5는 300원 안팎입니다(입력 2만 토큰 기준 어림).</div>
 <h3 class="sub-h">학생 배포 (Apps Script) <span class="hint" style="font-weight:400;font-size:14px;margin-left:8px">(선택 — 학생이 QR로 혼자 연습하고 답을 남기게 하려면)</span></h3>
 <p class="desc">선생님 학교 Google 계정의 스프레드시트에 <code>gas/Code.gs</code>와 <code>gas/index.html</code>을 붙여 웹 앱으로 배포한 뒤, 그 주소와 설정 시트의 관리 비밀번호를 넣습니다. 학생 쪽에는 질문·확인 의도·답의 흐름만 가고 라벨(반·번호)은 선생님 시트에만 남습니다. 안내는 저장소의 <code>blind/gas/README.md</code>에 있습니다.</p>
 <div class="grid2">
 <div class="field"><label for="gasUrl">웹 앱 주소</label><input id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>
-<div class="field"><label for="gasPw">관리 비밀번호 <span class="hint">(설정 시트 B2와 같게 — 이 탭에만 기억)</span></label><input id="gasPw" type="password" autocomplete="off"></div>
+<div class="field"><label for="gasPw">관리 비밀번호 <span class="hint">(설정 시트 B2와 같게 — 위 ‘이 컴퓨터에 기억’을 따릅니다)</span></label><input id="gasPw" type="password" autocomplete="off"></div>
 </div>
 <div class="toolrow"><button class="btn" type="button" id="gasCheck">연결 확인</button><span class="hint" id="gasMsg" role="status" aria-live="polite"></span></div>
 </section>
 <section class="step" aria-labelledby="hs1">
 <h2 id="hs1"><span class="no">01</span>담당 학생</h2>
-<p class="desc">블라인드 보기에서 PDF를 읽은 뒤 아래 막대의 ‘면접 준비에 등록’을 누르면 가린 글이 여기에 들어옵니다. 이름은 받지 않고 반·번호로만 구분합니다. 학생 자료는 이 브라우저 안(IndexedDB)에만 저장되고, 브라우저의 사이트 데이터를 지우면 함께 지워집니다.</p>
+<p class="desc">블라인드 보기에서 PDF를 읽은 뒤 아래 막대의 ‘면접 준비에 등록’을 누르면 가린 글이 여기에 들어옵니다. 학생 자료는 이 컴퓨터의 브라우저 안(IndexedDB)에만 저장되고, 브라우저의 사이트 데이터를 지우면 함께 지워집니다. 라벨에는 이름을 넣어도 됩니다 — 라벨은 이 화면과 선생님 시트·인쇄물에만 쓰이고, AI로 보내는 글과 학생 연습 페이지에는 가린 글만 갑니다.</p>
 <div id="stuList"></div>
 </section>
 <section class="step" id="stuDetail" hidden aria-labelledby="hs2">
 <h2 id="hs2"><span class="no">02</span><span id="stuTitle">학생</span></h2>
 <div class="stu-head">
-<div class="field"><label for="aliasIn">라벨 <span class="hint">(이름 대신 쓰는 표시. 예: 3-2 07)</span></label><input id="aliasIn" autocomplete="off"></div>
+<div class="field"><label for="aliasIn">라벨 <span class="hint">(이 컴퓨터·시트·인쇄물에만 쓰임. 예: 3-2 07 한서윤)</span></label><input id="aliasIn" autocomplete="off"></div>
 <div><button class="btn" id="stuDel" type="button">이 학생 지우기</button></div>
 </div>
 <h3 class="sub-h">지원</h3>
@@ -437,7 +442,8 @@ h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
 <div class="toolrow"><button class="btn main" type="submit" id="appSave">지원 추가</button><button class="btn" type="button" id="appCancel" hidden>취소</button><span class="hint" id="appMsg" role="status"></span></div>
 </form>
 <h3 class="sub-h">생기부</h3>
-<p class="desc">규칙으로 먼저 칠한 문장은 출발점입니다. 문장을 누르면 태그를 바꾸거나 지우고 메모를 달 수 있고, 글자를 끌어 고르면 그 부분만 따로 칠할 수 있습니다. 태그는 학종 평가요소 세부 항목(학업·진로·공동체 10가지) 그대로이며 한 문장에 둘까지만 답니다.</p>
+<p class="desc">‘AI로 읽기’를 누르면 AI가 생기부를 읽고 문장마다 학종 평가요소 세부 항목(학업·진로·공동체 10가지, 한 문장에 둘까지)을 달고 개념·방어·진위·약점 목록과 서사 축을 고릅니다. 키가 없으면 규칙으로 칠한 밑그림만 보입니다. 문장을 누르면 태그를 바꾸거나 메모를 달 수 있고(선생님 수정이 항상 우선), 글자를 끌어 고르면 그 부분만 따로 칠할 수 있습니다.</p>
+<div class="toolrow" style="margin-top:8px"><button class="btn main" type="button" id="aiRead">AI로 읽기</button><button class="btn" type="button" id="aiStruct">AI로 영역 다시 가르기</button><span class="hint" id="aiReadMsg" role="status" aria-live="polite"></span></div>
 <div class="print-head" id="printHead"></div>
 <div class="lists" id="autoLists"></div>
 <div class="tagsum" id="tagSum"></div>
@@ -5073,7 +5079,8 @@ async function registerFromFile(f) {
   for (const st of parsed) {
     const sig = st.text.length + ":" + st.text.slice(0, 80);
     const dup = HUB.students.find(x => x.label === st.label && x.sig === sig);
-    const rec = dup || { id: uid(), label: st.label, alias: st.label ? `${st.label.split("-")[0]}반 ${st.label.split("-")[1]}번` : "학생", createdAt: new Date().toISOString(), applications: [], highlights: [], memo: "" };
+    const nm = (f.names?.groups || []).find(g => g.pages.join() === st.pages.join())?.name || "";
+    const rec = dup || { id: uid(), label: st.label, alias: (st.label ? `${st.label.split("-")[0]}반 ${st.label.split("-")[1]}번` : "학생") + (nm ? " " + nm : ""), createdAt: new Date().toISOString(), applications: [], highlights: [], memo: "" };
     Object.assign(rec, { sig, source: { file: maskedFileName(f), pages: st.pages.map(p => p + 1) }, text: st.text, records: st.records, setuk: st.setuk, attendance: st.attendance, unparsed: st.unparsed, updatedAt: new Date().toISOString() });
     await dbPut(rec);
     if (dup) updated++; else { HUB.students.push(rec); added++; }
@@ -5304,7 +5311,13 @@ function sentenceBlocks(st) {
   return blocks;
 }
 const sentKey = (b, i) => `${b.key}#${i}`;
-function effTags(st, b, sn) { const o = st.highlights?.[sentKey(b, sn.i)]; return o && o.tags ? o.tags : sn.auto; }
+function effTags(st, b, sn) {
+  const o = st.highlights?.[sentKey(b, sn.i)];
+  if (o && o.tags) return o.tags;
+  if (st.ai) { const ai = st.ai.tags?.[refId(b, sn.i)]; return ai ? ai.tags : []; }   // AI가 읽은 뒤엔 규칙 밑그림을 쓰지 않는다
+  return sn.auto;
+}
+const tagSource = (st, b, sn) => st.highlights?.[sentKey(b, sn.i)]?.tags ? "manual" : st.ai?.tags?.[refId(b, sn.i)] ? "ai" : "rule";
 
 /* ---------- 자동 목록 ---------- */
 const CONCEPT_TAIL = /[가-힣A-Za-z0-9·\-]{2,24}(법칙|원리|이론|효과|정리|모형|모델|알고리즘|기법|방정식|곡선|지수|지표|공식|현상|기술|구조|메커니즘|체계|실험)(?![가-힣])/g;
@@ -5333,7 +5346,13 @@ function autoLists(st, blocks) {
   if (new Set(hopes.map(h => h.hope)).size > 1) weak.unshift({ w: "희망분야 변경: " + hopes.map(h => `${h.grade}학년 ${h.hope}`).join(" → "), key: "", where: "진로활동" });
   const subs3 = st.setuk.filter(x => x.grade === 3).map(x => x.subject);
   if (subs3.length) weak.push({ w: "3학년 세특 과목: " + subs3.join(", ") + " — 권장과목 미이수는 여기서 판단", key: "", where: "" });
-  return { concepts: [...concepts.values()], praise, vague, weak };
+  if (st.ai?.lists) {
+    const map = refMap(blocks), conv = x => ({ w: x.w, book: !!x.book, key: map[x.ref]?.key || "", where: map[x.ref]?.where || "" });
+    const L = st.ai.lists;
+    return { concepts: (L.concepts || []).map(conv), praise: (L.praise || []).map(conv), vague: (L.vague || []).map(conv),
+      weak: [...weak.filter(x => !x.key), ...(L.weak || []).map(conv)], source: "ai" };
+  }
+  return { concepts: [...concepts.values()], praise, vague, weak, source: "rule" };
 }
 
 /* ---------- 그리기 ---------- */
@@ -5349,7 +5368,8 @@ function renderRecords() {
     html.push(`<div class="rec" data-blk="${esc(b.key)}"><h4>${esc(b.title)}${b.isMajor ? `<span class="meta">전공 관련</span>` : ""}${b.hope ? `<span class="meta">희망분야 ${esc(b.hope)}</span>` : ""}<span class="meta">${bytes.toLocaleString()}B</span></h4><p>${b.sents.map(sn => sentHtml(st, b, sn)).join(" ")}</p></div>`);
   }
   if (g0) html.push("</section>");
-  if (!blocks.length) html.push(`<p class="empty">영역을 가르지 못했습니다(이 판형은 아직 모릅니다). 가린 글 전체는 아래에 그대로 둡니다.</p>`);
+  if (!blocks.length) html.push(`<p class="empty">규칙으로는 영역을 가르지 못한 판형입니다. 00에서 AI를 연결하고 위의 ‘AI로 읽기’를 누르면 AI가 영역·과목을 가른 뒤 읽습니다. 가린 글 전체는 아래에 그대로 둡니다.</p>`);
+  else if (st.structuredBy) html.push(`<p class="hint">영역·과목은 AI(${esc(st.structuredBy)})가 가른 것입니다. 원문과 다르면 ‘AI로 영역 다시 가르기’로 다시 할 수 있습니다.</p>`);
   html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><p class="att">${esc(st.text)}</p></details>`);
   if (st.unparsed?.length) html.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
   host.innerHTML = html.join("");
@@ -5363,7 +5383,8 @@ function sentHtml(st, b, sn) {
   let txt = "", at = 0;
   for (const m of marks) { if (m.s < at) continue; txt += esc(sn.t.slice(at, m.s)) + `<mark title="${esc(TAG_BY[m.tag]?.name || "")}">${esc(sn.t.slice(m.s, m.e))}</mark>`; at = m.e; }
   txt += esc(sn.t.slice(at));
-  const lab = tags.length ? `<span class="tg${o.tags ? " manual" : ""}">${tags.map(t => TAG_BY[t].name).join(" · ")}</span>` : "";
+  const src = tagSource(st, b, sn), why = src === "ai" ? st.ai.tags[refId(b, sn.i)].why : "";
+  const lab = tags.length ? `<span class="tg ${src}" title="${esc(src === "manual" ? "선생님이 정함" : src === "ai" ? "AI: " + (why || "") : "규칙 밑그림")}">${tags.map(t => TAG_BY[t]?.name || t).join(" · ")}</span>` : "";
   return `<span class="sent${tags.length ? " on" : ""}" id="s-${cssId(k)}" data-k="${esc(k)}">${lab}<span class="txt">${txt}</span>${o.memo ? `<span class="memo">메모: ${esc(o.memo)}</span>` : ""}</span>`;
 }
 const cssId = k => k.replace(/[^A-Za-z0-9가-힣]/g, "_");
@@ -5371,7 +5392,9 @@ function renderLists(st, blocks) {
   const L = autoLists(st, blocks);
   const item = x => `<li>${x.key ? `<a href="#s-${cssId(x.key)}" data-go="${esc(x.key)}">${esc(x.w)}</a>` : esc(x.w)}${x.where ? ` <span class="w">— ${esc(x.where)}</span>` : ""}${x.book ? ` <span class="w">(책)</span>` : ""}</li>`;
   const sec = (ttl, list, hint) => `<details><summary>${ttl}<span class="n">${list.length}</span></summary>${list.length ? `<ul>${list.map(item).join("")}</ul>` : `<p class="hint" style="margin-top:6px">${hint}</p>`}</details>`;
-  $("autoLists").innerHTML = sec("개념·용어·책", L.concepts, "따옴표 구절이나 ~법칙·이론·알고리즘 같은 말이 없습니다.") + sec("방어용 평가 문구", L.praise, "'~이 뛰어남' 식의 평가 서술을 찾지 못했습니다.") + sec("진위 확인 — 역할이 흐린 문장", L.vague, "'참여함·함께'로 끝나는 문장이 없습니다.") + sec("약점·공백", L.weak, "출결·희망분야 변경·부진 문구가 없습니다.");
+  const note = L.source === "ai" ? `<p class="srcnote"><b>AI가 읽음</b> · ${esc(st.ai.model)} · ${new Date(st.ai.createdAt).toLocaleString("ko-KR")}${st.ai.summary ? `<br>${esc(st.ai.summary)}` : ""}${st.ai.axes?.length ? `<br>서사 축 후보: ${st.ai.axes.map(a => `<b>${esc(a.title)}</b>(${esc(a.why)})`).join(" / ")}` : ""}</p>` : `<p class="srcnote">규칙 밑그림입니다 — 00에서 AI를 연결하고 ‘AI로 읽기’를 누르면 AI가 문장을 읽고 판단합니다.</p>`;
+  $("autoLists").innerHTML = note + sec("개념·용어·책", L.concepts, "따옴표 구절이나 ~법칙·이론·알고리즘 같은 말이 없습니다.") + sec("방어용 평가 문구", L.praise, "'~이 뛰어남' 식의 평가 서술을 찾지 못했습니다.") + sec("진위 확인 — 역할이 흐린 문장", L.vague, "'참여함·함께'로 끝나는 문장이 없습니다.") + sec("약점·공백", L.weak, "출결·희망분야 변경·부진 문구가 없습니다.");
+  $("autoLists").style.display = "grid"; $("autoLists").style.gridTemplateColumns = "1fr"; $("autoLists").querySelectorAll("details").forEach((d, i) => { if (i === 0) d.style.gridColumn = "1/-1"; });
   $("autoLists").querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); const el = document.getElementById("s-" + cssId(a.dataset.go)); if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); } });
 }
 function renderTagSum(st, blocks) {
@@ -5458,8 +5481,16 @@ const AI = { key: "", provider: "", model: "", models: [] };
 const KEY_STORE = "blind-ai-key", MODEL_STORE = "blind-ai-model";
 const providerOf = k => /^AIza/.test(k) ? "gemini" : /^sk-ant-/.test(k) ? "anthropic" : "";
 const PROVIDER_KO = { gemini: "Gemini(Google)", anthropic: "Claude(Anthropic)" };
+const REMEMBER = "blind-ai-remember";
+function remember() { try { return localStorage.getItem(REMEMBER) !== "0"; } catch { return false; } }
+/* 기억 설정에 따라 localStorage 또는 sessionStorage에 둔다. 바꾸면 다른 쪽은 지운다 */
+function keep(k, v) {
+  try { if (remember()) { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); sessionStorage.removeItem(k); } else { v ? sessionStorage.setItem(k, v) : sessionStorage.removeItem(k); localStorage.removeItem(k); } } catch { /* 무시 */ }
+}
+function recall(k) { try { return localStorage.getItem(k) || sessionStorage.getItem(k) || ""; } catch { return ""; } }
 function aiLoad() {
-  try { AI.key = sessionStorage.getItem(KEY_STORE) || ""; AI.model = sessionStorage.getItem(MODEL_STORE) || ""; } catch { /* 무시 */ }
+  $("keyRemember").checked = remember();
+  AI.key = recall(KEY_STORE); AI.model = recall(MODEL_STORE);
   AI.provider = providerOf(AI.key);
   if (AI.key) $("keyIn").value = AI.key;
   if (AI.model) { $("modelIn").innerHTML = `<option value="${esc(AI.model)}" selected>${esc(AI.model)}</option>`; }
@@ -5472,12 +5503,13 @@ function aiStat() {
 $("keyIn").addEventListener("input", () => {
   const k = $("keyIn").value.trim();
   AI.key = k; AI.provider = providerOf(k);
-  try { k ? sessionStorage.setItem(KEY_STORE, k) : sessionStorage.removeItem(KEY_STORE); } catch { /* 무시 */ }
+  keep(KEY_STORE, k);
   $("keyMsg").textContent = !k ? "" : AI.provider ? `${PROVIDER_KO[AI.provider]} 키로 보입니다. ‘연결 확인’을 누르면 쓸 수 있는 모델을 가져옵니다.` : "오류: Gemini(AIza…) 또는 Claude(sk-ant-…) 키만 쓸 수 있습니다.";
   aiStat();
 });
-$("keyClear").onclick = () => { AI.key = AI.provider = AI.model = ""; $("keyIn").value = ""; $("modelIn").innerHTML = `<option value="">— 키를 넣고 ‘연결 확인’ —</option>`; try { sessionStorage.removeItem(KEY_STORE); sessionStorage.removeItem(MODEL_STORE); } catch { /* 무시 */ } $("keyMsg").textContent = "키를 지웠습니다."; aiStat(); };
-$("modelIn").addEventListener("change", () => { AI.model = $("modelIn").value; try { sessionStorage.setItem(MODEL_STORE, AI.model); } catch { /* 무시 */ } aiStat(); });
+$("keyClear").onclick = () => { AI.key = AI.provider = AI.model = ""; $("keyIn").value = ""; $("modelIn").innerHTML = `<option value="">— 키를 넣고 ‘연결 확인’ —</option>`; keep(KEY_STORE, ""); keep(MODEL_STORE, ""); $("keyMsg").textContent = "키를 지웠습니다."; aiStat(); };
+$("modelIn").addEventListener("change", () => { AI.model = $("modelIn").value; keep(MODEL_STORE, AI.model); aiStat(); });
+$("keyRemember").addEventListener("change", () => { try { localStorage.setItem(REMEMBER, $("keyRemember").checked ? "1" : "0"); } catch { /* 무시 */ } keep(KEY_STORE, AI.key); keep(MODEL_STORE, AI.model); keep("blind-gas-pw", GAS.pw); $("keyMsg").textContent = $("keyRemember").checked ? "키를 이 컴퓨터에 기억합니다." : "탭을 닫으면 키가 사라집니다."; });
 const ANTH_HEADERS = () => ({ "content-type": "application/json", "x-api-key": AI.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" });
 async function listModels() {
   if (AI.provider === "gemini") {
@@ -5501,7 +5533,7 @@ $("keyCheck").onclick = async () => {
     const prefer = AI.provider === "gemini" ? AI.models.find(m => /flash/.test(m) && !/lite|8b/.test(m)) || AI.models[0] : AI.models.find(m => /opus-5-5/.test(m)) || AI.models.find(m => /sonnet-5-5/.test(m)) || AI.models[0];
     AI.model = AI.models.includes(AI.model) ? AI.model : prefer;
     $("modelIn").innerHTML = AI.models.map(m => `<option value="${esc(m)}"${m === AI.model ? " selected" : ""}>${esc(m)}</option>`).join("");
-    try { sessionStorage.setItem(MODEL_STORE, AI.model); } catch { /* 무시 */ }
+    keep(MODEL_STORE, AI.model);
     $("keyMsg").textContent = `연결됐습니다. 모델 ${AI.models.length}개 중 ${AI.model}을(를) 골라 두었습니다.`;
     $("modelHint").textContent = AI.provider === "gemini" ? "처음이면 Flash 계열이 빠르고 비용이 거의 없습니다." : "중요하게 볼 학생은 Opus, 가볍게는 Sonnet.";
   } catch (e) { $("keyMsg").textContent = "오류: " + (e?.message || e) + " — 키와 인터넷 연결을 확인해 주세요."; }
@@ -5646,7 +5678,8 @@ function buildPrompt(st, app, bank) {
 9. 개념 사전(glossary)은 세특·창체에 나온 전문 개념·이론·책 가운데 면접에서 물을 만한 것 6~12개를 고르고, 뜻은 학생 눈높이 한두 문장, use는 학생 활동과 연결된 1인칭 문장 하나입니다. 사실이 불확실하면 meaning 끝에 "(확인 필요)"를 붙입니다.
 10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").
 sections의 key는 core, concept, defense, truth, report, reading, weak, common 가운데에서 쓰고 이 순서로 둡니다. 해당 항목이 없으면 그 섹션은 넣지 않습니다.`;
-  const user = `# 지원 카드와 대학 프로파일\n${prof.join("\n")}\n\n# 자동 추출 목록\n${lists || "(없음)"}\n\n# 가린 생기부 (문장 번호 · 교사 태그 · 메모)\n${recordText(st, blocks)}`;
+  const first = st.ai ? `# 1차 분석(AI ${st.ai.model})\n${st.ai.summary || ""}\n서사 축 후보: ${(st.ai.axes || []).map(a => `${a.title} — ${a.why} [${(a.refs || []).join(", ")}]`).join(" / ") || "(없음)"}${st.ai.notes?.length ? "\n확인 필요: " + st.ai.notes.join(" / ") : ""}\n\n` : "";
+  const user = `${first}# 지원 카드와 대학 프로파일\n${prof.join("\n")}\n\n# ${st.ai ? "AI가 뽑은" : "규칙으로 뽑은"} 목록\n${lists || "(없음)"}\n\n# 가린 생기부 (문장 번호 · 태그${st.ai ? "(AI·교사)" : "(규칙·교사)"} · 메모)\n${recordText(st, blocks)}`;
   return { system, user };
 }
 async function generateQuestions(appId) {
@@ -5744,11 +5777,11 @@ aiLoad();
 const GAS = { url: "", pw: "" };
 function gasLoad() {
   try { GAS.url = localStorage.getItem("blind-gas-url") || ""; } catch { /* 무시 */ }
-  try { GAS.pw = sessionStorage.getItem("blind-gas-pw") || ""; } catch { /* 무시 */ }
+  GAS.pw = recall("blind-gas-pw");
   $("gasUrl").value = GAS.url; $("gasPw").value = GAS.pw;
 }
 $("gasUrl").addEventListener("input", () => { GAS.url = $("gasUrl").value.trim(); try { localStorage.setItem("blind-gas-url", GAS.url); } catch { /* 무시 */ } });
-$("gasPw").addEventListener("input", () => { GAS.pw = $("gasPw").value; try { sessionStorage.setItem("blind-gas-pw", GAS.pw); } catch { /* 무시 */ } });
+$("gasPw").addEventListener("input", () => { GAS.pw = $("gasPw").value; keep("blind-gas-pw", GAS.pw); });
 async function gasCall(body, timeoutMs = 30000) {
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/.test(GAS.url) && !/^http:\/\/(127\.0\.0\.1|localhost)/.test(GAS.url)) throw new Error("웹 앱 주소가 script.google.com/macros/s/…/exec 꼴이 아닙니다.");
   if (!GAS.pw) throw new Error("관리 비밀번호를 넣어 주세요.");
@@ -5867,6 +5900,112 @@ function exportRetrace(st, a) {
 }
 gasLoad();
 
+
+/* ═══════ AI로 읽기 — 형광펜·목록·서사 축을 AI가 판단, 판형을 못 가른 글은 AI가 가른다 ═══════ */
+function refMap(blocks) { const m = {}; for (const b of blocks) for (const sn of b.sents) m[refId(b, sn.i)] = { key: sentKey(b, sn.i), where: `${b.grade}학년 ${b.title}` }; return m; }
+const TAG_DEFS = `학업역량/학업성취도 — 교과 성취 수준과 추이. 전공 과목만이 아니라 분석 도구가 되는 과목(확률과 통계·정보·한문 등)의 성취도 함께 본다.
+학업역량/학업태도 — 자발적 질문·추가 자료 탐색·수업 밖으로 이어 간 흔적. "성실히 참여함"은 흔적이 아니다.
+학업역량/탐구력 — 판정 기준을 문서로 만들었는가, 예외와 반대 해석까지 자료로 검토했는가. 결론보다 방법과 한계 인식이 증거다. "보고서를 작성함"만으로는 탐구력이 아니다.
+진로역량/전공 관련 교과 이수 노력 — 위계에 맞는 이수(기초→일반→진로선택), 권장과목 이수, 부족을 채운 노력(독서·탐구 과목).
+진로역량/전공 관련 교과 성취도 — 전공 관련 과목의 성취와 그 과목 세특의 깊이. 전공 관련 과목 목록이 주어지면 그 과목에서만.
+진로역량/진로 탐색 활동과 경험 — 전공의 세부 분야 가운데 어디에 관심이 있는지, 그 분야의 연구 방식으로 탐구를 이어 간 경로. 학과 이름이 아니라 분야와 방법이 보여야 한다. '진로'라는 낱말이 있다고 다는 것이 아니다.
+공동체역량/협업과 소통능력 — 역할 분담·의견 조율·불일치 처리 장면. "두 사람이 독립적으로 판정하고 불일치를 토론해 기준을 고침" 같은 장면.
+공동체역량/나눔과 배려 — 지속성이 있는 행위, 상대의 변화가 적힌 기록.
+공동체역량/성실성과 규칙준수 — 출결, 맡은 일의 완결, 과정의 꾸준함.
+공동체역량/리더십 — 직함이 아니라 조직·운영 행위(모임을 만들고 역할을 나누고 갈등을 정리함). 직함만 있는 문장에는 달지 않는다.`;
+const TAG_NAMES = Object.fromEntries(TAGS.map(t => [t.name, t.id]));
+const ANALYZE_SCHEMA = {
+  type: "object",
+  properties: {
+    summary: { type: "string" },
+    axes: { type: "array", items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" }, refs: { type: "array", items: { type: "string" } } }, required: ["title", "why", "refs"] } },
+    tags: { type: "array", items: { type: "object", properties: { ref: { type: "string" }, tags: { type: "array", items: { type: "string" } }, why: { type: "string" } }, required: ["ref", "tags", "why"] } },
+    concepts: { type: "array", items: { type: "object", properties: { w: { type: "string" }, book: { type: "boolean" }, ref: { type: "string" } }, required: ["w", "book", "ref"] } },
+    praise: { type: "array", items: { type: "object", properties: { w: { type: "string" }, ref: { type: "string" } }, required: ["w", "ref"] } },
+    vague: { type: "array", items: { type: "object", properties: { w: { type: "string" }, ref: { type: "string" } }, required: ["w", "ref"] } },
+    weak: { type: "array", items: { type: "object", properties: { w: { type: "string" }, ref: { type: "string" } }, required: ["w", "ref"] } },
+    notes: { type: "array", items: { type: "string" } },
+  },
+  required: ["summary", "axes", "tags", "concepts", "praise", "vague", "weak", "notes"],
+};
+const STRUCT_SCHEMA = {
+  type: "object",
+  properties: {
+    attendance: { type: "string" },
+    records: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, area: { type: "string" }, hope: { type: "string" }, text: { type: "string" } }, required: ["grade", "area", "hope", "text"] } },
+    setuk: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, sem: { type: "string" }, subject: { type: "string" }, body: { type: "string" } }, required: ["grade", "sem", "subject", "body"] } },
+  },
+  required: ["attendance", "records", "setuk"],
+};
+function analyzePrompt(st, blocks) {
+  const major = [...majorSet(st)].join(", ");
+  const overrides = Object.entries(st.highlights || {}).filter(([, o]) => o.tags || o.memo);
+  const system = `당신은 한국 고등학교 3학년 담임교사를 돕는 대입 면접 지도 보조입니다. 가린 생기부(이름·학교는 토큰으로 바뀜)를 문장 단위로 읽고 학생부종합전형 평가요소 세부 항목으로 판단합니다.
+태그 정의(이 10가지 이름만 그대로 씁니다):
+${TAG_DEFS}
+규칙:
+1. 증거가 있는 문장에만 답니다. 한 문장에 둘까지. 셋 이상이 떠오르면 태그 기준이 느슨한 것이니 가장 강한 둘만. 증거가 없는 문장은 목록에 넣지 않습니다.
+2. 같은 활동이 여러 문장에 걸쳐 있으면 핵심 행동이 든 문장에 달고 서술 문장에는 달지 않습니다.
+3. 칭찬 문구("리더십이 드러남", "탐구심이 뛰어남")는 태그 증거가 아니라 '방어용 평가 문구'입니다 — praise에 담고, 그 문장 자체에는 근거가 되는 행동이 없으면 태그를 달지 않습니다.
+4. vague(진위 확인 대상)는 역할 서술어가 '참여함·함께·공동으로·협력하여·도움을 받아'이거나 동기·과정 없이 '보고서를 작성함·발표함'으로 끝나 본인이 직접 했는지 확인이 필요한 문장입니다.
+5. concepts는 면접에서 "그게 무엇인가요?"로 물을 만한 전문 개념·이론·용어·책 제목입니다(일반어 제외). 책이면 book=true.
+6. weak는 약점·공백입니다: 성적 부진·급변 서술, 미이수가 드러나는 서술, 진로 변경, 활동 공백, 출결 서술. 생기부에 없는 것을 지어 넣지 않습니다.
+7. axes(서사 축 후보 2~3개)는 면접 전체를 꿸 중심 활동군입니다. 기준: 학생이 직접 한 행동 동사와 궁금증·문제의식이 있고, 여러 학년·영역에 걸쳐 이어지는 활동. refs에 근거 문장 번호 2~4개.
+8. summary는 세 문장 안쪽: 이 학생이 어떤 학생인지, 지원 학과와 맞닿는 지점, 면접에서 가장 먼저 확인할 것.
+9. 블라인드: 이름·학교·부모를 추정하지 않습니다. 출력은 JSON만, 한국어.
+문장 번호는 입력의 [1-동아리-3] 같은 대괄호 안 값을 그대로 ref에 씁니다.${major ? `\n전공 관련 과목(교사 지정): ${major}` : ""}${overrides.length ? `\n선생님이 이미 정한 것(바꾸지 말고 참고): ${overrides.map(([k, o]) => `${k}: ${(o.tags || []).map(t => TAG_BY[t]?.name).filter(Boolean).join("·") || "-"}${o.memo ? " 메모 " + o.memo : ""}`).join(" / ")}` : ""}`;
+  return { system, user: `# 가린 생기부 (문장 번호)\n${recordText(st, blocks).replace(/ 〔태그: [^〕]*〕/g, "")}` };
+}
+function structPrompt(st) {
+  const system = `당신은 NEIS 학교생활기록부 출력물의 글을 항목별로 가르는 보조입니다. 입력은 PDF에서 뽑아 개인정보를 토큰([이름] 등)으로 바꾼 줄들입니다. 표 머리글·쪽 번호·발급 정보 줄은 버리고, 본문만 다음 셋으로 가릅니다.
+- attendance: '출결상황' 표의 줄들을 그대로(없으면 빈 문자열).
+- records: 창의적 체험활동(자율·자치활동/자율활동/동아리활동/진로활동/봉사활동)과 행동특성 및 종합의견을 학년별로. area는 이 이름 가운데 하나를 그대로. 진로활동의 '희망분야'는 hope에 따로. text는 그 칸의 본문 전체(줄바꿈으로 끊긴 문장을 이어 붙임, 내용은 바꾸지 않음).
+- setuk: 교과학습발달상황의 '세부능력 및 특기사항'을 학년·학기·과목별로. "(1학기)국어:"처럼 과목이 적혀 있으면 그 과목명을 subject로, 학기를 sem("1"/"2", 없으면 "")로. 성적표(원점수/평균 등)는 버립니다. 개인별 세부능력 특기사항은 subject "개인별 세특".
+내용을 요약하거나 고치지 않고 그대로 옮깁니다. 출력은 JSON만.`;
+  return { system, user: st.text };
+}
+function aiStatus(st) { return st.ai ? `AI가 읽음 · ${st.ai.model} · ${new Date(st.ai.createdAt).toLocaleString("ko-KR")}` : ""; }
+async function aiRead(force) {
+  const st = stuOf(HUB.cur); if (!st) return;
+  const msg = $("aiReadMsg"), b1 = $("aiRead"), b2 = $("aiStruct");
+  if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
+  b1.disabled = b2.disabled = true;
+  try {
+    let blocks = st._blocks || sentenceBlocks(st);
+    if (force || !blocks.length) {
+      msg.textContent = `${AI.model}로 영역·과목을 가르는 중…`;
+      const { system, user } = structPrompt(st);
+      const d = await callAI(system, user, STRUCT_SCHEMA);
+      if (!d || !Array.isArray(d.records)) throw new Error("응답에서 기록을 읽지 못했습니다.");
+      st.records = d.records.filter(r => r.text && r.grade >= 1 && r.grade <= 3).map(r => ({ grade: +r.grade, area: String(r.area), text: String(r.text).trim(), hope: r.hope || "" }));
+      st.setuk = (d.setuk || []).filter(x => x.body).map(x => ({ grade: +x.grade, sem: String(x.sem || ""), subject: String(x.subject || "(미분류)"), body: String(x.body).trim() }));
+      st.attendance = d.attendance || st.attendance; st.structuredBy = AI.model; st.ai = null; st.highlights = {}; st.marks = [];
+      blocks = st._blocks = sentenceBlocks(st);
+      await dbPut(st);
+    }
+    msg.textContent = `${AI.model}로 읽는 중… (Opus는 1~2분 걸릴 수 있습니다)`;
+    const { system, user } = analyzePrompt(st, blocks);
+    const d = await callAI(system, user, ANALYZE_SCHEMA);
+    if (!d || !Array.isArray(d.tags)) throw new Error("응답에서 태그를 읽지 못했습니다.");
+    const map = refMap(blocks), tags = {};
+    let dropped = 0;
+    for (const t of d.tags) {
+      if (!map[t.ref]) { dropped++; continue; }
+      const ids = (t.tags || []).map(x => TAG_NAMES[String(x).replace(/^[^/]*\//, "").trim()] || (TAG_BY[x] ? x : null)).filter(Boolean).slice(0, 2);
+      if (ids.length) tags[t.ref] = { tags: ids, why: t.why || "" };
+    }
+    const keep = list => (list || []).filter(x => x && x.w);
+    st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: d.summary || "", axes: (d.axes || []).filter(a => a.title), tags,
+      lists: { concepts: keep(d.concepts), praise: keep(d.praise), vague: keep(d.vague), weak: keep(d.weak) }, notes: d.notes || [] };
+    await dbPut(st);
+    renderRecords();
+    $("aiReadMsg").textContent = `읽었습니다 — 태그 ${Object.keys(tags).length}문장, 개념 ${st.ai.lists.concepts.length}, 방어 ${st.ai.lists.praise.length}, 진위 ${st.ai.lists.vague.length}, 약점 ${st.ai.lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림)` : ""}.`;
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
+  b1.disabled = b2.disabled = false;
+}
+$("aiRead").onclick = () => aiRead(false);
+$("aiStruct").onclick = () => { if (confirm("AI가 가린 글 전체를 다시 영역·과목으로 가릅니다. 이 학생의 형광펜 수정·메모는 지워집니다. 계속할까요?")) aiRead(true); };
+
 /* 아래 막대: 등록 단추는 읽은 파일이 있을 때만, 허브 보기에서는 막대 자체를 숨긴다 */
 const renderBarBlind = renderBar;
 renderBar = function () {
@@ -5885,7 +6024,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, ANALYZE_SCHEMA, STRUCT_SCHEMA };
 </script>
 </body>
 </html>
