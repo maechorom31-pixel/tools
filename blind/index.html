@@ -142,6 +142,46 @@ body.has-bar footer{padding-bottom:140px}
 .ab-btns [hidden]{display:none}
 @media (max-width:760px){.ab{grid-template-columns:1fr}.ab-btns{justify-content:flex-start}.ab-btns .btn{margin:2px 8px 2px 0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ═══════ 형광펜 ═══════ */
+.sent{cursor:pointer;border-radius:3px;padding:1px 0}
+.sent.on{background:var(--amber-soft)}
+.sent .tg{font-size:12px;font-weight:700;color:var(--amber-dark);margin-right:4px;white-space:nowrap;vertical-align:1px}
+.sent .tg.manual{color:var(--ink)}
+.sent mark{background:var(--amber-pale);color:inherit;padding:0 1px;border-radius:2px}
+.sent.flash{outline:2px solid var(--amber-dark);outline-offset:2px}
+@media (hover:hover){.sent:hover{background:var(--sub)} .sent.on:hover{background:#FBEFD2}}
+.hlbox{position:absolute;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04);width:300px;max-width:calc(100vw - 32px);font-size:13px}
+.hlbox .ttl{font-weight:600;margin-bottom:6px}
+.hlbox .opts{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.hlbox label{display:flex;align-items:center;gap:6px;min-height:28px;white-space:nowrap}
+.hlbox input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber-dark)}
+.hlbox .grp{grid-column:1/-1;font-size:12px;color:var(--mid);margin-top:4px}
+.hlbox textarea{width:100%;font:inherit;font-size:13px;min-height:44px;margin-top:8px;padding:6px 8px;border:1px solid #D9D5CE;border-radius:6px}
+.hlbox .row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.hlbox .btn{min-height:30px;font-size:13px;padding:0 10px}
+.hlbox .btn.main{background:var(--amber)}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 16px;margin-top:12px}
+.lists details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:var(--card)}
+.lists summary{cursor:pointer;font-weight:600;font-size:14px}
+.lists summary .n{color:var(--mid);font-weight:400;font-variant-numeric:tabular-nums;margin-left:6px}
+.lists ul{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.6}
+.lists li a{color:var(--ink);text-decoration:none;border-bottom:1px solid #D9D5CE}
+.lists li .w{color:var(--mid)}
+.tagsum{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tagsum .chip b{color:var(--amber-dark)}
+.memo{display:block;font-size:12px;color:var(--mid);margin-left:4px}
+body.print-rec header,body.print-rec #viewBlind,body.print-rec #stuList,body.print-rec #apps,body.print-rec #appForm,body.print-rec .actbar,body.print-rec footer,body.print-rec section.step:not(#stuDetail),body.print-rec .stu-head,body.print-rec .toolrow,body.print-rec .lists{display:none!important}
+body.print-rec #stuDetail{border:0;padding:0}
+body.print-rec .print-head{display:block!important}
+.print-head{display:none;font-size:13px;color:var(--mid);margin-bottom:12px}
+@media print{
+  .sent.on{background:none}
+  .sent.on>.txt{text-decoration:underline;text-decoration-color:#B45309;text-underline-offset:3px}
+  .sent mark{background:none;border-bottom:2px solid #1A1A1A}
+  .sent .tg{color:#000}
+  .rec p{color:#000}
+}
 /* ═══════ 면접 준비 ═══════ */
 :root{--content-scale:1}
 .vswitch{margin-top:16px}
@@ -290,13 +330,18 @@ h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
 <div class="field"><label for="univIn">대학 <span class="hint">(자료집에 있는 대학은 고르면 전형·비율·일정이 채워집니다)</span></label><input id="univIn" list="univList" placeholder="예: 전남대"><datalist id="univList"></datalist></div>
 <div class="field"><label for="admIn">전형</label><select id="admIn"><option value="">— 대학을 먼저 고르세요 —</option></select><input id="admFreeIn" hidden placeholder="전형 이름 (예: 학생부종합 일반전형)" aria-label="전형 이름 직접 적기"></div>
 <div class="field"><label for="unitIn">모집단위(학과)</label><input id="unitIn" placeholder="예: 국어국문학과"></div>
+<div class="field"><label for="majorIn">전공 관련 과목 <span class="hint">(모집단위에서 계열을 짐작해 채웁니다. 쉼표로 고쳐 적으세요)</span></label><input id="majorIn" placeholder="예: 국어, 문학, 독서, 언어와 매체"></div>
 <div class="field"><label for="dateIn">면접일 <span class="hint">(11/22, 11.22(토) 10:30, 11월 22일 오후 모두 됩니다)</span></label><input id="dateIn" placeholder="예: 12/2 13:00"><span class="hint" id="dateHint"></span></div>
 </div>
 <div class="field"><label for="profIn">프로파일 메모 <span class="hint">(평가영역 비율, 질문 성향, 유의사항처럼 세션에서 정리한 대학 프로파일을 붙여 넣는 곳. 질문 만들 때 그대로 씁니다)</span></label><textarea id="profIn"></textarea></div>
 <div class="toolrow"><button class="btn main" type="submit" id="appSave">지원 추가</button><button class="btn" type="button" id="appCancel" hidden>취소</button><span class="hint" id="appMsg" role="status"></span></div>
 </form>
 <h3 class="sub-h">생기부</h3>
-<div class="toolrow"><span class="hint">가린 글만 있습니다. 형광펜과 질문 만들기는 다음 단계에서 붙습니다.</span><span class="spacer"></span>
+<p class="desc">규칙으로 먼저 칠한 문장은 출발점입니다. 문장을 누르면 태그를 바꾸거나 지우고 메모를 달 수 있고, 글자를 끌어 고르면 그 부분만 따로 칠할 수 있습니다. 태그는 학종 평가요소 세부 항목(학업·진로·공동체 10가지) 그대로이며 한 문장에 둘까지만 답니다.</p>
+<div class="print-head" id="printHead"></div>
+<div class="lists" id="autoLists"></div>
+<div class="tagsum" id="tagSum"></div>
+<div class="toolrow"><button class="btn" type="button" id="printRec">형광펜 생기부 인쇄</button><span class="hint">흑백에서는 밑줄로 나옵니다.</span><span class="spacer"></span>
 <label class="scale"><span style="font-size:12px">가</span><input type="range" id="scaleIn" min="80" max="160" step="5" value="100" aria-label="본문 글자 크기"><span style="font-size:18px">가</span></label></div>
 <div id="recView"></div>
 </section>
@@ -2604,6 +2649,7 @@ function profileHtml(app) {
     if (a.openingQuestions?.length) rows.push(["시작 질문", a.openingQuestions.map(esc).join("<br>")]);
     if (a.notes?.length) rows.push(["유의", "<ul>" + a.notes.map(n => `<li>${esc(n)}</li>`).join("") + "</ul>"]);
   }
+  if (app.major) rows.push(["전공 관련 과목", esc(app.major)]);
   if (app.profile) rows.push(["프로파일 메모", esc(app.profile).replace(/\n/g, "<br>")]);
   if (!rows.length) return "";
   let html = `<div class="prof"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
@@ -2714,7 +2760,7 @@ function renderApps() {
 }
 function resetAppForm() {
   HUB.editing = null;
-  $("appForm").reset(); fillAdm(null); $("dateHint").textContent = ""; $("dateHint").className = "hint";
+  $("appForm").reset(); fillAdm(null); $("majorIn").dataset.touched = ""; $("dateHint").textContent = ""; $("dateHint").className = "hint";
   $("appSave").textContent = "지원 추가"; $("appCancel").hidden = true; $("appMsg").textContent = "";
 }
 function fillAdm(u, selected) {
@@ -2743,7 +2789,7 @@ function editApp(id) {
   const u = HUB.cards?.universities.find(x => x.id === a.univId);
   $("univIn").value = u ? univLabel(u) : a.univText || "";
   fillAdm(u, a.admId); if (!u || !a.admId) { $("admFreeIn").hidden = false; if (u) $("admIn").value = "__free"; } $("admFreeIn").value = a.admText || "";
-  $("unitIn").value = a.unit || ""; $("dateIn").value = a.dateRaw || ""; $("dateIn").dispatchEvent(new Event("input")); $("profIn").value = a.profile || "";
+  $("unitIn").value = a.unit || ""; $("majorIn").value = a.major || ""; $("majorIn").dataset.touched = a.major ? "1" : ""; $("dateIn").value = a.dateRaw || ""; $("dateIn").dispatchEvent(new Event("input")); $("profIn").value = a.profile || "";
   $("appSave").textContent = "고친 내용 저장"; $("appCancel").hidden = false;
   $("appForm").scrollIntoView({ block: "start" });
 }
@@ -2758,36 +2804,228 @@ $("appForm").addEventListener("submit", async e => {
   if (dateRaw && !p) { $("appMsg").textContent = "오류: 면접일을 읽지 못했습니다."; return; }
   const app = HUB.editing ? st.applications.find(x => x.id === HUB.editing) : { id: uid(), rounds: [] };
   Object.assign(app, { univId: u?.id || null, univText: u ? "" : univTxt, admId: a?.id || null, admText: a ? "" : $("admFreeIn").value.trim(), unit: $("unitIn").value.trim(),
-    dateRaw, date: p?.date || null, time: p?.time || null, period: p?.period || null, profile: $("profIn").value.trim() });
+    dateRaw, date: p?.date || null, time: p?.time || null, period: p?.period || null, profile: $("profIn").value.trim(), major: $("majorIn").value.trim() });
   if (!HUB.editing) st.applications.push(app);
   await dbPut(st);
-  resetAppForm(); renderApps(); renderStudents(); renderCal();
-  $("appMsg").textContent = HUB.editing ? "저장했습니다." : "추가했습니다.";
+  const wasEdit = !!HUB.editing;
+  resetAppForm(); renderApps(); renderStudents(); renderCal(); renderRecords();
+  $("appMsg").textContent = wasEdit ? "저장했습니다." : "추가했습니다.";
 });
 /* 카드에 없는 전형은 '직접 적기'로 */
 $("admIn").addEventListener("change", () => { $("admFreeIn").hidden = $("admIn").value !== "__free"; });
 
 /* ---------- 생기부 열람 ---------- */
 const AREA_SORT = ["자율·자치활동", "자율활동", "자치활동", "동아리활동", "진로활동", "봉사활동"];
+
+/* ═══════ 형광펜 — 학종 평가요소 세부 항목 10가지 ═══════
+   문장 단위로 단서를 세어 점수 높은 둘까지만 단다. 직함만으로는 리더십을 달지 않는다.
+   자동 표시는 저장하지 않고 열 때마다 다시 계산하며, 교사가 고친 것만 저장한다. */
+const TAGS = [
+  { id: "ach", g: "학업역량", name: "학업성취도", re: [/성취\s*(수준|도)/, /성취가\s*(크게\s*)?향상/, /(매우\s*)?우수(함|한)/, /등급|석차/, /향상(되|됨|시킴)/] },
+  { id: "att", g: "학업역량", name: "학업태도", re: [/질문(을|하|이)/, /궁금|의문을\s*(갖|가지)/, /스스로\s*(찾|조사|탐색|해결)/, /추가(로|적인)\s*(조사|자료|탐구)/, /심화|확장/, /수업\s*(밖|이후|후)에?\s*(도|까지)?\s*이어/, /오답\s*노트/, /끝까지\s*(붙잡|시도)/, /여러\s*풀이/] },
+  { id: "inq", g: "학업역량", name: "탐구력", re: [/가설/, /변인|통제/, /측정/, /오차/, /검증/, /자료(를|을)\s*(수집|분석|모으|정리)/, /데이터/, /기준(표|을\s*(세우|정하|만들))/, /예외|반례|반대\s*(해석|의견)/, /한계/, /보완/, /재실험|다시\s*실험/, /설계(하|함|한)/, /결과를\s*(해석|분석|비교)/, /비교(하여|·분석|\s*분석)/, /원인을\s*(분석|찾)/] },
+  { id: "crs", g: "진로역량", name: "전공 관련 교과 이수 노력", re: [/(선택|이수)(하여|해서|한\s*뒤|함)/, /공동\s*교육과정/, /진로\s*선택\s*과목/, /온라인\s*(공동|수업|강의)/, /과목을\s*(선택|수강)/] },
+  { id: "mach", g: "진로역량", name: "전공 관련 교과 성취도", re: [] },   // 전공 과목 세특의 성취 서술에만 (아래 특례)
+  { id: "exp", g: "진로역량", name: "진로 탐색 활동과 경험", re: [/진로/, /직업/, /분야/, /관심을\s*(갖|가지)/, /계기/, /특강/, /캠프/, /체험/, /희망/, /진학|학과|전공/, /꿈/] },
+  { id: "coop", g: "공동체역량", name: "협업과 소통능력", re: [/모둠|조별|팀|부원|구성원|조원/, /협업|협력/, /역할을\s*(나누|분담)/, /의견(을|이)\s*(조율|수렴|경청|엇갈|모으)/, /토의|토론/, /합의/, /갈등/, /조정|중재/, /소통/, /설득/] },
+  { id: "care", g: "공동체역량", name: "나눔과 배려", re: [/배려/, /나눔|나누어\s*주/, /도와|도움을\s*(주|줌)/, /멘토/, /양보/, /봉사/, /안내서|정리한\s*자료(를|을)\s*(만들|공유)/, /공유(함|하여)/, /어려워하는\s*친구/] },
+  { id: "dil", g: "공동체역량", name: "성실성과 규칙준수", re: [/성실/, /꾸준(히|한)/, /끝까지/, /책임/, /맡은\s*(일|역할)/, /규칙|약속/, /개근/, /빠짐없이|매일/] },
+  { id: "lead", g: "공동체역량", name: "리더십", re: [/이끌/, /주도(하|적|함)/, /기획(하|함)/, /제안(하여|해)\s*(운영|진행|시행|도입)/, /결성|조직(하|함)/, /운영(함|하며|하고)/, /스터디를\s*(운영|꾸리)/], title: /회장|부회장|부장|차장|반장|임원|위원장|팀장|조장|대표/ },
+];
+const TAG_BY = Object.fromEntries(TAGS.map(t => [t.id, t]));
+/* 영역별 가중: 같은 점수면 자율활동은 공동체, 진로활동은 진로 탐색, 세특은 학업 쪽 */
+const AREA_BIAS = { "자율활동": { coop: .5, lead: .5, care: .3 }, "자율·자치활동": { coop: .5, lead: .5, care: .3 }, "자치활동": { coop: .5, lead: .5 }, "동아리활동": { inq: .3, coop: .3 }, "진로활동": { exp: .7, crs: .2 }, "봉사활동": { care: .7 }, "행동특성 및 종합의견": { dil: .3, care: .3, lead: .3 }, "세특": { inq: .4, att: .4, ach: .2 } };
+/* 계열 → 전공 관련 과목(2015 개정 과목명). 지원 카드의 '전공 관련 과목' 칸 기본값이며 고칠 수 있다 */
+const MAJOR_MAP = [
+  [/국어|문예|어문|국문|문학|언어|사학|역사|철학|문헌|한문|인문|고고|종교|신학/, "인문", "국어, 문학, 독서, 언어와 매체, 화법과 작문, 한국사, 세계사, 동아시아사, 윤리와 사상, 생활과 윤리, 한문"],
+  [/영어|영문|중국|일본|일어|불어|독어|서어|노어|통번역|외국어|국제/, "어문", "영어, 영어Ⅰ, 영어Ⅱ, 영어 독해와 작문, 영어 회화, 국어, 세계사, 세계지리"],
+  [/교육|교대|사범|초등|유아|특수교육/, "교육", "교육학, 국어, 수학, 영어, 윤리와 사상, 생활과 윤리, 심리학"],
+  [/의예|의학|치의|한의|약학|간호|보건|물리치료|임상|응급|방사선|치위생|수의|의료/, "의약", "수학Ⅰ, 수학Ⅱ, 미적분, 생명과학Ⅰ, 생명과학Ⅱ, 화학Ⅰ, 화학Ⅱ, 보건"],
+  [/컴퓨터|소프트웨어|SW|AI|인공지능|정보|데이터|전기|전자|기계|건축|토목|화공|신소재|반도체|공학|로봇|에너지|항공|우주|산업/, "공학", "수학Ⅰ, 수학Ⅱ, 미적분, 기하, 확률과 통계, 물리학Ⅰ, 물리학Ⅱ, 화학Ⅰ, 정보, 인공지능 기초"],
+  [/수학|물리|화학|생명|생물|지구|천문|통계|자연|과학/, "자연", "수학Ⅰ, 수학Ⅱ, 미적분, 기하, 확률과 통계, 물리학Ⅰ, 물리학Ⅱ, 화학Ⅰ, 화학Ⅱ, 생명과학Ⅰ, 생명과학Ⅱ, 지구과학Ⅰ"],
+  [/경영|경제|회계|무역|통상|행정|정치|외교|법|사회|복지|심리|미디어|광고|홍보|언론|신문|방송|관광|부동산|도시|지리|아동|가족|소비자/, "사회", "사회·문화, 정치와 법, 경제, 생활과 윤리, 확률과 통계, 한국지리, 세계지리, 수학Ⅰ"],
+  [/체육|스포츠|음악|미술|디자인|무용|연극|영화|예술|공예|조형|패션/, "예체능", "체육, 음악, 미술, 운동과 건강, 음악 연주, 미술 창작, 국어"],
+];
+function guessMajor(unit) {
+  const u = (unit || "").replace(/\s+/g, "");
+  for (const [re, , subs] of MAJOR_MAP) if (re.test(u)) return subs;
+  return "";
+}
+$("unitIn").addEventListener("input", () => { if (!$("majorIn").dataset.touched) $("majorIn").value = guessMajor($("unitIn").value); });
+$("majorIn").addEventListener("input", () => { $("majorIn").dataset.touched = "1"; });
+
+/* 문장 가르기 — 마침표 뒤에 공백·한글·따옴표가 오면 끊는다(소수점·날짜는 안 끊긴다) */
+const splitSents = t => t.split(/(?<=[.!?])(?=\s|[가-힣'‘"“(\[])/).map(x => x.trim()).filter(Boolean);
+const normSubj = s => s.replace(/\s+/g, "").replace(/[ⅠⅡⅢ]/g, m => ({ "Ⅰ": "1", "Ⅱ": "2", "Ⅲ": "3" }[m])).replace(/I{1,3}$/, m => String(m.length));
+function majorSet(st) {
+  const set = new Set();
+  for (const a of st.applications) for (const x of (a.major || "").split(/[,，·/]/)) if (x.trim()) set.add(normSubj(x));
+  return set;
+}
+/* 한 문장의 자동 태그 */
+function autoTags(sent, area, isMajorSubj) {
+  const score = {};
+  for (const t of TAGS) {
+    let n = 0;
+    for (const re of t.re) if (re.test(sent)) n++;
+    if (t.id === "lead") { const title = t.title.test(sent); if (!n && title) continue; if (title) n += .5; }
+    if (t.id === "mach") { if (isMajorSubj && TAG_BY.ach.re.some(re => re.test(sent))) n = 1.6; }
+    if (n) score[t.id] = n + (AREA_BIAS[area]?.[t.id] || 0);
+  }
+  if (score.mach && score.ach) delete score.ach;           // 전공 과목이면 성취도는 전공 쪽으로
+  // '진로'라는 낱말 하나로는 달지 않는다 — 진로활동 영역이거나 단서가 둘 이상일 때만
+  const MIN = { exp: 1.5 };
+  return Object.entries(score).filter(([k, v]) => v >= (MIN[k] || 1)).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
+}
+/* 학생의 기록을 문장 단위로 편다: [{key, title, grade, area, sents:[{i, t, auto}]}] */
+function sentenceBlocks(st) {
+  const major = majorSet(st), blocks = [];
+  for (const g of [1, 2, 3]) {
+    for (const r of st.records.filter(x => x.grade === g).sort((a, b) => AREA_SORT.indexOf(a.area) - AREA_SORT.indexOf(b.area))) {
+      if (r.area === "행동특성 및 종합의견") continue;
+      blocks.push({ key: `${g}|${r.area}`, title: r.area, grade: g, area: r.area, hope: r.hope, sents: splitSents(r.text).map((t, i) => ({ i, t, auto: autoTags(t, r.area, false) })) });
+    }
+    for (const x of st.setuk.filter(x => x.grade === g)) {
+      const isM = major.has(normSubj(x.subject));
+      blocks.push({ key: `${g}|세특|${x.subject}|${x.sem}`, title: x.subject + (x.sem ? ` ${x.sem}학기` : ""), grade: g, area: "세특", isMajor: isM, sents: splitSents(x.body).map((t, i) => ({ i, t, auto: autoTags(t, "세특", isM) })) });
+    }
+    for (const r of st.records.filter(x => x.grade === g && x.area === "행동특성 및 종합의견"))
+      blocks.push({ key: `${g}|행특`, title: "행동특성 및 종합의견", grade: g, area: r.area, sents: splitSents(r.text).map((t, i) => ({ i, t, auto: autoTags(t, r.area, false) })) });
+  }
+  return blocks;
+}
+const sentKey = (b, i) => `${b.key}#${i}`;
+function effTags(st, b, sn) { const o = st.highlights?.[sentKey(b, sn.i)]; return o && o.tags ? o.tags : sn.auto; }
+
+/* ---------- 자동 목록 ---------- */
+const CONCEPT_TAIL = /[가-힣A-Za-z0-9·\-]{2,24}(법칙|원리|이론|효과|정리|모형|모델|알고리즘|기법|방정식|곡선|지수|지표|공식|현상|기술|구조|메커니즘|체계|실험)(?![가-힣])/g;
+const QUOTED = /[‘'"“「『〈《]([^’'"”」』〉》]{2,40})[’'"”」』〉》]/g;
+const ENGLISH = /(?<![A-Za-z])[A-Z][A-Za-z\-]{1,}(?:\s[A-Z][A-Za-z\-]+)*|(?<![A-Za-z])[A-Z]{2,}(?![A-Za-z])/g;
+const PRAISE = /([가-힣·\s]{2,30}?(능력|태도|역량|자세|리더십|성실성|책임감|끈기|열정|호기심|자기주도성|의사소통|협업|배려심|통찰력|사고력|창의성|집중력|탐구심|적극성|정직성|유연성|소통\s*능력|수용력|문제해결력))(이|가|을|를|도|은|는)?\s*(매우\s*|특히\s*)?(뛰어남|돋보임|탁월함|인상적임|보임|드러남|갖춤|지님|강함|높음|우수함|두드러짐|돋보이|보여\s*줌)/g;
+const VAGUE_ROLE = /참여함|함께|공동으로|협력하여|도움을\s*받아|조원들과|모둠원과|부원들과/;
+const VAGUE_END = /(보고서|발표\s*자료|결과물)(를|을)\s*(작성|제출|발표)함\.?$/;
+const WEAK = /부진|어려움을\s*(겪|느끼)|하락|떨어|보완이\s*필요|아쉬|미흡|낮은\s*편/;
+function autoLists(st, blocks) {
+  const concepts = new Map(), praise = [], vague = [], weak = [];
+  const ref = (b, sn) => ({ key: sentKey(b, sn.i), where: `${b.grade}학년 ${b.title}` });
+  for (const b of blocks) for (const sn of b.sents) {
+    const t = sn.t;
+    for (const re of [QUOTED, CONCEPT_TAIL, ENGLISH]) { re.lastIndex = 0; let m; while ((m = re.exec(t))) { const w = (m[1] || m[0]).trim(); if (w.length < 2 || /^\d+$/.test(w)) continue; const isBook = /읽|독서|저자|책/.test(t) && re === QUOTED; if (!concepts.has(w)) concepts.set(w, { w, book: isBook, ...ref(b, sn) }); } }
+    PRAISE.lastIndex = 0; let m; while ((m = PRAISE.exec(t))) praise.push({ w: m[0].trim(), ...ref(b, sn) });
+    if (b.area !== "행동특성 및 종합의견" && (VAGUE_ROLE.test(t) || (VAGUE_END.test(t) && !/(조사|분석|설계|측정|비교|직접|스스로)/.test(t)))) vague.push({ w: t, ...ref(b, sn) });
+    if (b.area === "세특" && WEAK.test(t)) weak.push({ w: t, ...ref(b, sn) });
+  }
+  // 출결: 학년 · 수업일수 다음 칸에 0이 아닌 수가 있으면
+  for (const ln of (st.attendance || "").split("\n")) {
+    const nums = ln.match(/\d+/g) || [];
+    if (nums.length >= 3 && nums.slice(2).some(n => +n > 0)) weak.unshift({ w: "출결: " + ln, key: "", where: "출결상황" });
+  }
+  const hopes = st.records.filter(r => r.hope).sort((a, b) => a.grade - b.grade);
+  if (new Set(hopes.map(h => h.hope)).size > 1) weak.unshift({ w: "희망분야 변경: " + hopes.map(h => `${h.grade}학년 ${h.hope}`).join(" → "), key: "", where: "진로활동" });
+  const subs3 = st.setuk.filter(x => x.grade === 3).map(x => x.subject);
+  if (subs3.length) weak.push({ w: "3학년 세특 과목: " + subs3.join(", ") + " — 권장과목 미이수는 여기서 판단", key: "", where: "" });
+  return { concepts: [...concepts.values()], praise, vague, weak };
+}
+
+/* ---------- 그리기 ---------- */
 function renderRecords() {
   const st = stuOf(HUB.cur), host = $("recView");
-  const blocks = [];
-  if (st.attendance) blocks.push(`<div class="rec"><h4>출결상황</h4><p class="att">${esc(st.attendance)}</p></div>`);
-  for (const g of [1, 2, 3]) {
-    const recs = st.records.filter(r => r.grade === g).sort((a, b) => AREA_SORT.indexOf(a.area) - AREA_SORT.indexOf(b.area));
-    const subs = st.setuk.filter(x => x.grade === g);
-    if (!recs.length && !subs.length) continue;
-    let h = `<section class="gradeblk"><h3>${g}학년</h3>`;
-    for (const r of recs.filter(x => x.area !== "행동특성 및 종합의견")) h += `<div class="rec"><h4>${esc(r.area)}${r.hope ? `<span class="meta">희망분야 ${esc(r.hope)}</span>` : ""}<span class="meta">${neisBytes(r.text).toLocaleString()}B</span></h4><p>${esc(r.text)}</p></div>`;
-    for (const x of subs) h += `<div class="rec"><h4>${esc(x.subject)}${x.sem ? `<span class="meta">${x.sem}학기</span>` : ""}<span class="meta">${neisBytes(x.body).toLocaleString()}B</span></h4><p>${esc(x.body)}</p></div>`;
-    for (const r of recs.filter(x => x.area === "행동특성 및 종합의견")) h += `<div class="rec"><h4>행동특성 및 종합의견<span class="meta">${neisBytes(r.text).toLocaleString()}B</span></h4><p>${esc(r.text)}</p></div>`;
-    blocks.push(h + "</section>");
+  const blocks = st._blocks = sentenceBlocks(st);
+  const html = [];
+  if (st.attendance) html.push(`<div class="rec"><h4>출결상황</h4><p class="att">${esc(st.attendance)}</p></div>`);
+  let g0 = 0;
+  for (const b of blocks) {
+    if (b.grade !== g0) { if (g0) html.push("</section>"); g0 = b.grade; html.push(`<section class="gradeblk"><h3>${g0}학년</h3>`); }
+    const bytes = neisBytes(b.sents.map(x => x.t).join(" "));
+    html.push(`<div class="rec" data-blk="${esc(b.key)}"><h4>${esc(b.title)}${b.isMajor ? `<span class="meta">전공 관련</span>` : ""}${b.hope ? `<span class="meta">희망분야 ${esc(b.hope)}</span>` : ""}<span class="meta">${bytes.toLocaleString()}B</span></h4><p>${b.sents.map(sn => sentHtml(st, b, sn)).join(" ")}</p></div>`);
   }
-  if (!blocks.length) blocks.push(`<p class="empty">영역을 가르지 못했습니다(이 판형은 아직 모릅니다). 가린 글 전체는 아래에 그대로 둡니다.</p>`);
-  blocks.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><p class="att">${esc(st.text)}</p></details>`);
-  if (st.unparsed?.length) blocks.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
-  host.innerHTML = blocks.join("");
+  if (g0) html.push("</section>");
+  if (!blocks.length) html.push(`<p class="empty">영역을 가르지 못했습니다(이 판형은 아직 모릅니다). 가린 글 전체는 아래에 그대로 둡니다.</p>`);
+  html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><p class="att">${esc(st.text)}</p></details>`);
+  if (st.unparsed?.length) html.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
+  host.innerHTML = html.join("");
+  host.querySelectorAll(".sent").forEach(el => el.addEventListener("click", onSentClick));
+  renderLists(st, blocks); renderTagSum(st, blocks);
+  $("printHead").textContent = `${st.alias} · ${st.applications.map(appTitle).join(" / ") || "지원 미정"} · 형광펜: 학종 평가요소 세부 항목`;
 }
+function sentHtml(st, b, sn) {
+  const k = sentKey(b, sn.i), o = st.highlights?.[k] || {}, tags = effTags(st, b, sn);
+  const marks = (st.marks || []).filter(m => m.key === k).sort((a, b) => a.s - b.s);
+  let txt = "", at = 0;
+  for (const m of marks) { if (m.s < at) continue; txt += esc(sn.t.slice(at, m.s)) + `<mark title="${esc(TAG_BY[m.tag]?.name || "")}">${esc(sn.t.slice(m.s, m.e))}</mark>`; at = m.e; }
+  txt += esc(sn.t.slice(at));
+  const lab = tags.length ? `<span class="tg${o.tags ? " manual" : ""}">${tags.map(t => TAG_BY[t].name).join(" · ")}</span>` : "";
+  return `<span class="sent${tags.length ? " on" : ""}" id="s-${cssId(k)}" data-k="${esc(k)}">${lab}<span class="txt">${txt}</span>${o.memo ? `<span class="memo">메모: ${esc(o.memo)}</span>` : ""}</span>`;
+}
+const cssId = k => k.replace(/[^A-Za-z0-9가-힣]/g, "_");
+function renderLists(st, blocks) {
+  const L = autoLists(st, blocks);
+  const item = x => `<li>${x.key ? `<a href="#s-${cssId(x.key)}" data-go="${esc(x.key)}">${esc(x.w)}</a>` : esc(x.w)}${x.where ? ` <span class="w">— ${esc(x.where)}</span>` : ""}${x.book ? ` <span class="w">(책)</span>` : ""}</li>`;
+  const sec = (ttl, list, hint) => `<details><summary>${ttl}<span class="n">${list.length}</span></summary>${list.length ? `<ul>${list.map(item).join("")}</ul>` : `<p class="hint" style="margin-top:6px">${hint}</p>`}</details>`;
+  $("autoLists").innerHTML = sec("개념·용어·책", L.concepts, "따옴표 구절이나 ~법칙·이론·알고리즘 같은 말이 없습니다.") + sec("방어용 평가 문구", L.praise, "'~이 뛰어남' 식의 평가 서술을 찾지 못했습니다.") + sec("진위 확인 — 역할이 흐린 문장", L.vague, "'참여함·함께'로 끝나는 문장이 없습니다.") + sec("약점·공백", L.weak, "출결·희망분야 변경·부진 문구가 없습니다.");
+  $("autoLists").querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); const el = document.getElementById("s-" + cssId(a.dataset.go)); if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); } });
+}
+function renderTagSum(st, blocks) {
+  const n = {}; for (const b of blocks) for (const sn of b.sents) for (const t of effTags(st, b, sn)) n[t] = (n[t] || 0) + 1;
+  $("tagSum").innerHTML = TAGS.map(t => `<span class="chip"><b>${n[t.id] || 0}</b> ${t.name}</span>`).join("");
+}
+
+/* ---------- 문장 누르기 → 태그·메모 상자 ---------- */
+let hlBox = null;
+function closeBox() { if (hlBox) { hlBox.remove(); hlBox = null; } }
+document.addEventListener("click", e => { if (hlBox && !hlBox.contains(e.target) && !e.target.closest(".sent")) closeBox(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeBox(); });
+function onSentClick(e) {
+  if (e.target.closest("a")) return;
+  const sel = window.getSelection();
+  if (sel && !sel.isCollapsed && sel.toString().trim().length >= 2) return openMarkBox(e, sel);   // 끌어 고른 경우
+  const st = stuOf(HUB.cur), k = e.currentTarget.dataset.k;
+  const [b, sn] = findSent(st, k);
+  if (!b) return;
+  const cur = effTags(st, b, sn), o = st.highlights?.[k] || {};
+  openBox(e.currentTarget, `
+    <div class="ttl">이 문장의 태그 <span class="hint">(둘까지)</span></div>
+    <div class="opts">${["학업역량", "진로역량", "공동체역량"].map(g => `<div class="grp">${g}</div>` + TAGS.filter(t => t.g === g).map(t => `<label><input type="checkbox" value="${t.id}"${cur.includes(t.id) ? " checked" : ""}>${t.name}</label>`).join("")).join("")}</div>
+    <textarea placeholder="메모 (질문 아이디어, 확인할 것)">${esc(o.memo || "")}</textarea>
+    <div class="row"><button class="btn main" type="button" data-act="save">저장</button><button class="btn" type="button" data-act="auto">자동으로 되돌림</button><button class="btn" type="button" data-act="clear">태그 지움</button></div>`);
+  const boxes = [...hlBox.querySelectorAll("input[type=checkbox]")];
+  boxes.forEach(c => c.onchange = () => { const on = boxes.filter(x => x.checked); if (on.length > 2) c.checked = false; });
+  hlBox.querySelector("[data-act=save]").onclick = async () => { st.highlights = st.highlights || {}; st.highlights[k] = { tags: boxes.filter(x => x.checked).map(x => x.value), memo: hlBox.querySelector("textarea").value.trim() }; await dbPut(st); closeBox(); renderRecords(); };
+  hlBox.querySelector("[data-act=auto]").onclick = async () => { if (st.highlights) { const memo = st.highlights[k]?.memo; delete st.highlights[k]; if (memo) st.highlights[k] = { memo }; } await dbPut(st); closeBox(); renderRecords(); };
+  hlBox.querySelector("[data-act=clear]").onclick = async () => { st.highlights = st.highlights || {}; st.highlights[k] = { tags: [], memo: hlBox.querySelector("textarea").value.trim() }; await dbPut(st); closeBox(); renderRecords(); };
+}
+function findSent(st, k) {
+  for (const b of st._blocks || []) for (const sn of b.sents) if (sentKey(b, sn.i) === k) return [b, sn];
+  return [null, null];
+}
+function openBox(anchor, inner) {
+  closeBox();
+  hlBox = document.createElement("div"); hlBox.className = "hlbox"; hlBox.innerHTML = inner;
+  document.body.appendChild(hlBox);
+  const r = anchor.getBoundingClientRect(), w = hlBox.offsetWidth;
+  hlBox.style.top = `${window.scrollY + r.bottom + 6}px`;
+  hlBox.style.left = `${Math.max(16, Math.min(window.scrollX + r.left, window.innerWidth - w - 16))}px`;
+}
+/* 끌어 고른 글자만 칠하기 — 한 문장 안에서만 */
+function openMarkBox(e, sel) {
+  const st = stuOf(HUB.cur), sentEl = e.currentTarget, k = sentEl.dataset.k;
+  const range = sel.getRangeAt(0), txtEl = sentEl.querySelector(".txt");
+  if (!txtEl.contains(range.startContainer) || !txtEl.contains(range.endContainer)) return;
+  const pre = range.cloneRange(); pre.selectNodeContents(txtEl); pre.setEnd(range.startContainer, range.startOffset);
+  const sIdx = pre.toString().length, eIdx = sIdx + range.toString().length;
+  const picked = range.toString();
+  openBox(sentEl, `<div class="ttl">“${esc(picked.length > 40 ? picked.slice(0, 40) + "…" : picked)}” 칠하기</div>
+    <div class="opts">${TAGS.map(t => `<label><input type="radio" name="mk" value="${t.id}">${t.name}</label>`).join("")}</div>
+    <div class="row"><button class="btn main" type="button" data-act="mark">칠하기</button><button class="btn" type="button" data-act="unmark">이 자리 지움</button></div>`);
+  hlBox.querySelector("[data-act=mark]").onclick = async () => {
+    const tag = hlBox.querySelector("input[name=mk]:checked")?.value; if (!tag) return;
+    st.marks = (st.marks || []).filter(m => !(m.key === k && m.s < eIdx && m.e > sIdx));
+    st.marks.push({ key: k, s: sIdx, e: eIdx, tag }); await dbPut(st); closeBox(); sel.removeAllRanges(); renderRecords();
+  };
+  hlBox.querySelector("[data-act=unmark]").onclick = async () => { st.marks = (st.marks || []).filter(m => !(m.key === k && m.s < eIdx && m.e > sIdx)); await dbPut(st); closeBox(); sel.removeAllRanges(); renderRecords(); };
+}
+$("printRec").onclick = () => { document.body.classList.add("print-rec"); const done = () => { document.body.classList.remove("print-rec"); window.removeEventListener("afterprint", done); }; window.addEventListener("afterprint", done); window.print(); setTimeout(done, 2000); };
+
 $("scaleIn").addEventListener("input", () => { document.documentElement.style.setProperty("--content-scale", $("scaleIn").value / 100); try { localStorage.setItem("blind-scale", $("scaleIn").value); } catch { /* 무시 */ } });
 try { const sc = localStorage.getItem("blind-scale"); if (sc) { $("scaleIn").value = sc; document.documentElement.style.setProperty("--content-scale", sc / 100); } } catch { /* 무시 */ }
 
@@ -2823,7 +3061,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor };
 </script>
 </body>
 </html>
