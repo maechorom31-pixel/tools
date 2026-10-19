@@ -1,0 +1,5199 @@
+{
+ "version": "2027-susi-v1",
+ "source": {
+  "title": "2027학년도 수시모집 면접 전형 자료집",
+  "publisher": "2026 세종대입지원단 면접지원팀(서류기반부)",
+  "note": "자료집 텍스트를 구조화한 것. 비율·일정은 당해 모집요강으로 교차 확인 필요"
+ },
+ "universities": [
+  {
+   "no": "051",
+   "id": "tukorea",
+   "name": "한국공학대학교",
+   "short": "한국공학대",
+   "campus": null,
+   "region": "경기",
+   "admissions": [
+    {
+     "id": "tukorea-jonghap-changui",
+     "name": "학생부 종합 - 창의인재",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "4배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 60
+        },
+        {
+         "label": "면접",
+         "pct": 40
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 구술면접",
+     "format": "10분 이내 / 면접 위원 2명",
+     "duration": "10분 이내",
+     "panel": "2명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업역량",
+       "pct": 30,
+       "desc": null
+      },
+      {
+       "name": "진로역량",
+       "pct": 40,
+       "desc": null
+      },
+      {
+       "name": "공동체역량",
+       "pct": 30,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": "학업역량",
+       "unit": null,
+       "q": "물리2 과목을 이수했는데, 배운 내용 중에서 가장 기억에 남는 내용은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업역량",
+       "unit": null,
+       "q": "고교 생활 중 문제해결을 위해 남들과는 다른 자신만의 아이디어를 도출해서 일을 잘 해냈던 경험이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업역량",
+       "unit": null,
+       "q": "매일 자투리 시간에 학업을 위해 노력했다는 내용이 있는데, 해당 시간에 주로 어떤 과목을 공부했나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업역량",
+       "unit": null,
+       "q": "졸업 후 어떤 분야로 진출할 계획이며 어떻게 준비할 것인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업역량",
+       "unit": null,
+       "q": "수학 관련 과목의 등급이 지속적으로 하락한 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로역량",
+       "unit": null,
+       "q": "한국공학대학교의 ○○학과에 지원한 이유가 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로역량",
+       "unit": null,
+       "q": "○○학과에 진학하여 가장 듣고 싶은 수업은 무엇인가요? 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로역량",
+       "unit": null,
+       "q": "다양한 프로그래밍 언어를 공부했다고 되어 있는데, 학습한 프로그래밍 언어 중에 가장 흥미로운 프로그래밍 언어는 무엇인가요? 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로역량",
+       "unit": null,
+       "q": "3학년 때 전자 탐구 동아리 활동을 하며 반도체가 야기하는 환경 문제를 탐구했는데, 반도체가 야기하는 환경 문제가 무엇인가요? 이를 해결할 수 있는 방안은 무엇이 있을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로역량",
+       "unit": null,
+       "q": "공정 무역에 대해서 학습한 경험이 있는데, 공정 무역의 문제점은 무엇이라고 생각하나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체역량",
+       "unit": null,
+       "q": "학급자치회 회장으로서 학급을 위해 기여한 바가 크다고 학교생활기록부에 나와 있는데, 학급 단합을 위해 어떤 노력을 하였나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체역량",
+       "unit": null,
+       "q": "학교에서 어려움을 겪는 친구를 도와주고 보람을 느꼈던 경험이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체역량",
+       "unit": null,
+       "q": "팀을 이루어 진행했던 활동 중에서 가장 기억에 남는 활동은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체역량",
+       "unit": null,
+       "q": "출결사항에 미인정 결과와 결석이 있는데, 무슨 일로 인해 발생한 것인지요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "반도체공학부",
+       "q": "반도체 효율 극대화?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "반도체공학부",
+       "q": "어떤 재료가 반도체의 효율 향상에 좋을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "반도체공학부",
+       "q": "물리를 선택하지 않은 이유?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "기타 칸의 반도체공학부 질문 3개는 평가영역 표기 없이 실려 있어 criterion null로 둠"
+     ]
+    },
+    {
+     "id": "tukorea-jonghap-gyeyak",
+     "name": "학생부 종합 - 조기취업형계약학과",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "면접",
+         "pct": 100
+        }
+       ]
+      }
+     ],
+     "interviewPct": 100,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 구술면접",
+     "format": "15분 이내 / 면접 위원 2명",
+     "duration": "15분 이내",
+     "panel": "2명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-25",
+       "dateEnd": "2026-11-26",
+       "time": null,
+       "units": "전 모집단위",
+       "note": "중 1일"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "성실성",
+       "pct": 25,
+       "desc": null
+      },
+      {
+       "name": "직무적합성",
+       "pct": 50,
+       "desc": null
+      },
+      {
+       "name": "공동체의식",
+       "pct": 25,
+       "desc": null
+      }
+     ],
+     "questionStyle": null,
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "052",
+   "id": "ut",
+   "name": "한국교통대학교",
+   "short": "한국교통대",
+   "campus": null,
+   "region": "충북",
+   "admissions": [
+    {
+     "id": "ut-jonghap-1",
+     "name": "학생부종합Ⅰ",
+     "track": "학생부종합",
+     "units": [
+      "항공서비스학과"
+     ],
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "7배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 60
+        },
+        {
+         "label": "면접",
+         "pct": 40
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 면접",
+     "format": "다수의 입학사정관이 제출서류(학교생활기록부 또는 학생부 대체서식) 및 면접평가를 기반으로 평가영역별 요소를 5단계 척도로 독립적·종합적으로 평가",
+     "duration": null,
+     "panel": "다수의 입학사정관",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-25",
+       "dateEnd": "2026-11-27",
+       "time": null,
+       "units": "항공서비스학과",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업적역량",
+       "pct": 40,
+       "desc": "40점"
+      },
+      {
+       "name": "사회적 역량",
+       "pct": 60,
+       "desc": "60점"
+      }
+     ],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "지원한 전공 분야와 관련해 더 자세히 알기 위해 노력했던 부분들에 대해 이야기해 주시기 바랍니다.",
+       "followUp": "구체적으로 전공분야와 관련하여 어떤 활동이나 경험을 하였습니까? / 그러한 활동이나 경험들을 통해서 어떠한 것들을 새롭게 알게 되었습니까?"
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "우리 학과(전공)를 진학하기 위해 가장 의미 있다고 생각한 교내 활동과 그 활동을 통해 느낀 점을 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "우리 학과(전공)에 지원하게 된 동기와 이를 위해 어떤 노력을 기울였는지 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "해당 전공을 선택한 동기는 무엇입니까?",
+       "followUp": "그러한 동기를 설정할 수 있도록 하게 된 계기는 무엇입니까? / 본인이 준비한 내용과 ○○전공과의 관련성을 설명해 보십시오."
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "우리 학과(전공)를 지원하게 된 동기는 무엇이며, 중요시 여긴 교과목과 그 교과목의 성적향상을 위하여 어떤 노력을 기울였는지 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "본인의 진로와 관련하여 호기심이나 관심을 갖고 있는 세부 분야가 있습니까?",
+       "followUp": "그 분야에 관심을 갖게 된 계기나 이유는 무엇입니까? / 현재 어떤 노력들을 하고 있습니까? 그러한 노력들이 앞으로 진로 분야에서 어떠한 강점이 될 수 있다고 생각합니까?"
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "고등학교 재학 기간 중 스스로 목표를 설정하고 지속적으로 노력한 교내 활동과 그 활동을 통해 느낀 점을 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학업적역량",
+       "unit": null,
+       "q": "고등학교 재학 기간 중 가장 중점을 둔 교내 활동을 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "본인이 고교생활 중 꾸준히 해 온 일이나 활동이 있다면 이야기해 주십시오.",
+       "followUp": "그러한 활동들은 어떤 계기로 시작했는지 이야기해 주십시오. / 본인의 구체적인 역할과 그러한 활동을 지속적으로 실천하고 있는 이유를 이야기해 주십시오."
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "자신에게 주어진 역할이나 임무를 수행하는데 있어 성실한 자세로 최선을 다했다고 자부할 수 있을 만한 사례가 있다면 이야기해 주십시오.",
+       "followUp": "그것을 성공적으로 해내기 위해 어떤 노력들을 기울였습니까? / 성실한 자세로 임했다고 볼 수 있는 측면들은 무엇입니까? / 그러한 사례의 어떤 면에서 본인의 성실함을 볼 수 있습니까?"
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "본인이 가장 의미 있게 참가했던 봉사활동 경험을 이야기해 주십시오.",
+       "followUp": "봉사활동을 하면서 가장 기억에 남는 장면은 무엇인가요? / 그러한 장면이 의미가 있었던 이유는 무엇인가요? / 봉사활동이 본인에게 어떤 영향을 주었나요?"
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "공동의 목표 달성을 위한 활동들 중 가장 기억에 남는 활동이 있다면 이야기해 주십시오.",
+       "followUp": "구체적으로 목표를 설정하는 방법을 어떻게 논의하였습니까? / 협력을 하는 과정에서 가장 힘들었던 것은 무엇입니까?"
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "다른 사람과 함께 즐겁게 수행한 교내 활동을 본인의 역할 중심으로 말씀해 주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "지정된 기본 복장 양식이 존재. (공식 요강을 재확인)",
+      "면접 대상자 답변은 학교생활기록부(학교생활기록부 대체서식)를 기반으로 답변해야 되며, 기재되어 있지 않은 답변 시 불이익 또는 해당 내용을 면접 평가에 반영하지 않음",
+      "면접 기출문제는 참고용으로 실제 면접 시 사용되지 않을 수 있음"
+     ],
+     "pastQuestionsLink": "한국교통대 입학처",
+     "parseNotes": [
+      "면접 일정은 항공서비스학과만 표기되어 있음 — 다른 모집단위는 면접 없음으로 추정"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "053",
+   "id": "koreatech",
+   "name": "한국기술교육대학교",
+   "short": "한국기술교육대",
+   "campus": null,
+   "region": "충남",
+   "admissions": [
+    {
+     "id": "koreatech-jonghap-changui",
+     "name": "학생부종합전형 – 창의인재(면접형), 충남형계약학과_조기취업형",
+     "aliases": [
+      "창의인재(면접형)",
+      "충남형계약학과_조기취업형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "4배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 60
+        },
+        {
+         "label": "면접",
+         "pct": 40
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 면접",
+     "format": "면접관 2인과 개별 블라인드 면접 / 10분 내외",
+     "duration": "10분 내외",
+     "panel": "2인",
+     "blind": true,
+     "schedule": [
+      {
+       "date": "2026-10-31",
+       "dateEnd": null,
+       "time": null,
+       "units": "창의인재(면접형)",
+       "note": null
+      },
+      {
+       "date": "2026-11-25",
+       "dateEnd": null,
+       "time": null,
+       "units": "충남형계약학과(반도체·디스플레이공학과)",
+       "note": "원문 요일 표기 (일)이나 2026-11-25는 수요일 — 요강 확인 필요"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "전공적합성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "발전가능성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "나우리역량",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": "전공적합성",
+       "unit": "기계공학부",
+       "q": "생활기록부에 기재된 내용 중 하버사인 공식을 자율주행 자동차의 경로를 계획하는데 활용한다고 되어있는데, 이에 대해 설명해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": "기계공학부",
+       "q": "심화수학1 과목을 이수하였는데, 어떠한 도움을 받았나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": "건축공학부",
+       "q": "고양이 집에 어떤 내진설계를 했나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": "건축공학부",
+       "q": "미분을 건축공학에 어떻게 적용시킬 수 있을지",
+       "followUp": null
+      },
+      {
+       "criterion": "발전가능성",
+       "unit": "디자인학과",
+       "q": "요즘 이슈되는 기술이나 디자인 중 어떤 것에 흥미를 가지고 계신가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "나우리역량",
+       "unit": null,
+       "q": "생활기록부에 2학년 질병조퇴가 10일 정도 있는데 왜 그런가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "나우리역량",
+       "unit": null,
+       "q": "고등학교 활동 중 부반장 활동이 많은데 왜 반장은 하지 않았는지?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "전공관련 내용과 더불어 응시자의 학교 생활을 파악하는 것에 매우 큰 관심이 있음.",
+      "조퇴가 많거나, 활동에 특이점이 있을 시 답변을 단단히 준비해가야 함."
+     ],
+     "pastQuestionsLink": "한국기술교육대학교 선행학습 평가 보고서 (논술관련만 있음)",
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "054",
+   "id": "hufs",
+   "name": "한국외국어대학교",
+   "short": "한국외대",
+   "campus": null,
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "hufs-jonghap-myeonjeop",
+     "name": "학생부종합 – 면접형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "3배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류기반 면접",
+     "format": "7분 이내 / 면접위원 2명",
+     "duration": "7분 이내",
+     "panel": "2명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": null,
+       "units": "[서울] 전 모집단위",
+       "note": null
+      },
+      {
+       "date": "2026-11-22",
+       "dateEnd": null,
+       "time": null,
+       "units": "[글로벌] 전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "진로개발역량",
+       "pct": 60,
+       "desc": null
+      },
+      {
+       "name": "협력적소통역량",
+       "pct": 40,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "3학년 때 난민 수용 문제를 다룬 내용이 있는 것 같은데 난민의 정의는 뭐고 국제적으로 어떻게 해결해야 하는가?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "고려의 외교관 서희에 대해 탐구했는데 어떤 외교를 펼쳤고 그 의의 속 현재 국제 사회에서 적용할 수 있는 것이 있다고 생각해 보신 적이 있다면 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "국제법에 관심이 많은 것 같은데 관련된 교과 활동 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "왜 바이오 메디컬학과로 전공하고 싶나요?",
+       "followUp": "그렇다면 왜 바이오메디컬학과로 지원하지 않고 공과 계열로 지원했나요? / 그럼 IT 관련해서 프로그래밍을 해본 적이 있나요?"
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "유학을 생각하고 있는데 성적을 보니 영어 성적이 낮은데 괜찮을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "사회문화 시간에 러시아와 중앙아시아의 사회운동에 관한 사회학적 분석이라는 탐구를 진행했는데, 어떤 내용을 주제로 했는지 한번 말씀해 주실래요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "고등학교 시절에 러시아를 다양하고 깊게 탐구한 것 같아요. 현재 러시아-우크라이나 전쟁이 장기화로 가고 있는데 현재 러시아에 대해서 어떻게 생각하시나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "진로개발역량",
+       "unit": null,
+       "q": "우리학교 커리큘럼에 대해 알아본 바가 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "협력적소통역량",
+       "unit": null,
+       "q": "생기부를 보니 학생회 학예부를 맡아서 행사를 진행했다고 하는데 뭐 어떤 행사가 가장 기억에 남았는지 한번 짧게 말씀해 주실래요?",
+       "followUp": null
+      },
+      {
+       "criterion": "협력적소통역량",
+       "unit": null,
+       "q": "봉사활동을 정말 많은 데 교과 큐레이터 활동은 뭐였는지 설명해 볼래요?",
+       "followUp": null
+      },
+      {
+       "criterion": "협력적소통역량",
+       "unit": null,
+       "q": "대학교를 마친 후의 계획을 말해주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "대기실은 자유석으로 운영됨.",
+      "1인당 면접시간은 7~15분 내외, 학생부를 기초로 한 대면 면접"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "055",
+   "id": "kau",
+   "name": "한국항공대학교",
+   "short": "한국항공대",
+   "campus": null,
+   "region": "경기",
+   "admissions": [
+    {
+     "id": "kau-jonghap-mirae",
+     "name": "미래인재전형, 고른기회전형",
+     "aliases": [
+      "미래인재전형",
+      "고른기회전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "3배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100,
+         "points": 1000
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "일반면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "생기부 기반면접",
+     "format": "수험생 1명에 대하여 2인의 면접위원이 일반면접 실시",
+     "duration": null,
+     "panel": "2인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-07",
+       "dateEnd": null,
+       "time": null,
+       "units": "공과대학(우주공학전공, 항공공학전공, 기계공학전공, 우주항공신소재전공, 반도체신소재전공, 스마트드론공학전공), AI융합대학(인공지능전공, 컴퓨터공학전공, 반도체시스템전공, 전자및항공전자전공, AI융합 ICT전공, AI로봇전공), 항공·경영대학(항공교통전공, 물류전공, 경영전공, 항공경영전공), 항공운항학과",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업 역량",
+       "pct": 30,
+       "desc": null
+      },
+      {
+       "name": "진로 역량",
+       "pct": 40,
+       "desc": null
+      },
+      {
+       "name": "공동체 역량",
+       "pct": 30,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": "학업 역량",
+       "unit": null,
+       "q": "1학년에 비해서 2, 3학년 성적이 높은데 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업 역량",
+       "unit": null,
+       "q": "파동은 에너지입니다. 그러면 노이즈캔슬링시에 파동을 들려주므로 결국 에너지는 더 커지는 건가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업 역량",
+       "unit": null,
+       "q": "기후 변화에 따른 생태계 변화에 대한 보고서를 작성했는데, 사례를 들어 설명하고 생태계를 보전할 수 있는 방법으로 무엇을 제시했는지 답변해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "진로 역량",
+       "unit": null,
+       "q": "한국항공대학교 스마트드론공학과(또는 해당 학과)에 지원하게 된 이유에 대해서 말씀해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "진로 역량",
+       "unit": null,
+       "q": "지원동기를 말씀하시면서 UAM를 언급하셨습니다. 향후 5-10년 안에 이 기술이 도심에 상용화된다면 주의해야 할 점은 무엇이라고 생각하시나요",
+       "followUp": null
+      },
+      {
+       "criterion": "진로 역량",
+       "unit": null,
+       "q": "항공대 캠프에 참여하셨다고 말씀하셨습니다. 이것 외에도 학교생활 중에서 드론(또는 항공)과 관련하여 했던 활동에 대해 말씀해주세요",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체 역량",
+       "unit": null,
+       "q": "기장, 부기장 의견이 다르면 어떻게 할 것인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체 역량",
+       "unit": null,
+       "q": "아까 말씀하셨던 것처럼 반장(또는 부반장/부회장)도 많이 하셨습니다. 학급에서 발생하는 어려웠던 상황과 그 상황을 어떻게 해결하셨는지 말씀해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "공동체 역량",
+       "unit": null,
+       "q": "봉사시간이 많으십니다. 봉사 활동을 하게 된 계기와 사례를 말씀해주세요",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "활동의 진위여부와 깊이를 검증하는 날카로운 꼬리 질문(탐구 원리, 프로그래밍 언어 등)이 들어오므로 철저한 서류 숙지가 필요",
+      "성적 하락이나 출결 감점 같은 약점은 솔직한 인정과 발전적 변화로 대응해야 하며, UAM 상용화나 항공 딜레마 같은 시사 질문은 '안전의식'을 중심으로 답변"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "1단계 1000점(기본점수 800점), 2단계 1단계 70%(기본 560점) + 면접 30%(기본 240점) — 기본점수는 생략하고 비율만 반영"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "056",
+   "id": "hannam",
+   "name": "한남대학교",
+   "short": "한남대",
+   "campus": null,
+   "region": "대전",
+   "admissions": [
+    {
+     "id": "hannam-jonghap-injae2",
+     "name": "학생부종합 – 한남인재Ⅱ(서류+면접) 전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "4배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 확인 면접",
+     "format": "2인의 평가자가 10분 진행",
+     "duration": "10분",
+     "panel": "2인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "전공적합성",
+       "pct": 50,
+       "desc": null
+      },
+      {
+       "name": "인성",
+       "pct": 50,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "지원동기를 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "한남대와 자신의 가치관이 어떤 부분이 잘 맞는다고 생각했는지",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "생활기록부를 보면 교육은 뚜렷하지만, 국어교육은 뚜렷하지 않은데, 국어교육을 선택한 이유가 무엇인가요?",
+       "followUp": "교무실 분리수거면 선생님들과 많이 친해졌겠네요. 혹시 분리수거 담당 선생님이 국어선생님이셨나요?"
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "국어교육에는 여러 분야가 있는데, 그 중 가장 강한 부분과 약한 부분을 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "생기부에 보면 신냉전과 구냉전의 비교 대조를 한 탐구가 있는데 이게 고등학교 수준이라고는 생각되지 않거든요, 주제는 어떻게 정하게 되었고, 탐구는 어떻게 진행하게 되었나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "인공지능이 간호에 어떻게 사용될 수 있을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "우리 학교에 입학해서 무엇을 할 계획인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "마지막으로 자신의 역량을 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "자신의 장점",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "자기소개를 해주세요",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "단체 협동 활동에서 무임승차하는 사람이 있을 시 어떻게 대처할지",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "(출결이 별로 좋지 않다면) 조퇴랑 결석이 많은 이유",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "봉사활동 시간이 다른 학생에 비해서 부족한 것 같아요.",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "마지막으로 하고 싶은 말 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "생기부에 보면 CBL 활동에서 회장을 맡았다고 했는데, 구체적으로 무슨 일을 하셨나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "고등학교 생활을 하면서 갈등을 해결한 경험이 있나요?",
+       "followUp": "그럼 높은 학년들과 충돌이 일어났을 때 어떻게 대응하셨나요?"
+      },
+      {
+       "criterion": "인성",
+       "unit": null,
+       "q": "고등학교 생활 중 가장 기억에 남는 활동은 무엇인가요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "학교생활기록부의 교과영역(석차등급, 교과별 세부능력 및 특기사항 포함) 및 비교과영역 등을 종합적으로 평가함."
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "057",
+   "id": "handong",
+   "name": "한동대학교",
+   "short": "한동대",
+   "campus": null,
+   "region": "경북",
+   "admissions": [
+    {
+     "id": "handong-jonghap-gimpact",
+     "name": "학생부종합 – G-IMPACT인재전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2.5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "학생부 기반의 맞춤형 확인 면접",
+     "format": "2인의 평가자가 10분 진행",
+     "duration": "10분",
+     "panel": "2인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": "10:00/13:00",
+       "units": "G-IMPACT인재전형",
+       "note": null
+      }
+     ],
+     "criteria": [],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "한동대학교에 지원한 동기와 희망전공, 진로계획을 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "화법과 작문 수업 세부능력 및 특기사항에 일본의 급속한 발전 원인을 언어학적 관점에서 분석하고 한국의 현재와 연결 짓는 부분에서 분석력과 비판적 사고력이 돋보인다고 작성되어 있는데, 해당 분석 내용을 구체적으로 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "물리Ⅱ 수업에서 '도플러 효과를 활용한 자율주행 로봇의 충돌 방지 시스템' 탐구를 수행했는데, 이를 구체적으로 설명하고, 실제 재난 현장 같은 복잡한 환경으로 확장할 때 고려해야 할 현실적 제약이나 한계점을 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "진로활동 시간에 '피디 마인드'를 읽고 PD에 대한 이해를 넓혔습니다. 저자가 말하는 PD의 가장 중요한 자질은 무엇인가요? 또한 해당 자질을 가지기 위해 노력한 점이 있다면 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "스타트 티칭 동아리 활동 중 '루소의 아동중심 교육'에 대한 발표 내용을 요약하고, 루소의 이론을 바탕으로 본인이 교육자라면 구체적으로 어떻게 학생들을 인도할 것인지 알려주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "생태탐구 동아리 활동을 통해 극지 생태계와 생물학 연구로 진로 방향을 설정한 것으로 나타났습니다. 극지 연구 현장에서 본인이 선호하는 역할과 이유는 무엇이며, 그 역할을 잘하기 위해 지금 무엇을 준비해야 할까요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "2학년 때 영어 멘토링에서 멘토로 친구들의 수준에 맞는 학습방법을 제시했습니다. 자신이 멘토로서 가장 신경 썼던 부분은 무엇이었고, 멘티의 변화를 어떻게 이끌어 냈는지 설명해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "학급 반장 역할을 수행하며 소외되는 친구가 없도록 배려했다고 기록되어 있습니다. 구체적으로 한 사례를 들어 친구들을 어떤 방식으로 도왔고, 그 결과 학급 분위기나 개인에게 어떤 변화가 있었는지 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "봉사 실적 기록에는 교내·지역 봉사와 '하급생 생활 도우미' 활동이 포함되어 있습니다. 지속적인 자원봉사 활동을 통해 본인의 가치관이나 태도에 어떤 변화가 있었는지 이야기해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "미인정 지각 20회, 질병 결석·지각·조퇴가 25회인데, 무슨 특별한 사유가 있었나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "예시 문항은 G-IMPACT·SW 공통으로 한 표에 실려 있어 G-IMPACT 카드에만 넣음; 평가영역 표기 없음"
+     ]
+    },
+    {
+     "id": "handong-jonghap-sw",
+     "name": "학생부종합 – SW인재전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2.5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "학생부 기반의 맞춤형 확인 면접",
+     "format": "2인의 평가자가 20분 진행",
+     "duration": "20분",
+     "panel": "2인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": "13:00",
+       "units": "SW인재전형",
+       "note": null
+      }
+     ],
+     "criteria": [],
+     "questionStyle": "record",
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [
+      "예시 문항은 G-IMPACT인재전형 카드 참고"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "058",
+   "id": "hanbat",
+   "name": "국립한밭대학교",
+   "short": "한밭대",
+   "campus": null,
+   "region": "대전",
+   "admissions": [
+    {
+     "id": "hanbat-jonghap-jiyeok",
+     "name": "학생부종합 – 지역인재, 소프트웨어인재, 특수교육대상자",
+     "aliases": [
+      "지역인재",
+      "소프트웨어인재",
+      "특수교육대상자"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류기반 면접",
+     "format": "15분 / 면접 위원 2명",
+     "duration": "15분",
+     "panel": "2명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-20",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": "공통질문",
+       "unit": null,
+       "q": "(2026학년도 공통질문) 지원한 학과에서 배우고 싶은 것과 졸업 후 하고 싶은 일을 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "공통질문",
+       "unit": null,
+       "q": "(2025학년도 공통질문) 이 학과에 지원한 동기와 졸업 후 10년 뒤 자신의 모습을 설명하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "최근 뉴스나 책에서 본 경제 이슈에 대해 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "경제학과에 진학하면 수학을 해야 되는데 수학 성적이 낮은 것을 어떻게 해결할 건가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "자신의 장점과 약점에 대해 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "생활기록부에 SNS 마케팅과 관련된 활동이 있는데 어떤 내용인지 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "고등학교 3년 동안 배우고 싶은 내용과 진로 희망은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "학급 임원 및 동아리 활동을 하며 어려웠던 점과 잘한 점은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "영어와 관련된 활동을 많이 했다고 적혀있는데 활동들 중에서 가장 기억에 남는 것이 있다면 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "후배코칭리더에 대해서 정확히 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "글로벌리더십캠프에 대해 자세하게 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "마지막으로 하고 싶은 말 있나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "매년 공통 질문이 학교 홈페이지에 게시",
+      "대기 중 가지고 온 자료 볼 수 있음."
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "059",
+   "id": "hanseo",
+   "name": "한서대학교",
+   "short": "한서대",
+   "campus": null,
+   "region": "충남",
+   "admissions": [
+    {
+     "id": "hanseo-gyogwa-myeonjeop",
+     "name": "학생부위주(교과)[충남형계약학과전형/한서인재전형/모든전형(항공관광학과)]",
+     "aliases": [
+      "충남형계약학과전형",
+      "한서인재전형",
+      "모든전형(항공관광학과)"
+     ],
+     "track": "학생부교과",
+     "units": null,
+     "stages": [
+      {
+       "name": "일괄합산",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 60
+        },
+        {
+         "label": "면접고사",
+         "pct": 40
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "다대다 구술면접",
+     "format": "다대다(多대多) 면접으로, 보통 한 조에 4명씩 동시에 입실 (당일 상황에 따라 2~5명으로 유연하게 변경됨)",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-10-27",
+       "dateEnd": null,
+       "time": null,
+       "units": "[충남형 계약학과 전형] 전학과",
+       "note": null
+      },
+      {
+       "date": "2026-10-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "[한서인재전형] 인문사회계열, 공학계열, 예체능계열, 자유전공학과",
+       "note": null
+      },
+      {
+       "date": "2026-10-29",
+       "dateEnd": null,
+       "time": null,
+       "units": "[한서인재전형] 자연과학계열",
+       "note": null
+      },
+      {
+       "date": "2026-10-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "[모든전형] 항공관광학과",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "발전가능성(학생부 비교과 활용)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "자기주도성과 논리적 표현 능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "도덕성·사회성(인성평가)",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": "보건과학대학(간호학과/물리치료학과/작업치료학과 등)",
+       "q": "우리 대학 보건 계열 학과에 지원하게 된 결정적인 동기는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보건과학대학(간호학과/물리치료학과/작업치료학과 등)",
+       "q": "고등학교 재학 중 타인을 위해 지속적으로 실천했던 봉사활동이나 선행이 있다면 말해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보건과학대학(간호학과/물리치료학과/작업치료학과 등)",
+       "q": "환자나 보호자가 무리한 요구를 하거나 컴플레인을 걸어온다면, 의료인으로서 어떻게 대처하겠습니까?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보건과학대학(간호학과/물리치료학과/작업치료학과 등)",
+       "q": "대학 입학 후 전공 학업 외에 인성이나 역량을 기르기 위해 꼭 하고 싶은 활동은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "항공융합학부 & 관광 관련 학과(호텔카지노관광학과/항공서비스학과 등)",
+       "q": "서비스 직무에서 가장 중요하다고 생각하는 자질(예: 미소, 경청, 인내 등) 한 가지와 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "항공융합학부 & 관광 관련 학과(호텔카지노관광학과/항공서비스학과 등)",
+       "q": "단체 활동(조별 과제, 동아리 등) 중 팀원들과 의견이 충돌했을 때, 본인만의 소통 방식으로 해결했던 경험이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "항공융합학부 & 관광 관련 학과(호텔카지노관광학과/항공서비스학과 등)",
+       "q": "우리 학과와 관련하여 최근 언론이나 뉴스에서 접한 흥미로운 트렌드나 이슈가 있다면 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "항공융합학부 & 관광 관련 학과(호텔카지노관광학과/항공서비스학과 등)",
+       "q": "본인이 글로벌 인재로 성장하기 위해 고등학교 시절 노력했던 부분(어학 등)은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "항공융합학부 & 관광 관련 학과(호텔카지노관광학과/항공서비스학과 등)",
+       "q": "읽은 책 중에서 이 과를 지원하는 데 영향을 준 책이 있다면 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인·엔터테인먼트학부(영상애니메이션학과/산업디자인학과 등)",
+       "q": "본인이 가장 감명 깊게 보았던 영상 작품(영화, 애니메이션 등)이나 디자인 작품은 무엇이며, 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인·엔터테인먼트학부(영상애니메이션학과/산업디자인학과 등)",
+       "q": "창작 활동을 하다가 아이디어가 떠오르지 않는 슬럼프가 찾아온다면 어떻게 극복하겠습니까?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인·엔터테인먼트학부(영상애니메이션학과/산업디자인학과 등)",
+       "q": "우리 학과에 입학하기 위해 고등학교 시절 스스로 찾아서 했던 전공 관련 탐구(또는 실기, 연습)가 있다면 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인·엔터테인먼트학부(영상애니메이션학과/산업디자인학과 등)",
+       "q": "4차 산업혁명 시대(AI 기술 발전 등)에 본인이 전공하려는 예술/디자인 분야가 어떻게 변화할 것이라 예상하나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [
+      "우리 대학 및 해당 학과에 지원하게 된 동기를 간단하게 말씀해 주세요.",
+      "면접장에 오면서 어떤 생각을 하셨나요? 오늘 면접에 임하는 각오를 한 문장으로 표현해 보세요."
+     ],
+     "notes": [
+      "첫 문장에 결론 배치 (두괄식): 제한 시간 내에 핵심을 모두 전달하기 위해 답변의 길이보다 두괄식으로 핵심만 명확하게 말하는 태도 중요",
+      "바른 자세와 목소리 톤 (태도 평가): 다대다 면접(여러 명의 지원자가 동시에 입실)으로 진행되므로, 옆 사람이 답변할 때 고개를 끄덕이며 경청하는 태도",
+      "사전 공지 숙지(학교 홈페이지에 매년 공지되는 면접 가이드라인 숙지)"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "'면접기준' 세 항목을 criteria로 옮김(비율 없음)"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "060",
+   "id": "hanyang-seoul",
+   "name": "한양대학교",
+   "short": "한양대(서울)",
+   "campus": "서울",
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "hanyang-jonghap-myeonjeop",
+     "name": "학생부종합(면접형)",
+     "track": "학생부종합",
+     "units": [
+      "공과대학(융합전자공학, 컴퓨터소프트웨어, 전기생체공학, 신소재공학, 화학공학, 에너지공학, 기계공학, 미래자동차공학, 데이터사이언스)",
+      "한양인터칼리지학부(자연)",
+      "의과대학",
+      "사범대학"
+     ],
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "7배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "제시문 기반 면접(공과, 한양인터칼리지) / 학생부 기반 면접(의과, 사범)",
+     "format": "제시문 기반: 현장 녹화 면접(비대면) 20분 내외 / 학생부 기반: 2인 내외(대면) 10분 내외",
+     "duration": "제시문 20분 내외 / 학생부 10분 내외",
+     "panel": "2인 내외(학생부 기반)",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-22",
+       "dateEnd": null,
+       "time": null,
+       "units": "공과대학(융합전자공학, 컴퓨터소프트웨어, 전기생체공학, 신소재공학, 화학공학, 에너지공학, 기계공학, 미래자동차공학, 데이터사이언스), 한양인터칼리지학부(자연)",
+       "note": "제시문 기반 녹화"
+      },
+      {
+       "date": "2026-12-05",
+       "dateEnd": null,
+       "time": null,
+       "units": "의과대학",
+       "note": "학생부 기반"
+      },
+      {
+       "date": "2026-12-06",
+       "dateEnd": null,
+       "time": null,
+       "units": "사범대학",
+       "note": "학생부 기반"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업, 논리적사고, 의사소통(제시문 기반·의과·사범 제외 학과)",
+       "pct": null,
+       "desc": "출제범위 수학: 수학, 수학Ⅰ, 수학Ⅱ, 미적분, 확률과통계, 기하 / 과학: 통합과학, 물리학Ⅰ, 화학Ⅰ, 생명과학Ⅰ, 물리학Ⅱ, 화학Ⅱ, 생명과학Ⅱ"
+      },
+      {
+       "name": "적성, 인성, 잠재력(의과대학)",
+       "pct": null,
+       "desc": "예비 의료인으로서의 가치관 및 태도 / 질문에 대한 의사표현의 적절성 및 논리적인 전개력"
+      },
+      {
+       "name": "적성, 인성, 잠재력(사범대학)",
+       "pct": null,
+       "desc": "예비 교육자로서의 가치관 및 태도 / 질문에 대한 의사표현의 적절성 및 논리적인 전개력"
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "사범계열",
+       "q": "교사에게 필요한 자질은 무엇이라고 생각하며 본인에게 그러한 자질이 있다고 생각하시나요? 학생부 내용을 기반으로 설명해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "사범계열",
+       "q": "3년 동안의 고등학교 생활 중 친구에게 한 배려는 무엇이었으며 그 이유에 대해 말해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "사범계열",
+       "q": "000과목에서 학습 멘토 활동을 했는데 가르칠 때 어려웠던 점은 무엇이었나요? 나만의 효과적인 방식이 있었다면 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "국어교육과",
+       "q": "다양한 탐구 활동을 했던데 이를 기반으로 왜 국어교사를 희망하게 되었으며 이후 이를 어떻게 활용할 것인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "국어교육과",
+       "q": "최근 문해력 이슈가 불거지고 있다. 학생들의 문해력을 기르기 위해 어떤 교육을 할 것인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "국어교육과",
+       "q": "(생기부 내 고교학점제 비판 활동에 대하여) 왜 이 문제에 관해 비판의 입장을 가지게 되었고, 국어 교사로서 이를 어떻게 해결할 것인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "국어교육과",
+       "q": "현재 한류가 전 세계로 퍼지며 인기를 얻고 있다. 이 관점에서 우리나라의 문학을 해외에 소개해야 한다면 어떤 점을 강점으로 들고 싶은가? 학생이 답변한 특징을 잘 보여주는 작품 한 가지를 추천해보라.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "의약학계열(인성)",
+       "q": "중고등학교 시절에 남과 어울려 했던 나눔/협력 활동 경험을 한 가지 이야기하고, 그때 어떤 점이 가장 힘들었고, 어려움을 어떻게 극복하였으며, 어떤 결과를 얻었고, 그때 무엇을 배웠는지 이야기해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "의약학계열(인성)",
+       "q": "지금까지 살아오면서 겪었던 힘들었던 경험(역경)을 한 가지 이야기하고, 그때 어떤 점이 가장 힘들었고, 어떻게 대처를 하였으며, 어떤 결과를 얻었고, 그때 무엇을 배웠는지 이야기해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "적성, 인성, 잠재력",
+       "unit": "의약학계열(인성)",
+       "q": "고등학교 시절 당신이 스스로 목표를 세워 성취한 학습/행동 변화 경험을 한 가지 이야기하고, 그때 어떤 점이 가장 힘들었고, 어떻게 대처를 하였으며, 어떤 결과를 얻었고, 그때 무엇을 배웠는지 이야기해 보세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "기출 문제를 반복해서 풀어볼 필요가 있음.",
+      "풀이 과정을 통해 짧은 시간 내에 정답을 도출해야 함."
+     ],
+     "pastQuestionsLink": "기출 문제 링크",
+     "parseNotes": [
+      "제시문 기반 면접 예시 문항 칸은 원문에 그림으로만 실려 텍스트 없음",
+      "'(생기부 내 고교학점제 비반 활동)'은 '비판 활동'의 오타로 보고 수정"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "061",
+   "id": "hongik",
+   "name": "홍익대학교",
+   "short": "홍익대",
+   "campus": null,
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "hongik-silgi-misul",
+     "name": "실기/실적 위주 - 미술우수자, 농어촌학생[미술계열(예술학과 제외)]",
+     "aliases": [
+      "미술우수자",
+      "농어촌학생[미술계열(예술학과 제외)]"
+     ],
+     "track": "실기/실적",
+     "units": [
+      "미술계열"
+     ],
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "미술우수자 3배수 / 농어촌학생 2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 40
+        },
+        {
+         "label": "면접",
+         "pct": 60
+        }
+       ]
+      }
+     ],
+     "interviewPct": 60,
+     "interviewType": "제시문",
+     "interviewTypeRaw": "미술우수자: 지원자의 미술관련 소양, 창의성, 표현능력, 제출서류의 진실성 등을 종합적으로 평가 / 농어촌학생: 제출서류의 진실성, 미술 관련 소양, 창의성, 표현능력 등을 종합적으로 평가",
+     "format": "36분 문제풀이 후 10분 면접 / 면접 위원 2명",
+     "duration": "36분 문제풀이 + 10분 면접",
+     "panel": "2명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "<세종> 미술우수자전형(디자인컨버전스학부), 농어촌우수자전형(영상·애니메이션학부, 게임학부 게임그래픽디자인전공(미술계))",
+       "note": null
+      },
+      {
+       "date": "2026-11-29",
+       "dateEnd": null,
+       "time": null,
+       "units": "<세종> 미술우수자전형(영상·애니메이션학부, 게임학부 게임그래픽디자인전공(미술계)), 농어촌우수자전형(디자인컨버전스학부)",
+       "note": null
+      },
+      {
+       "date": "2026-12-05",
+       "dateEnd": null,
+       "time": null,
+       "units": "<서울> 미술우수자전형(미술대학자율전공, 동양화과, 회화과, 판화과, 조소과), 농어촌학생전형(동양화과, 회화과, 판화과, 조소과, 디자인학부, 금속조형디자인과, 도예·유리과, 목조형가구학과, 섬유미술·패션디자인과)",
+       "note": null
+      },
+      {
+       "date": "2026-12-06",
+       "dateEnd": null,
+       "time": null,
+       "units": "<서울> 미술우수자전형(디자인학부, 예술학과, 금속조형디자인과, 도예·유리과, 목조형가구학과, 섬유미술·패션디자인과)",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "미술관련 소양",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "창의성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "표현능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "제출서류의 진실성",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "1번 문제 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "2번 문제 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "금속조형디자인과(서울)",
+       "q": "이 세 그림 중 어떤 그림이 가장 마음에 들어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "금속조형디자인과(서울)",
+       "q": "왜 표정을 그렇게 그렸나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "금속조형디자인과(서울)",
+       "q": "졸업 후에는 무엇을 할 것인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "지원동기 먼저 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "온라인 전시회가 더 좋은 점이 뭐가 있어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "예술이 뭐라고 생각하세요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "제일 영향을 많이 받은 작가는?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "그 전시회가 왜 인상 깊었어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "좋아하는 색이 뭐예요?",
+       "followUp": "검정색보다 더 어두운 색이 있을까요?"
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "(가), (나)에 작품의 제목을 본인이 바꿔서 지어본다면 무엇으로 하고 싶은가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "게임그래픽디자인전공(세종)",
+       "q": "픽토그램이 어떤 좋은 점이 있을까요? 일상에서 본 편리한 기능을 주었던 픽토그램 중에 어떤 픽토그램이 기억나나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "게임그래픽디자인전공(세종)",
+       "q": "학교에서 한 활동 중에 학과와 관련해서 어필할 수 있는 점은?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "게임그래픽디자인전공(세종)",
+       "q": "좋아하는 게임이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "게임그래픽디자인전공(세종)",
+       "q": "잘하는 것이 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인컨버전스학부(세종)",
+       "q": "2번 문제 작품에 제목을 짓는다면 뭐로 하고 싶어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인컨버전스학부(세종)",
+       "q": "사실적 표현을 사용하는 작가 중에 기억나는 작가 있어요?",
+       "followUp": "인상 깊은 작가는 없어요?"
+      },
+      {
+       "criterion": null,
+       "unit": "디자인컨버전스학부(세종)",
+       "q": "공간디자인이 꿈인 거 같은데 왜 홍대 디자인컨버전스학부에 지원하였나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인학부(서울)",
+       "q": "(가) 작품과 학생의 작품을 볼 때 관람객은 어떤 감정을 느낄까요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "디자인학부(서울)",
+       "q": "학생의 작품에서 조형적으로 강조된 부분은 어느 부분일까요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "목조형가구학부(서울)",
+       "q": "파울 클레 조형관에 대해서 말해보세요.",
+       "followUp": "그럼 파울 클레에서 영향을 받은 작업도 있을 것 같은데요, 생각나는 거 하나 말해보세요."
+      },
+      {
+       "criterion": null,
+       "unit": "목조형가구학부(서울)",
+       "q": "음악 감상과 비평 수업에서 점수를 잘 받았는데 어떻게 해서 받았나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "목조형가구학부(서울)",
+       "q": "예술가에게 필요한 자질을 꼭 필요한 두 가지만 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "목조형가구학부(서울)",
+       "q": "시간이 얼마 안 남았는데 마지막으로 하고 싶은 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "목조형가구학부(서울)",
+       "q": "그림 얼마나 그렸어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "섬유미술·패션디자인과(서울)",
+       "q": "동세라는 조형원리로 작가가 어떤 걸 표현하고자 했을까요?",
+       "followUp": "그럼 우리는 지금 이렇게 설명을 들으니까 알 수 있는 거고, 그냥 그림만 봤을 때는 속도를 어떻게 알 수 있죠?"
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "다른 노래를 이 그림에 대입시킬 수 있다면 어떤 음악을 하고 싶으신가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "그림 속 도형에 색을 넣는다면 어떻게 넣고 싶은지 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "그림 속 도형들의 질감에 대해서는 실제로 구현할 때 어떤 질감으로 표현할 생각으로 그리셨나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "혹시 자신 작품 보고 떠오르는 작가가 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "예술학과에 지원하시면서 진로에 대해 고민도 하고 예술학과가 어떤 학과인지 공부, 조사 등등 하셨을 텐데 좋아하는 작가나 진로와 관련된 인물이 있으면 말해주시겠어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "예술학과(서울)",
+       "q": "3년 동안의 활동 중에서 잘했고 가장 흥미를 갖고 열심히 한 활동 하나 소개해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "황금비라는 것을 아세요? 그럼 황금비가 적용된 작품은 무엇이라고 생각하나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "미술사를 배운 적이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "기하학적인 도형을 사용하는 미술 사조가 무엇인지 알고 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "새의 날개 중에 앞에 있는 날개는 명암이 들어가고 뒤에 있는 날개는 날리게 표현한 것 같은데 의도가 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "종이에서 양옆과 위아래의 남겨져 있는 폭이 비슷한 것 같은데 어떤 이유가 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "학교에 입학한다면 어떠한 것을 하고 싶나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "(가), (나), (다) 작품의 조형 요소와 조형 원리의 공통점을 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "자신의 그림을 음악으로 표현한다면 어떤 장르로 하고 싶은지 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "그림을 제작한다면, 재료와 색은 어떻게 하고 싶어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "왜 손을 사실적으로 표현하고 싶나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "1번 작품에서 어떻게 그림의 모티브를 얻었는지 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "본교에 입학하면 어떤 전공을 하고 싶나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "자율전공(미술대)(서울)",
+       "q": "생기부에 AI아트 시대가 본격화된다는 말이 적혀 있는데, 어떤 활동이었나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "제시문 면접에서 출제되는 작품에 대한 감상 풀이와 자신의 그림 등에 대해 답변을 하는 것 이외에도 지원동기, 꿈, 좋아하는 디자이너, 작가, 자신의 진로를 위해 노력한 활동 등 자신의 역량을 파악하는 질문도 할 수 있음."
+     ],
+     "pastQuestionsLink": "홍익대학교 | 수시모집 기출문제 게시판목록 | 전체",
+     "parseNotes": [
+      "2024~2026 면접 문항(서울/세종)은 원문에 그림으로만 실려 텍스트 없음"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "062",
+   "id": "snue",
+   "name": "서울교육대학교",
+   "short": "서울교대",
+   "campus": null,
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "snue-gyogwa-chucheon",
+     "name": "학생부교과(학교장추천)",
+     "track": "학생부교과",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 80
+        },
+        {
+         "label": "면접",
+         "pct": 20
+        }
+       ]
+      }
+     ],
+     "interviewPct": 20,
+     "interviewType": "제시문",
+     "interviewTypeRaw": "인적성 면접, 제시문 면접(구상형)",
+     "format": "10분(면접 준비시간 7분), 교직 인적성 3문항을 '문항별'로 평가 기준에 따라 평가",
+     "duration": "10분(준비 7분)",
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": "오전/오후",
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "교직 인적성",
+       "pct": null,
+       "desc": "3문항 문항별 평가"
+      }
+     ],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": "교직 인적성",
+       "unit": null,
+       "q": "지능정보사회에서는 온라인과 오프라인이 촘촘히 연결되어 디지털 세계와 현실의 경계가 흐려지는 '빅블러(Big Blur)' 현상이 나타난다. 이러한 환경에서 학생들은 SNS, 게임, 온라인 커뮤니티 등을 통해 관계를 맺거나 자아를 표현하면서도, 사이버 폭력, 과도한 비교, 언어 파괴, 익명성 뒤에 숨은 일탈 등을 경험하기도 한다. 학생들이 디지털 세계와 현실 사이의 균형 감각을 갖춘 건강한 시민으로 성장하도록 돕기 위한 교사의 지도 방안 2가지를 제시하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "교직 인적성",
+       "unit": null,
+       "q": "'생산적 실패(Productive Failure)'는 시행착오를 겪거나 실패하는 경험을 통해 자신의 한계를 깨닫고, 이를 발전의 동력으로 삼을 수 있음을 뜻한다. 그러나 실패의 경험은 때로는 좌절감이나 학습 의욕 저하로 이어질 수 있다는 우려도 있다. 본인의 삶에서 경험한 생산적 실패의 구체적 사례를 말하고, 학생이 경험하는 실패가 좌절이 아닌 배움의 기회가 되도록 하기 위해 교사로서 실천할 수 있는 교육적 방안을 설명하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "교직 인적성",
+       "unit": null,
+       "q": "박교사는 초등학교 5학년 과학 수업에서 탐구하고 발표하는 활동을 하기 위해 모둠을 구성하려고 한다. 일부 학생들은 스스로 모둠원을 정하는 방식을 요구하고, 다른 학생들은 교사가 편성하는 방법을 원한다. 두 방식의 장‧단점을 교육적인 관점에서 설명하고, 본인이 교사라면 어떤 방식으로 모둠을 편성할지 이유를 들어 설명하시오.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "별도의 자기소개 없음"
+     ],
+     "pastQuestionsLink": "서울교육대학교 입학처",
+     "parseNotes": []
+    },
+    {
+     "id": "snue-jonghap-gyojik",
+     "name": "학생부종합(교직인성우수자, 기회균형Ⅰ·Ⅱ)",
+     "aliases": [
+      "교직인성우수자",
+      "기회균형Ⅰ",
+      "기회균형Ⅱ"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "인적성 면접, 제시문 면접(구상형, 즉답형)",
+     "format": "10분(면접 준비시간 7분), 교직 인적성 1문항을 평가 기준에 따라 평가, 학생부 기반 면접 후 평가 기준에 따라 등급 부여",
+     "duration": "10분(준비 7분)",
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": "오전/오후",
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "교직 인적성(제시문 1문항)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "학생부 기반 면접",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [
+      {
+       "criterion": "학생부 기반 면접",
+       "unit": null,
+       "q": "1학년 동아리 활동으로 교권 침해에 대해 다뤘는데, 교사와 학생의 인권이 조화되는 방법을 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학생부 기반 면접",
+       "unit": null,
+       "q": "2학년 동아리 활동으로 핀란드 교육에 대해 다뤘는데, 우리나라의 교육과 핀란드의 교육에서 다른 점이 뭔지 말해주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학생부 기반 면접",
+       "unit": null,
+       "q": "3학년 진로활동에서 교육격차를 다루면서 기회의 평등과 질적 평등이 다르다고 했는데 어떻게 다른지 말해주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "오전·오후 면접 문제 다름",
+      "특정 교과에 국한되지 않도록 출제, 단순한 지식의 유무가 아닌 포괄적인 범위를 확인함",
+      "학술적 개념이나 전문 용어의 사용을 지양, 제시문에 대한 이해력, 문제 해결을 위한 종합적 사고력 및 자기 생각을 논리적이고 타당하게 답변할 수 있는 소통력에 초점을 둠"
+     ],
+     "pastQuestionsLink": "서울교육대학교 입학처",
+     "parseNotes": [
+      "'학생부종합전형 면접평가 요소 및 면접 예시 문항' 절을 이 카드에 귀속"
+     ]
+    },
+    {
+     "id": "snue-gita-bukhan",
+     "name": "기타(북한이탈학생전형, 재외국민특별전형)",
+     "aliases": [
+      "북한이탈학생전형",
+      "재외국민특별전형"
+     ],
+     "track": "기타",
+     "units": null,
+     "stages": [
+      {
+       "name": "일괄합산",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "면접평가",
+         "pct": 100
+        }
+       ]
+      }
+     ],
+     "interviewPct": 100,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "면접평가 100%(구상형, 즉답형)",
+     "format": "10분+5분(면접 준비시간 7분), 교직 인적성 3문항 및 학생부 기반 면접 결과를 '평가 항목'별로 평가",
+     "duration": "10분+5분(준비 7분)",
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-21",
+       "dateEnd": null,
+       "time": "오전/오후",
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [],
+     "questionStyle": null,
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": "서울교육대학교 입학처",
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "063",
+   "id": "cue",
+   "name": "진주교육대학교",
+   "short": "진주교대",
+   "campus": null,
+   "region": "경남",
+   "admissions": [
+    {
+     "id": "cue-jonghap-21c",
+     "name": "학생부종합 – 21세기형 교직적성자, 국가보훈대상자, 다문화·탈북학생, 농어촌, 기회균형, 장애인 등 대상자",
+     "aliases": [
+      "21세기형 교직적성자",
+      "국가보훈대상자",
+      "다문화·탈북학생",
+      "농어촌",
+      "기회균형",
+      "장애인 등 대상자"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2.5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 70
+        },
+        {
+         "label": "면접",
+         "pct": 30
+        }
+       ]
+      }
+     ],
+     "interviewPct": 30,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 면접, 심층면접",
+     "format": "15분 / 면접위원 3명",
+     "duration": "15분",
+     "panel": "3명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "긍정적 자아개념",
+       "pct": 33.3,
+       "desc": null
+      },
+      {
+       "name": "교사로서의 자질",
+       "pct": 33.3,
+       "desc": null
+      },
+      {
+       "name": "전문성 및 발전 가능성",
+       "pct": 33.3,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "긍정적 자아개념",
+       "unit": null,
+       "q": "학업이나 교내 활동 중 본인의 노력에 비해 아쉬운 결과를 거두거나 실패를 경험한 적이 있다면, 이를 어떻게 극복했고 그 과정에서 자신에 대해 새롭게 깨달은 점은 무엇인지 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "긍정적 자아개념",
+       "unit": null,
+       "q": "단체 활동이나 조별 과제 중 자신과 성향이나 의견이 너무 달라 갈등을 겪었던 구성원이 있었다면, 스트레스 상황 속에서 본인의 긍정적인 면을 잃지 않고 어떻게 소통하여 해결했는지 구체적인 사례를 들어 설명해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "교사로서의 자질",
+       "unit": null,
+       "q": "최근 학교 현장에서 다양성과 포용성이 강조되고 있습니다. 교실 내에서 학습 속도가 느리거나 학교생활 적응에 어려움을 겪는 학생을 포용하기 위해, 예비 교사로서 갖추어야 할 가장 중요한 태도는 무엇이며 이를 실천하기 위해 고교 시절 노력한 경험이 있다면 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "교사로서의 자질",
+       "unit": null,
+       "q": "공동체의 규칙이나 가치와 개인의 이익이 충돌하는 상황을 목격하거나 경험했을 때, 교사로서 학생들에게 올바른 공동체 의식을 심어주기 위해 본인이 보여주었던 모범적 사안이나 행동 철학은 무엇인지 설명해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전문성 및 발전 가능성",
+       "unit": null,
+       "q": "지원한 교육 전공(교과)과 관련하여 고교 재학 중 가장 깊이 있게 탐구했던 '핵심 교육 개념'이나 '이론'은 무엇입니까? 그 지식을 습득하기 위해 활용한 본인만의 주도적인 학습 방법과, 이를 향후 교실 현장에서 어떻게 쉽게 풀어내어 가르칠 것인지 구체적으로 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전문성 및 발전 가능성",
+       "unit": null,
+       "q": "대학 입학 후 급변하는 교육 환경 속에서 자신만의 전문성을 지속적으로 확장하기 위해 수립한 학업 및 발전 계획이 있다면, 고교 시절의 학습 경험과 연계하여 말씀해 주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "학교생활기록부 내용 및 교직관 등에 대한 질의·응답을 통해 지원자의 긍정적 자아개념, 교사의 자질, 전문성 및 발전 가능성 등 예비 초등교사로서의 교직 인·적성을 종합적으로 평가"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "원문 '아쉬운 결과를 거나 실패를' → '거두거나'로 보정"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "064",
+   "id": "cje",
+   "name": "청주교육대학교",
+   "short": "청주교대",
+   "campus": null,
+   "region": "충북",
+   "admissions": [
+    {
+     "id": "cje-jonghap-jiyeok",
+     "name": "지역인재전형, 국가보훈대상자전형, 다문화가족자녀전형, 농어촌학생전형, 장애인학생전형, 기회균형선발제전형",
+     "aliases": [
+      "지역인재전형",
+      "국가보훈대상자전형",
+      "다문화가족자녀전형",
+      "농어촌학생전형",
+      "장애인학생전형",
+      "기회균형선발제전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "지역인재 2배수 / 나머지 전형 3배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 60
+        },
+        {
+         "label": "면접",
+         "pct": 40
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "개별면접(10분)",
+     "format": "복수의 면접위원이 종합평가함, 생활기록부 등 수험생의 제출서류를 활용함",
+     "duration": "10분",
+     "panel": "복수",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-27",
+       "dateEnd": null,
+       "time": null,
+       "units": "지역인재전형, 국가보훈대상자전형, 다문화가족자녀전형, 농어촌학생전형, 장애인학생전형, 기회균형선발제전형",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "교직 인·적성",
+       "pct": 40,
+       "desc": null
+      },
+      {
+       "name": "창의적 탐구 및 리더십 역량",
+       "pct": 40,
+       "desc": null
+      },
+      {
+       "name": "의사소통 역량",
+       "pct": 20,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "교직 인·적성",
+       "unit": null,
+       "q": "AI가 교육 현장에 활성화되고 있는 현재, 초등학교에서 휴대폰이나 스마트 패드 같은 미디어 기기 사용을 '허용'해야 한다고 생각하나요, 아니면 '금지'해야 한다고 생각하나요? 구체적인 이유와 함께 본인의 견해를 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "교직 인·적성",
+       "unit": null,
+       "q": "만약 학급에 수업 참여에 매우 소심하고 소외된 학생이 있다면 담임교사로서 어떻게 지도할 것인지 구체적인 방안을 제시해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "교직 인·적성",
+       "unit": null,
+       "q": "원래 희망하던 진로에서 초등 교사로 진로를 변경하게 된 결정적인 계기는 무엇이며, 본인이 생각하는 초등 교사의 가장 중요한 역량은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "창의적 탐구 및 리더십 역량",
+       "unit": null,
+       "q": "학교 생활 중 동아리를 직접 구성하거나 프로젝트 활동을 많이 한 것으로 보입니다. 주로 어떤 역할을 맡아 수행했으며, 그 과정에서 창의성을 발휘해 문제를 해결한 경험이 있다면 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "창의적 탐구 및 리더십 역량",
+       "unit": null,
+       "q": "1, 2, 3학년 동안 학급 임원으로 활동하면서 학급 내에서 가장 해결하기 어려웠던 갈등 상황은 무엇이었으며, 이를 리더로서 어떻게 중재하고 해결했나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "창의적 탐구 및 리더십 역량",
+       "unit": null,
+       "q": "학교 안의 기존 환경이나 시스템 중 특히 '이것만은 바꾸고 싶거나 개선하고 싶다'고 생각하여 창의적인 대안을 고민해 본 사례가 있다면 소개해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "의사소통 역량",
+       "unit": null,
+       "q": "본인의 학생부 활동(예: 그림책 탐구, 학생 심리 앱 제작 등)에 대해 면접관이 구체적인 개념이나 한계점을 지적하며 압박 질문을 던졌을 때, 당황하지 않고 자신의 논리를 보완하여 답변해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "의사소통 역량",
+       "unit": null,
+       "q": "만약 학급 내 조별 활동 과정에서 학생들 사이에 심한 갈등이 발생해 의사소통이 단절되었다면, 교사로서 양측 학생들의 의견을 어떻게 경청하고 조율하여 소통을 재개하도록 도울 것인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "의사소통 역량",
+       "unit": null,
+       "q": "자신을 한 가지 색깔로 표현한다면 무엇인가요? 또는 청주교대에 도착해서 느낀 첫인상과 아이스브레이킹을 해보세요와 같은 돌발 질문에 대해 본인의 장점과 연계하여 재치 있고 자신감 있게 답변해 주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "질문은 교직인적성(미디어 활용, 소외 학생 지도), 창의적 탐구 및 리더십(갈등 해결, 문제 돌파력), 의사소통 역량(꼬리 질문 대처, 돌발 질문) 위주로 구성",
+      "대기실에서 전자기기는 반납해야 하지만 인쇄된 종이 자료는 자유롭게 검토가능"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "065",
+   "id": "knue",
+   "name": "한국교원대학교",
+   "short": "한국교원대",
+   "campus": null,
+   "region": "충북",
+   "admissions": [
+    {
+     "id": "knue-jonghap-usu",
+     "name": "학생부종합 - 학생부종합우수자 일반전형, 사회통합 특별전형, 농어촌 특별전형, 기초수급 및 차상위계층 특별전형, 장애인 등 대상자 특별전형",
+     "aliases": [
+      "학생부종합우수자 일반전형",
+      "사회통합 특별전형",
+      "농어촌 특별전형",
+      "기초수급 및 차상위계층 특별전형",
+      "장애인 등 대상자 특별전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "3배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 80
+        },
+        {
+         "label": "면접",
+         "pct": 20
+        }
+       ]
+      }
+     ],
+     "interviewPct": 20,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "인·적성 문항 및 개방형 질문",
+     "format": "10분 내외 / 면접위원 3명",
+     "duration": "10분 내외",
+     "panel": "3명",
+     "blind": true,
+     "schedule": [
+      {
+       "date": "2026-12-05",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "교직 적·인성 문항(발표)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "개방형 질문",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": "개방형질문",
+       "unit": null,
+       "q": "고등학교 수업 중 지원 전공과 관련하여 가장 흥미 있었던 주제는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "개방형질문",
+       "unit": null,
+       "q": "실생활에서 지원 전공과 관련된 지식을 확인하거나, 응용해 본 경험이 있다면 말씀해 보시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "개방형질문",
+       "unit": null,
+       "q": "지원 전공과 관련하여 최근에 읽은 책이 있다면, 간단하게 소개해 보시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "개방형질문",
+       "unit": null,
+       "q": "학교생활 중 지원 전공 또는 특정 분야에 몰두하여 최선을 다한 경험이나 사례가 있다면 말씀해 보시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "개방형질문",
+       "unit": null,
+       "q": "지원자가 생각하는 좋은 교사란 무엇인지 자유롭게 말씀해 보시오.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "제2단계 면접 성적이 현저히 부진(면접 평가위원 전원에게 'F등급'을 받은 경우)하여 한국교원대에서 수학하기 어렵다고 판단되는 자는 불합격 처리",
+      "지원자격 미달자, 부정행위자, 수능 최저학력기준 및 수능 필수 응시기준 미충족자는 불합격 처리",
+      "면접 절차: 면접대기실 입실 → 발표자료 작성실 입실 → 교직 적 인성 문항에 대한 발표자료 작성(약10분) → 면접실 입실 → 작성 내용 발표(약 3분) → 발표내용 관련 질의/응답(약 3분) → 개방형 질문 관련 질의/응답(약 4분)",
+      "지원자, 지원자의 부모 및 친족의 개인정보(성명, 출신고교, 출신대학, 직장명) 또는 학교생활기록부 기재 금지사항(대입전형자료 미제공 내용 포함) 발언 시 평가 미반영 또는 감점 등 불이익을 받을 수 있음. (교복 착용 불가)"
+     ],
+     "pastQuestionsLink": "한국교원대학교 인적성면접",
+     "parseNotes": [
+      "인·적성 문항 예시는 원문에 그림으로만 실려 텍스트 없음"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "066",
+   "id": "afa",
+   "name": "공군사관학교",
+   "short": "공사",
+   "campus": null,
+   "region": "충북",
+   "admissions": [
+    {
+     "id": "afa-ilban-useon",
+     "name": "일반우선",
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "1차 시험",
+       "multiple": "남자(인문/4배수, 자연/6배수), 여자(인문/8배수, 자연/10배수)",
+       "parts": [
+        {
+         "label": "1차 시험",
+         "pct": null,
+         "points": 300
+        }
+       ]
+      },
+      {
+       "name": "2차 시험",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1차",
+         "pct": null,
+         "points": 300
+        },
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 150
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 450
+        },
+        {
+         "label": "생기부",
+         "pct": null,
+         "points": 100
+        }
+       ]
+      }
+     ],
+     "interviewPct": 45,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "인·적성 면접",
+     "format": "지원동기서, 학교생활기록부, 심리검사 결과자료 등을 활용한 심층 면접",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-08-31",
+       "dateEnd": "2026-10-16",
+       "time": null,
+       "units": "전 모집단위",
+       "note": "시험응시일은 2차시험 등록 기간 중 원서접수 사이트에서 신청(선착순) 개인별 1박 2일 소요(1일차: 신체검사, 2일차: 체력검정 및 면접)"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "인성 및 가치관",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "전공적합성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "학교생활기록부",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "자신은 자신이 좋은 친구라고 생각하는가?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "본인의 성격 중 가장 없애고 싶은 건?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "군인이란 뭐라고 생각해요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "우리나라에 가장 위협이 되는 국가가 어디라고 생각해요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "공사 오면 제일 힘들 것 같은 건 뭐에요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "자기소개서에 남학생들과 운동해도 뒤처지지 않는다고 써있는데 체력은 어떻게 봤어요? 몇 개 했어요?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "군인 장단점이 뭐라고 생각해요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "가정을 해봅시다. 본인이 군에서 작전을 수행하는데, 규율을 어기면 작전에 성공하고 규율을 지키면 작전에 실패합니다. 어떤 선택을 할 겁니까?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "북러회담 말고도 예전부터 북한은 꾸준히 우리에게 위협을 가했던 것 같은데 혹시 기억나는 사건 있어요?",
+       "followUp": "그럼 천안함 사건에 대해 자세히 말해보세요."
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "학교 생활 중 동아리에서 한 활동이 있는데 어떤 활동을 했는가?",
+       "followUp": "그 중에서 리더로서 희생정신을 발휘한게 있을텐데 말해보세요."
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "1학년 때 미인정 지각 2개가 있는데 혹시 설명할 수 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "근데 생기부에 국제관련 희망한 것 같은데 왜 공사 지원했어요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [
+      "운동 잘해요?",
+      "왜 공사 오고싶다고 생각했어요?"
+     ],
+     "notes": [
+      "학교생활기록부의 공동체 역량 확인하는 과정과 북한과의 관계 및 안보에 대한 가치관을 확인"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "interviewPct = 면접 450 / (300+150+450+100=1000)"
+     ]
+    },
+    {
+     "id": "afa-gyojang-chucheon",
+     "name": "고교학교장추천",
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "1차 시험",
+       "multiple": "남자(인문/4배수, 자연/6배수), 여자(인문/8배수, 자연/10배수)",
+       "parts": [
+        {
+         "label": "1차 시험",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        }
+       ]
+      },
+      {
+       "name": "2차 시험",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 150
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 650
+        },
+        {
+         "label": "생기부",
+         "pct": null,
+         "points": 200
+        }
+       ]
+      }
+     ],
+     "interviewPct": 65,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "인·적성 면접",
+     "format": "지원동기서, 학교생활기록부, 심리검사 결과자료 등을 활용한 심층 면접",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-08-31",
+       "dateEnd": "2026-10-16",
+       "time": null,
+       "units": "전 모집단위",
+       "note": "시험응시일은 2차시험 등록 기간 중 원서접수 사이트에서 신청(선착순) 개인별 1박 2일 소요(1일차: 신체검사, 2일차: 체력검정 및 면접)"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "인성 및 가치관",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "전공적합성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "학교생활기록부",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "공군사관학교에 지원한 동기는?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "국제 사회에서 존경하는 인물이 있는가?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "지원동기에 국제 사회 안보에 기여한다고 했는데 어떻게 기여할 것인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "인성 및 가치관",
+       "unit": null,
+       "q": "자신이 생각하는 인간관계란 무엇인가?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "본인이 알고 있는 세계 정세에 대해 있는 대로 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "공군사관학교에 대해 아는 사실은?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공적합성",
+       "unit": null,
+       "q": "북한 무력 도발 5개가 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "학교 생활을 하면서 기억에 남는 활동에는 어떤 것이 있나요?",
+       "followUp": "구체적으로 어떤 걸 했는가?"
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "본인이 한 단체생활 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "학교생활기록부",
+       "unit": null,
+       "q": "고등학교 생활하면서 희생했던 경험이나 타인을 위해 봉사했던 경험이 있나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [
+      "캠퍼스를 본 느낌이 어떤가요?",
+      "오늘 오면서 어떤 생각을 하면서 왔나요?"
+     ],
+     "notes": [
+      "지원 동기와 학교 생활 중 공동체 역량에 관한 내용 확인 및 공군사관학교에 대한 지식"
+     ],
+     "pastQuestionsLink": "기출 문제 링크",
+     "parseNotes": [
+      "interviewPct = 면접 650 / (150+650+200=1000)"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "067",
+   "id": "knmu",
+   "name": "국군간호사관학교",
+   "short": "국간사",
+   "campus": null,
+   "region": "대전",
+   "admissions": [
+    {
+     "id": "knmu-ilban-teukbyeol",
+     "name": "일반전형, 특별전형",
+     "aliases": [
+      "일반전형",
+      "특별전형"
+     ],
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "우선선발(학교장 추천)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "학생부(교과, 비교과)",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "1차 시험",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 250
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 50
+        }
+       ]
+      },
+      {
+       "name": "우선선발(일반 우선·특별전형)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "학생부(교과, 비교과)",
+         "pct": null,
+         "points": 125
+        },
+        {
+         "label": "1차 시험",
+         "pct": null,
+         "points": 125
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 200
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 50
+        }
+       ]
+      },
+      {
+       "name": "종합선발",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "학생부(교과, 비교과)",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 150
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 50
+        },
+        {
+         "label": "수능시험",
+         "pct": null,
+         "points": 700
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "지원동기서, 학생부, 인성검사결과지 2종 등을 면접 참고 자료로 활용",
+     "format": "각 분과당 10분내외 / 1분과 4명, 2분과 3명, 3분과 2명",
+     "duration": "분과당 10분 내외",
+     "panel": "1분과 4명, 2분과 3명, 3분과 2명",
+     "blind": true,
+     "schedule": [
+      {
+       "date": "2026-09-14",
+       "dateEnd": "2026-09-30",
+       "time": null,
+       "units": "전 모집단위",
+       "note": "신체검사, 체력검정, 면접"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "1분과(지원동기·외적영역·국가·안보관)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "2분과(품성)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "3분과(심리)",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "1분과(지원동기·외적영역·국가·안보관)",
+       "unit": null,
+       "q": "간호사가 되고 싶다고 되어 있던데 왜 사관학교에 지원하게 된 건가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "1분과(지원동기·외적영역·국가·안보관)",
+       "unit": null,
+       "q": "생기부 보니까, 2학년 때는 질병지각, 조퇴가 많고 3학년 때는 무단지각이 조금 있는데, 이에 대해 설명해주겠어요?",
+       "followUp": null
+      },
+      {
+       "criterion": "1분과(지원동기·외적영역·국가·안보관)",
+       "unit": null,
+       "q": "북한의 오물풍선에 대한 대응 방안?, 여성징병제 논의 등",
+       "followUp": null
+      },
+      {
+       "criterion": "2분과(품성)",
+       "unit": null,
+       "q": "본인이 싫어하는 사람 유형이 있다면 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "2분과(품성)",
+       "unit": null,
+       "q": "본인이 평가하기에 자신은 백 점 만점에 몇 점인가요? 그리고 그렇게 평가한 기준도 알려주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "2분과(품성)",
+       "unit": null,
+       "q": "다른 사람에게 선한 영향력을 끼친 적이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "3분과(심리)",
+       "unit": null,
+       "q": "지원자는 어떤 부분 좋은 감정을 느끼고 어떤 상황에서 나쁜 감정을 느끼는거 같아요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "의료인으로서의 역량과 군인으로서의 사명감을 동시에 평가함.",
+      "꼬리 질문을 활용한 압박면접이 주요한 합격 요인으로 예상됨 (안보관, 갈등관리능력 등).",
+      "교복 착용 등 개인정보 유추 가능한 일체의 요소 금지."
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "interviewPct는 우선선발(학교장 추천) 기준 250/500; 일반우선·특별 200/500=40, 종합선발 150/1000=15",
+      "3분과 질문이 원문에 중복 수록되어 하나만 남김"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "068",
+   "id": "kma",
+   "name": "육군사관학교",
+   "short": "육사",
+   "campus": null,
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "kma-ilban",
+     "name": "일반전형 우선선발(고등학교 학교장 추천, 적성우수, 미래 국방 인재), 종합선발",
+     "aliases": [
+      "고등학교 학교장 추천",
+      "적성우수",
+      "미래 국방 인재",
+      "종합선발"
+     ],
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "1차시험",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "필기(학교장 추천·종합선발 합·불 / 적성우수 300점 / 미래국방인재 미실시)",
+         "pct": null,
+         "points": null
+        },
+        {
+         "label": "서류평가(미래국방인재 합·불, 그 외 미실시)",
+         "pct": null,
+         "points": null
+        }
+       ]
+      },
+      {
+       "name": "2차시험(고등학교 학교장 추천)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 640
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 160
+        }
+       ]
+      },
+      {
+       "name": "2차시험(적성 우수)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 500
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 100
+        }
+       ]
+      },
+      {
+       "name": "2차시험(미래 국방인재)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 800
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 200
+        }
+       ]
+      },
+      {
+       "name": "2차시험(종합선발)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 200
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 80,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "인적성·제시문 기반 복합형",
+     "format": "구술면접, 학교생활, 자기소개, 외적자세, 심리검사, 종합판정 등 총 6개 분야로 구분 시행",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-09-01",
+       "dateEnd": "2026-10-30",
+       "time": null,
+       "units": "일반전형 2차 시험",
+       "note": "장소: 육군사관학교, 응시조별 2일 진행"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "구술면접",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "학교생활",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "자기소개",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "외적자세",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "심리검사",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "종합판정",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "구술면접",
+       "unit": null,
+       "q": "제시문 내용 요약과 이에 대한 자신의 주장에 대해 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "구술면접",
+       "unit": null,
+       "q": "현재 한일 관계 발전과 과거사 청산 중 어떤 것에 우선순위를 둘 것인지 말하시오.",
+       "followUp": "한일 과거사에 어떤 역사가 있는지 말하시오. / 한일 과거사 청산과 한일관계 발전 중 무엇에 우선순위를 둘 것인지."
+      },
+      {
+       "criterion": "구술면접",
+       "unit": null,
+       "q": "통일이 된다면 우리나라에 어떤 이득이 있을지 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "구술면접",
+       "unit": null,
+       "q": "현재 우리나라 안보에 가장 위협이 되는 것과 그 해결책은?",
+       "followUp": null
+      },
+      {
+       "criterion": "구술면접",
+       "unit": null,
+       "q": "'미·러의 우크라이나 딜, 결국 자강 외에는 길이 없다' 뉴스를 제시하고 1분간 준비해 관련 내용을 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "학교생활",
+       "unit": null,
+       "q": "리더십 경험에서 회장이 개인 사정으로 직책을 수행하지 못했다는 게 무슨 말이고, 이를 통해 배운 점이 장교가 됐을 때 어떤 도움이 될까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학교생활",
+       "unit": null,
+       "q": "학창 시절 리더십을 발휘한 경험을 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "자기소개",
+       "unit": null,
+       "q": "자신의 장점이 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "자기소개",
+       "unit": null,
+       "q": "특별히 장교가 되려는 이유가 있나요? 장교가 된다면 무엇이 가장 기대되나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "자기소개",
+       "unit": null,
+       "q": "어떤 마음가짐으로 생도생활을 할 것인지 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "자기소개",
+       "unit": null,
+       "q": "나에게 육사는 ○○이다. 빈칸을 채우시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "자기소개",
+       "unit": null,
+       "q": "육사에 와서 무엇을 하고 싶어요? / 학업 계획은?",
+       "followUp": null
+      },
+      {
+       "criterion": "외적자세",
+       "unit": null,
+       "q": "발성(큰소리)·발음, 제식 자세 수행.",
+       "followUp": null
+      },
+      {
+       "criterion": "외적자세",
+       "unit": null,
+       "q": "주어진 문장을 최대한 큰 소리로 읽고, 차렷 자세·좌향좌·우향우를 하고, 스티커를 따라 면접실 안을 걸어보시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "외적자세",
+       "unit": null,
+       "q": "체력에 자신이 있나요? 어제 체력시험 점수 자세하게 말해봐요.",
+       "followUp": null
+      },
+      {
+       "criterion": "외적자세",
+       "unit": null,
+       "q": "2차 시험을 준비하면서 가장 힘들었던 것이 무엇인지 말하시오.",
+       "followUp": null
+      },
+      {
+       "criterion": "심리검사",
+       "unit": null,
+       "q": "지금까지 본 면접 어떤 것 같아요?",
+       "followUp": null
+      },
+      {
+       "criterion": "심리검사",
+       "unit": null,
+       "q": "심리검사 보니까 통제하는 걸 좋아하는 것 같은데?",
+       "followUp": null
+      },
+      {
+       "criterion": "심리검사",
+       "unit": null,
+       "q": "성격적 단점, 책임감 때문에 힘들었던 경험, 고1로 돌아간다면 가장 바꾸고 싶은 것, 리더십을 발휘했던 경험을 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "종합판정",
+       "unit": null,
+       "q": "다른 직업도 많은데 굳이 장교가 되려는 이유, 육사에 오면 가장 걱정되는 부분, 장교가 되고 10년 후 본인의 모습, 육사가 본인을 뽑아야 하는 이유, 입학하면 해보고 싶은 것, 살면서 가장 힘들었거나 기억에 남는 일을 말씀해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "종합판정",
+       "unit": null,
+       "q": "2차 시험을 준비하면서 가장 힘들었던 것은? / 지금까지 본 면접 어떤 것 같아요?",
+       "followUp": null
+      },
+      {
+       "criterion": "종합판정",
+       "unit": null,
+       "q": "마지막으로 한 마디",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "2차 시험 안에 면접시험, 체력검정, 신체검사가 포함됨 — 1일차 오전: 등록, 채혈, 체력검정 / 1일차 오후: 면접시험 준비 / 2일차 오전·오후: A조 면접시험→신체검사, B조 신체검사→면접시험",
+      "고등학교장 추천 전형은 2차 시험 합격자 중 비선자는 적성 우수 선발 대상이 됨.",
+      "적성우수, 미래국방인재 전형은 2차 시험 합격자 중 비선자는 종합선발 대상이 됨."
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "interviewPct는 2차시험 내 면접 비중(학교장 추천 640/800=80, 적성우수 500/600≈83, 미래국방인재 800/1000=80, 종합선발 200/250=80) — 1차 필기 점수(적성우수 300)는 제외",
+      "최고점: 학교장 추천 640, 적성우수 500, 미래국방인재 800, 종합선발 200 (최저점 미기재)"
+     ]
+    },
+    {
+     "id": "kma-teukbyeol",
+     "name": "특별전형(국가보훈대상자, 고른기회, 재외국민 자녀)",
+     "aliases": [
+      "국가보훈대상자",
+      "고른기회",
+      "재외국민 자녀"
+     ],
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "1차시험",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "필기(국가보훈대상자·고른기회 300점 / 재외국민자녀 합·불)",
+         "pct": null,
+         "points": null
+        }
+       ]
+      },
+      {
+       "name": "2차시험(국가보훈대상자·고른기회)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접시험",
+         "pct": null,
+         "points": 500
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 100
+        }
+       ]
+      },
+      {
+       "name": "2차시험(재외국민자녀)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "면접시험",
+         "pct": null,
+         "points": 500
+        }
+       ]
+      }
+     ],
+     "interviewPct": 83,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "인적성·제시문 기반 복합형",
+     "format": "구술면접, 학교생활, 자기소개, 외적자세, 심리검사, 종합판정 등 총 6개 분야로 구분 시행",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-09-01",
+       "dateEnd": "2026-10-30",
+       "time": null,
+       "units": "특별전형 2차 시험",
+       "note": "장소: 육군사관학교, 응시조별 2일 진행"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "구술면접",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "학교생활",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "자기소개",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "외적자세",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "심리검사",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "종합판정",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [
+      "2차 시험 안에 면접시험, 체력검정, 신체검사가 포함됨 — 1일차 오전: 등록, 채혈, 체력검정 / 1일차 오후: 면접시험 준비 / 2일차 오전·오후: A조 면접시험→신체검사, B조 신체검사→면접시험",
+      "2차 시험 합격자 중 비선자는 적성우수, 종합선발 대상이 됨(단, 재외국민 자녀의 경우 남 인문계 4배수, 자연계 5배수 / 여 인문계 8배수, 자연계 10배수 이내 인원에게만 기회 부여)"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "원문 '최고점: 5000점'은 500점의 오타로 보임",
+      "interviewPct = 500/600 (국가보훈·고른기회 기준), 재외국민자녀는 100"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "069",
+   "id": "naval",
+   "name": "해군사관학교",
+   "short": "해사",
+   "campus": null,
+   "region": "경남",
+   "admissions": [
+    {
+     "id": "naval-useon",
+     "name": "우선선발",
+     "aliases": [
+      "고교학교장추천전형",
+      "고교학교장추천 제외전형"
+     ],
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "일괄(고교학교장추천전형)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1차",
+         "pct": null,
+         "points": 300
+        },
+        {
+         "label": "면접시험",
+         "pct": null,
+         "points": 500
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "학생부",
+         "pct": null,
+         "points": 100
+        }
+       ]
+      },
+      {
+       "name": "일괄(고교학교장추천 제외전형)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1차",
+         "pct": null,
+         "points": 500
+        },
+        {
+         "label": "면접시험",
+         "pct": null,
+         "points": 300
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "학생부",
+         "pct": null,
+         "points": 100
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "다면평가 체계 기반의 분과별 심층 면접",
+     "format": "2일 이상의 일정(또는 당일 집중) 동안 다수의 분과를 이동하며 진행 (분과별 면접관 2~3명 대 생도 지원자 1명 또는 집단 토론)",
+     "duration": null,
+     "panel": "분과별 2~3명",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-09-01",
+       "dateEnd": "2026-10-30",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "국가관",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "군인정신",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "리더십",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "인성",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "인간관계 문제를 해결한 적이 있는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "장교 중에서도 해군 장교가 되고 싶은 이유는 무엇인가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "미인정 지각이나 결과가 좀 많은데, 그 이유는 무엇이며 그런 습관이 해군사관학교에 들어와서 걸림돌이 되진 않는다고 생각하나?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "자신이 다른 지원자들과 차별화되는 점은?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "최근에 친구와 불화를 겪었던 경험이나 이를 해결했던 경험",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": null,
+       "q": "북한의 도발에 대해 아는 것?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "군인다운 태도(용모와 어조)의 대답필요",
+      "'솔직함'과 '명예심' 강조"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "interviewPct = 500/1000 (학교장추천 기준); 추천 제외전형은 300/1000=30"
+     ]
+    },
+    {
+     "id": "naval-jonghap",
+     "name": "종합선발",
+     "track": "사관학교",
+     "units": null,
+     "stages": [
+      {
+       "name": "일괄",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "면접",
+         "pct": null,
+         "points": 200
+        },
+        {
+         "label": "체력검정",
+         "pct": null,
+         "points": 100
+        },
+        {
+         "label": "신체검사",
+         "pct": null,
+         "points": null,
+         "passFail": true
+        },
+        {
+         "label": "학생부",
+         "pct": null,
+         "points": 50
+        },
+        {
+         "label": "수능",
+         "pct": null,
+         "points": 650
+        }
+       ]
+      }
+     ],
+     "interviewPct": 20,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "다면평가 체계 기반의 분과별 심층 면접",
+     "format": "우선선발과 동일",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-09-01",
+       "dateEnd": "2026-10-30",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [],
+     "questionStyle": null,
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "070",
+   "id": "gist",
+   "name": "광주과학기술원",
+   "short": "GIST",
+   "campus": null,
+   "region": "광주",
+   "admissions": [
+    {
+     "id": "gist-ilban",
+     "name": "일반전형, 학교장추천전형, 고른기회전형",
+     "aliases": [
+      "일반전형",
+      "학교장추천전형",
+      "고른기회전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "일반전형 6배수 내외 / 학교장추천·고른기회 5배수 내외",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "구술(교과형)",
+     "interviewTypeRaw": "전공수학능력 구술면접(문제해결능력, 교과 학업 소양, 수학·과학적 사고력 평가) + 내적역량 구술면접(진학의지, 의사소통능력, 리더십 등 내적역량 및 가치관 확인)",
+     "format": "다수의 평가자에 의한 다단계 종합평가(15분 내외)",
+     "duration": "15분 내외",
+     "panel": "다수",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-10-22",
+       "dateEnd": "2026-10-23",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "전공수학능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "내적역량",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "concept",
+     "sampleQuestions": [
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "치환적분법에 대해 설명해보세요.",
+       "followUp": "조금 더 명확한 예시를 들어보세요. / 범위가 어떻게 바뀌나요?"
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "조건부 확률이란 무엇입니까?",
+       "followUp": "동전으로 예시를 들어보세요."
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "고속도로에서 사용되는 구간단속에서 미분과 적분이 어떻게 사용되는지 설명해 주실 수 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "○○책을 읽고 거미줄을 신소재로 사용할 수 있다고 하셨는데 어떻게 사용할 수 있을까요? (생활기록부 내용)",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "자기소개서에서 무한 퍼텐셜 우물에서의 시간 비의존 슈뢰딩거의 파동 방정식에 대해 공부했다고 하셨는데 이것에 대해 설명해주실 수 있으신가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "확률과 통계 시간에 배운 분산을 어떻게 구하는지요?",
+       "followUp": "그렇게 하면 자료 개수가 많아질수록 분산이 커지나요? / 왜 편차의 평균이 아니라 편차 제곱의 평균으로 구하나요? / 정규 분포의 그래프를 구성하는 요소에는 무엇이 있나요? / 모든 정규 분포 그래프는 똑같이 생겼나요?"
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "암호학에 관심이 많다고 했는데, 암호에 쓰이는 수학적 내용 아는 것 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "블록체인의 사회적 장단점에 대해 어떻게 생각하나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "교육과정에서 벗어난 것 일 수도 있는데, Gausian distribution 배운 적 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "물리량 보존 법칙에 대해 배웠나요? 보존되는 물리량에는 무엇이 있을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "전공수학능력",
+       "unit": null,
+       "q": "운동량 보존과 뉴턴 제2법칙은 어떤 관계가 있을까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "간단한 자기소개로 시작할까요?",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "고등학교 시절에서 잘했던 점과 힘들었던 점을 말해보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "GIST가 학생을 뽑아야 하는 이유는 뭔가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "본인은 나중에 과학자가 되면 다른 과학자와 차별점을 둘 수 있는 점이 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "지스트에서 해외 교류를 많이 하는데, 관심있는 것 있어요?",
+       "followUp": null
+      },
+      {
+       "criterion": "내적역량",
+       "unit": null,
+       "q": "아쉬웠던 답변이 있으면 보충하고 마무리해 보세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [
+      "자기소개"
+     ],
+     "notes": [
+      "모든 질문에 꼬리질문이 이어지는 편이기 때문에 하나의 활동, 개념에 대해 깊이 있게 답변할 수 있도록 준비할 것."
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "원문 '속도로에서 사용되는 구간단속' → '고속도로에서'로 보정"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "071",
+   "id": "dgist",
+   "name": "대구경북과학기술원(DGIST)",
+   "short": "DGIST",
+   "campus": null,
+   "region": "대구",
+   "admissions": [
+    {
+     "id": "dgist-gwahak-injae",
+     "name": "실기/실적 - 과학인재",
+     "track": "실기/실적",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "5배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류기반 면접",
+     "format": "다수 평가자에 의한 대면면접; 지원자의 제출서류를 바탕으로 과학활동의 우수성, 사회적 역량을 종합적으로 평가",
+     "duration": null,
+     "panel": "다수",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-25",
+       "dateEnd": "2026-11-27",
+       "time": null,
+       "units": "전 모집단위",
+       "note": "중 시행(예정)"
+      }
+     ],
+     "criteria": [
+      {
+       "name": "과학활동의 우수성",
+       "pct": 70,
+       "desc": null
+      },
+      {
+       "name": "사회적 역량",
+       "pct": 30,
+       "desc": null
+      }
+     ],
+     "questionStyle": "common",
+     "sampleQuestions": [
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "DGIST에서 어떻게 자신의 꿈을 실현해 나갈 것인지 자유롭게 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "자신의 꿈을 찾기 위해 노력했던 그간의 과정에 대해 자유롭게 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "에너지공학 분야에 관심을 갖게 된 계기는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "DGIST 에너지공학과에서 연구하고 싶은 주제나 분야가 있다면 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "에너지 기술의 발전이 사회에 어떤 영향을 미칠 것이라고 생각하나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "연구 또는 실험 과정에서 직면했던 어려움과 해결 방법을 설명해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "과학활동의 우수성",
+       "unit": null,
+       "q": "앞으로 에너지공학 분야에서 이루고 싶은 목표나 계획이 있다면 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "본인 소개와 지원 동기를 간단히 이야기해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "어려운 상황이나 문제를 해결했던 경험이 있다면 사례와 함께 작성해 주세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "팀 프로젝트 경험이 있다면 그 경험을 통해 배운 점은 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "사회적 역량",
+       "unit": null,
+       "q": "본인이 가지고 있는 강점이 에너지공학 연구에 어떻게 기여할 수 있다고 생각하나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "실제 본인이 참여한 활동을 확인하는 면접 질문에 답변 준비"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "072",
+   "id": "unist",
+   "name": "울산과학기술원(UNIST)",
+   "short": "UNIST",
+   "campus": null,
+   "region": "울산",
+   "admissions": [
+    {
+     "id": "unist-jonghap-tamgu",
+     "name": "학생부종합 – 탐구인재전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "개인 서류확인 면접",
+     "format": "2~3인의 평가자가 종합적, 정성적으로 평가",
+     "duration": null,
+     "panel": "2~3인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-07",
+       "dateEnd": "2026-11-08",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "창의적인 탐구능력 및 수학능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "진로계획 및 발전가능성",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "품행 및 인성",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "record",
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    },
+    {
+     "id": "unist-jonghap-grit",
+     "name": "학생부종합 – 그릿인재전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 30
+        },
+        {
+         "label": "면접(심층 포트폴리오 + 융합 프로젝트)",
+         "pct": 70
+        }
+       ]
+      }
+     ],
+     "interviewPct": 70,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "(개인) 심층 포트폴리오 기반, (단체) 융합 프로젝트",
+     "format": "(개인) 자료 기반 5~10분, 면접위원 2~3인 / (단체) 5명 내외를 1팀으로 구성(1~2시간 진행), 팀별 역량 기반 융합 프로젝트 제안서 작성, 면접위원 2~3인",
+     "duration": "개인 5~10분 + 단체 1~2시간",
+     "panel": "2~3인",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-07",
+       "dateEnd": "2026-11-08",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "(개인) 자기주도적 탐구능력, 몰입도, 성취도",
+       "pct": null,
+       "desc": "사전제출 포트폴리오 기반"
+      },
+      {
+       "name": "(단체) 융합적 연결력, 창의적 통찰력, 공동체 역량",
+       "pct": null,
+       "desc": "소그룹 울산팀 기반 면접"
+      }
+     ],
+     "questionStyle": null,
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": null,
+     "parseNotes": []
+    }
+   ]
+  },
+  {
+   "no": "073",
+   "id": "postech",
+   "name": "포항공과대학교",
+   "short": "POSTECH",
+   "campus": null,
+   "region": "경북",
+   "admissions": [
+    {
+     "id": "postech-ilban",
+     "name": "일반전형Ⅰ,일반전형Ⅱ,반도체공학인재전형",
+     "aliases": [
+      "일반전형Ⅰ",
+      "일반전형Ⅱ",
+      "반도체공학인재전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "3배수",
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계(일반전형Ⅰ, 반도체공학인재전형)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 50
+        },
+        {
+         "label": "면접평가",
+         "pct": 50
+        }
+       ]
+      },
+      {
+       "name": "2단계(일반전형Ⅱ)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 67
+        },
+        {
+         "label": "면접평가",
+         "pct": 33
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "혼합",
+     "interviewTypeRaw": "서류 기반",
+     "format": "일반전형Ⅰ: (통합면접) 개인면접 + 개인과제 + 그룹활동 / 일반전형Ⅱ: 서류평가 기반의 1:1 질의응답 구술면접 / 반도체공학인재전형: 서류평가 기반 질의응답 및 제시문 기반 구술면접이 결합된 통합 면접",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-28",
+       "dateEnd": null,
+       "time": null,
+       "units": "일반전형Ⅰ",
+       "note": null
+      },
+      {
+       "date": "2026-11-29",
+       "dateEnd": null,
+       "time": null,
+       "units": "일반전형Ⅱ, 반도체공학인재전형",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "잠재력",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "학업능력",
+       "unit": null,
+       "q": "고교 교육과정 중 특정 고급 과목(예: 고급수학 등)을 수강하지 않고 실험 위주의 다른 교과목(예: 화학실험 등)을 이수한 구체적인 배경과 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업능력",
+       "unit": null,
+       "q": "고교 재학 시절 이공계 학습에 필수적인 특정 과학 과목(예: 물리학 등)을 이수하지 않았는데 그 이유는 무엇이며, 이로 인해 생길 수 있는 기초 수과학적 학업 공백을 대학 입학 전까지 어떻게 보완할 계획인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "학업능력",
+       "unit": null,
+       "q": "[제시문 문항] 만약 위키피디아에 수록된 700만 개의 단어가 있다고 가정합시다. 이 단어들을 전부 인쇄해 종이책으로 만들 경우 전체 무게는 대략 어느 정도가 될까요? 정답이 정해져 있지 않은 질문이므로, 자신이 설정한 전제(한 페이지당 단어 개수 세기, 가로세로 단어 수의 곱, 종이 무게 단위 환산 등)를 활용하여 본인의 논리적 추론 과정을 차분하게 설명해 보세요.",
+       "followUp": null
+      },
+      {
+       "criterion": "잠재력",
+       "unit": null,
+       "q": "이공계 대학 중 특별히 POSTECH에 지원하게 된 명확한 동기는 무엇이며, 우리 대학만의 강점과 특화된 지원(예: 포스텍 2.0 지원, 최첨단 연구 인프라 등)이 본인의 꿈을 완성해 가는 데 어떠한 시너지 효과를 줄 것으로 생각하나요?",
+       "followUp": null
+      },
+      {
+       "criterion": "잠재력",
+       "unit": null,
+       "q": "대학에 입학한 후에 가장 중점적으로 도전해 보고 싶은 세부 연구 분야(예: 생명정보학, AI 융합 제어 등)는 무엇이며, 대학 내에서 관심 있게 살펴본 특정 연구실이나 교수님의 연구 성과가 있다면 소개해 주세요",
+       "followUp": null
+      },
+      {
+       "criterion": "잠재력",
+       "unit": null,
+       "q": "학교생활기록부 3학년 활동에 기재된 AI 및 데이터 다루기 활동(예: 전이인자 삽입 돌연변이 관련 머신러닝/딥러닝 알고리즘 적용 등)에 대해, 실제 본인이 기여한 핵심 설계 부분과 배운 점을 상세히 공유해 주세요.",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "일반전형Ⅱ는 수능최저(수학포함 2합 4) 적용, 일반전형Ⅰ·반도체공학인재전형은 수능최저 없음",
+      "제시문 열람 및 면접 대기실 등 고사장 내부에 시계가 배치되지 않는 상황이 발생할 수 있음. 제시문 작성(8분), 제시문 답변(2분), 개방형 답변(8분) 등 시간 배분이 매우 예리하게 끊어지는 전형이므로 반드시 개인 아날로그 시계를 착용하고 들어가는 것을 권장"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "interviewPct는 일반전형Ⅰ·반도체 기준 50; 일반전형Ⅱ는 33"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "074",
+   "id": "kaist",
+   "name": "한국과학기술원",
+   "short": "KAIST",
+   "campus": null,
+   "region": "대전",
+   "admissions": [
+    {
+     "id": "kaist-regular",
+     "name": "Regular Admission - 일반전형, 고른기회전형, 특기자전형, 반도체시스템인재전형",
+     "aliases": [
+      "일반전형",
+      "고른기회전형",
+      "특기자전형",
+      "반도체시스템인재전형"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "일반전형·반도체시스템인재전형 2.5배수 / 고른기회전형·특기자전형 2배수",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 40
+        },
+        {
+         "label": "면접",
+         "pct": 60
+        }
+       ]
+      }
+     ],
+     "interviewPct": 60,
+     "interviewType": "구술(교과형)",
+     "interviewTypeRaw": "일반전형, 고른기회전형, 반도체시스템인재전형: 학업역량 및 제출서류 기반 면접 / 특기자전형: 특기역량 및 제출서류 기반 면접",
+     "format": "학업역량: 수학·과학·영어 관련 개인별 구술면접(과학은 물리, 화학, 생명과학 중 지원자 선택 1과목) / 적합성: 지원서 기반 질문 및 공통질문에 대한 개인별 구술면접(반도체시스템인재는 전공적합성(반도체공학관련) 추가) / 특기자: 특기 관련 우수성과 잠재력, 영어 능력을 확인하는 개인별 구술면접, 본인 특기역량에 대한 발표(5분) 포함",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-26",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "학업역량(특기자전형은 특기역량)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "적합성",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "concept",
+     "sampleQuestions": [],
+     "openingQuestions": [],
+     "notes": [],
+     "pastQuestionsLink": "KAIST 입학처 | 학사과정 | 입학정보 | 면접기출문제",
+     "parseNotes": [
+      "예시 문항은 원문에 그림으로만 실려 텍스트 없음"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "075",
+   "id": "kentech",
+   "name": "한국에너지공과대학교",
+   "short": "KENTECH",
+   "campus": null,
+   "region": "전남",
+   "admissions": [
+    {
+     "id": "kentech-ilban",
+     "name": "학생부종합 - 일반전형",
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "5배수 내외",
+       "parts": [
+        {
+         "label": "서류",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 50
+        },
+        {
+         "label": "면접",
+         "pct": 50
+        }
+       ]
+      }
+     ],
+     "interviewPct": 50,
+     "interviewType": "창의성",
+     "interviewTypeRaw": "창의성 면접(주어진 과제에 대해서 자신만의 해결방안을 제시하도록 하는 열린 면접)",
+     "format": "면접준비 30분 + 면접문답 15분 내외",
+     "duration": "준비 30분 + 문답 15분 내외",
+     "panel": null,
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-11-30",
+       "dateEnd": null,
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "발산적 사고력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "문제해결능력",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "인문적 통찰 역량",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "[기본 임무] 새로운 외계 정착 후보지에 대한 정보가 일부 확보되었다. 제공된 정보를 바탕으로 탐험대의 정착지를 결정하고 탐험선에 탑재할 특별 아이템을 10가지 이내로 선택하여 본인만의 탐험 계획을 수립하라. 에너지 수급을 충족하고 다양한 요소를 고려하여 지속 가능한 거주 여건을 마련해야 한다. 특별 아이템 이외에 외계 정착에 필요한 기본적인 장비는 함께 탑재되며, 외계 행성의 환경은 지구와 유사하다. ※ 합리적인 근거가 있거나 상식적인 내용은 자유롭게 창의적으로 고려할 수 있다.",
+       "followUp": null
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "1. 본인의 탐험 계획을 설명해 주세요. 최종적으로 고른 정착지와 특별 아이템을 선택한 이유는 무엇인가요? (약 2~4분)",
+       "followUp": null
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "2. 성공적인 정착 계획을 수립하려면 다양한 요소를 고려해야 합니다. 잠재적인 위험 요인은 어떤 것들을 예상했으며, 어떻게 대응할 수 있을까요? (약 2~4분)",
+       "followUp": null
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "3. 탐험 계획을 수립하려면 다양한 상황과 조건 속에서 단 하나의 최종 선택을 결정해야 합니다. 탐험 계획을 수립하는데 결정이 어려웠던 부분은 특히 무엇이었으며 이 상황에서 본인은 어디에 우선순위를 두었나요? (약 2~4분)",
+       "followUp": null
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "4. 수립한 탐험 계획을 수행하려면 대중과 탐험위원회를 설득해야 합니다. 본인의 계획을 알리고 지지를 받기 위해서 1년이 주어진다면 어떻게 할 것인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "5. 탐험 계획을 세우면서 다양한 조합의 시뮬레이션을 진행하게 됩니다. 각각의 시뮬레이션 결과가 본인의 생각이나 예상과 잘 일치했나요? (Yes or No 선택)",
+       "followUp": "5-1.(Yes) 의사결정 과정에서 모두가 자기 생각과 같은 이야기를 해준다면, 최선의 결론을 내리기 위해 추가로 할 수 있는 것은 어떤 것이 있을까요? (약 2~4분) / 5-2.(No) 시뮬레이션의 결과와 자신의 예상이 어떤 부분이 달랐나요? 둘 중 어느 것이 더 타당하다고 생각하며, 그 이유는 무엇인가요? (약 2~4분)"
+      },
+      {
+       "criterion": "창의성 면접",
+       "unit": null,
+       "q": "6. 성공적인 임무 수행에 필요할 것으로 예상되는 아이템 한 가지를 추가로 자유롭게 제안해 보세요. (약 2~4분)",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "개별면접문항: 3가지 유형 중 2개 질문 제시(원문에 유형 내용 없음)"
+     ],
+     "pastQuestionsLink": "KENTECH 창의성면접",
+     "parseNotes": [
+      "개별면접문항 3가지 유형은 원문에 그림으로만 실려 텍스트 없음"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "076",
+   "id": "knua",
+   "name": "한국예술종합학교",
+   "short": "한예종",
+   "campus": null,
+   "region": "서울",
+   "admissions": [
+    {
+     "id": "knua-ilban",
+     "name": "일반전형",
+     "track": "실기/실적",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1차시험(기초 역량 및 실기 검증)",
+         "pct": null
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "2차시험(심층 실기 및 구술 면접)",
+         "pct": null
+        }
+       ]
+      }
+     ],
+     "interviewPct": null,
+     "interviewType": "인적성",
+     "interviewTypeRaw": "실기전형/일반면접",
+     "format": "다대일 면접; 입실 시작 → 수험표와 신분증 검사 → 대기실 입실 → 면접 → 퇴실",
+     "duration": null,
+     "panel": null,
+     "blind": null,
+     "schedule": [],
+     "criteria": [],
+     "questionStyle": "mixed",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "인생에서 가장 힘들었던 경험은 무엇이고 어떻게 극복했나요?",
+       "followUp": "반대로 가장 좋았던 경험은 무엇인가요? / 그렇다면 인생에서 다시 돌아가고 싶은 때는 언제인가요?"
+      },
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "지금까지 한 말들, 다 진심이에요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "마지막으로 할 말 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "공통",
+       "q": "최근 사회 이슈에 대한 학생의 생각은 어떠한가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "영화과",
+       "q": "오늘 치른 1차 글쓰기 시험에서 주인공의 욕망과 파멸 과정을 다루었는데, 왜 하필 이 인물의 결말을 비극으로 설정했는가? 해피엔딩으로 바꾼다면 이야기의 메시지가 어떻게 변하겠는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "영화과",
+       "q": "상업 영화와 독립 예술 영화의 경계가 무너지고 있는 최근 트렌드에 대해 어떻게 생각하며, 본인은 어떤 포지션의 연출자가 되고 싶은가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "방송영상과",
+       "q": "최근 유튜브나 숏폼(TikTok, Reels) 콘텐츠가 기성 방송 다큐멘터리의 영역을 위협하고 있다. 숏폼 형식으로 사회적 고발 다큐멘터리를 만든다면 어떤 연출 방식을 쓰겠는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "방송영상과",
+       "q": "자소서에 언급한 사회적 이슈([예: 청년 고립, 기후 위기 등])를 대중적인 예능이나 드라마 포맷으로 녹여낼 아이디어가 있다면 말해보라.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "연기과",
+       "q": "독백 대사를 할 때 왜 그 특정 단어에서 호흡을 멈추었는가? 인물의 어떤 내면 심리를 표현하고 싶었던 건가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "연기과",
+       "q": "방금 한 연기는 너무 학원에서 짜여온 정형화된 느낌이다. 지금 당장 그 캐릭터를 완전히 '사이코패스' 같은 성격으로 바꾸어서 10초 뒤에 다시 연기해 보라.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "연출과/극작과",
+       "q": "지정 희곡([예: 셰익스피어, 체호프 작품 등])을 현대 한국의 20대 청년들이 공감할 수 있는 무대로 바꾼다면, 시공간 배경과 오브제를 어떻게 재해석하겠는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "연출과/극작과",
+       "q": "좋은 연극이란 관객에게 위로를 주는 것인가, 아니면 불편한 진실을 마주하는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "조형예술과/디자인과",
+       "q": "실기 시험에서 주어진 주제를 표현할 때 왜 이 색감과 재료(오브제)를 선택했는가? 본인이 의도한 시각적 효과와 메시지를 설명해 보라.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "조형예술과/디자인과",
+       "q": "포트폴리오에 드러난 화풍이 특정 기성 작가의 스타일과 매우 유사해 보인다. 그 작가와 본인 작품의 결정적인 차이점(차별성)은 무엇인가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "건축과",
+       "q": "도시의 랜드마크 건축물이 가진 공공성과 사유재산으로서의 가치가 충돌할 때, 건축가는 어떤 태도를 취해야 한다고 생각하는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "기악과/성악과",
+       "q": "방금 연주한(부른) 곡의 작곡가가 이 곡을 쓸 당시의 시대적 배경과 삶의 궤적을 알고 있는가? 그것이 본인의 연주 방식에 어떻게 반영되었는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "기악과/성악과",
+       "q": "무대 위에서 치명적인 실수를 했을 때, 멘탈을 유지하고 연주를 끝까지 끌고 가기 위해 본인만의 마인드 컨트롤 방법이 있다면?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "작곡과",
+       "q": "본인이 작곡한 곡의 멜로디 라인은 훌륭하지만 화성적 전개가 다소 단조롭다. 현대 음악적 기법을 도입한다면 어느 부분을 어떻게 수정하고 싶은가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "무용원",
+       "q": "자신의 신체적 장점과 치명적인 단점은 무엇이며, 그 단점을 무대 위에서 어떤 움직임(안무)으로 보완하거나 예술적으로 승화시키는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "전통예술원",
+       "q": "우리 전통 예술(소리/춤/연희)이 지닌 고유의 '한(恨)'과 '흥(興)'을 서양의 예술 장르와 융합한다면, 이질감 없이 대중을 사로잡을 레파토리를 어떻게 기획하겠는가?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "전통예술원",
+       "q": "전통의 원형을 완벽히 보존하는 것과, 시대에 맞게 변형하는 것 중 무엇이 더 가치 있다고 생각하는가?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [
+      "대기실에서 오래 기다렸을 텐데 지치진 않았나요? 컨디션은 좀 어때요?",
+      "오늘 한예종 시험장에 오면서 주로 어떤 생각을 하거나 다짐을 하면서 왔나요?"
+     ],
+     "notes": [
+      "뻔한 정답 대신 '날 것의 주관'",
+      "압박 질문은 '정직함'으로 돌파"
+     ],
+     "pastQuestionsLink": null,
+     "parseNotes": [
+      "선발 비율·면접 일정이 원문에 없음"
+     ]
+    }
+   ]
+  },
+  {
+   "no": "077",
+   "id": "nuch",
+   "name": "한국전통문화대학교",
+   "short": "한국전통문화대",
+   "campus": null,
+   "region": "충남",
+   "admissions": [
+    {
+     "id": "nuch-useon",
+     "name": "우선선발",
+     "track": "기타",
+     "units": null,
+     "stages": [
+      {
+       "name": "1단계",
+       "multiple": "4배수",
+       "parts": [
+        {
+         "label": "우선선발 입학고사",
+         "pct": 100
+        }
+       ]
+      },
+      {
+       "name": "2단계",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "1단계",
+         "pct": 75
+        },
+        {
+         "label": "심층면접",
+         "pct": 25
+        }
+       ]
+      }
+     ],
+     "interviewPct": 25,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 면접",
+     "format": "15분 이내 / 면접 위원 3인 이상",
+     "duration": "15분 이내",
+     "panel": "3인 이상",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-08-19",
+       "dateEnd": "2026-08-20",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "일반소양(전통문화에 대한 이해와 자세, 의사소통능력, 인성)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "전공적성(전공 관련 지식 및 문제 해결력)",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "concept",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": "보존과학과",
+       "q": "국립박물관 입장료(무료/유료)에 대해 어떻게 생각하시나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보존과학과",
+       "q": "옻나무에서 나는 액체로 칠기에 바르는 물질이 무엇인지 모르겠어요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보존과학과",
+       "q": "한국전통문화대학교에 대해 알게 된 경로에 대해 말해줄 수 있나요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "보존과학과",
+       "q": "문화유산에 이물질이 묻었을 때 어떻게 해야 하는지?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "전통조경학과",
+       "q": "앞에 놓인 사진처럼 자연유산이 호우 피해를 입고 있을 경우 본인이 이를 관리하는 공무원이라면 가장 먼저 할 일은 무엇이고 그 이유는 무엇인가요?",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "전통조경학과",
+       "q": "AI가 설계한 정원은 창의성이 있다고 생각하나요, 없다고 생각하나요?",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "(면접절차) 자기소개(지원동기)-전공(구상형/즉답형)-교양(즉답형)-학업계획 및 장래희망"
+     ],
+     "pastQuestionsLink": "한국전통문화대학교 입학처 | 수시모집 | 기출문제",
+     "parseNotes": []
+    },
+    {
+     "id": "nuch-jonghap-gyogwa",
+     "name": "학생부 종합, 교과 – 전통문화인재, 교과우수자",
+     "aliases": [
+      "전통문화인재전형(학생부종합)",
+      "교과우수자전형(학생부교과)"
+     ],
+     "track": "학생부종합",
+     "units": null,
+     "stages": [
+      {
+       "name": "일괄합산(전통문화인재전형·학생부종합)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "서류평가",
+         "pct": 60
+        },
+        {
+         "label": "심층면접",
+         "pct": 40
+        }
+       ]
+      },
+      {
+       "name": "일괄합산(교과우수자전형·학생부교과)",
+       "multiple": null,
+       "parts": [
+        {
+         "label": "학생부성적",
+         "pct": 80
+        },
+        {
+         "label": "심층면접",
+         "pct": 20
+        }
+       ]
+      }
+     ],
+     "interviewPct": 40,
+     "interviewType": "서류기반",
+     "interviewTypeRaw": "서류 기반 면접",
+     "format": "15분 이내 / 면접 위원 3인 이상",
+     "duration": "15분 이내",
+     "panel": "3인 이상",
+     "blind": null,
+     "schedule": [
+      {
+       "date": "2026-10-20",
+       "dateEnd": "2026-10-23",
+       "time": null,
+       "units": "전 모집단위",
+       "note": null
+      }
+     ],
+     "criteria": [
+      {
+       "name": "일반소양(전통문화에 대한 이해와 자세, 의사소통능력, 인성)",
+       "pct": null,
+       "desc": null
+      },
+      {
+       "name": "전공적성(전공 관련 지식 및 문제 해결력)",
+       "pct": null,
+       "desc": null
+      }
+     ],
+     "questionStyle": "concept",
+     "sampleQuestions": [
+      {
+       "criterion": null,
+       "unit": "융합고고학과",
+       "q": "한국의 삼국시대 유적지를 국가별로 말해보고, 이를 통해 각각의 국가의 문화상을 말해보시오.",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "융합고고학과",
+       "q": "역사학과 고고학의 차이점",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "융합고고학과",
+       "q": "현대사회에서 고고학이 가지는 가치",
+       "followUp": null
+      },
+      {
+       "criterion": null,
+       "unit": "융합고고학과",
+       "q": "대중에게 고고학을 알릴 방법",
+       "followUp": null
+      }
+     ],
+     "openingQuestions": [],
+     "notes": [
+      "(면접절차) 자기소개(지원동기)-전공(구상형/즉답형)-교양(즉답형)-학업계획 및 장래희망"
+     ],
+     "pastQuestionsLink": "한국전통문화대학교 입학처 | 수시모집 | 기출문제",
+     "parseNotes": [
+      "interviewPct는 전통문화인재(종합) 기준 40; 교과우수자는 20"
+     ]
+    }
+   ]
+  }
+ ]
+}
