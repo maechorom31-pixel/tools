@@ -142,6 +142,62 @@ body.has-bar footer{padding-bottom:140px}
 .ab-btns [hidden]{display:none}
 @media (max-width:760px){.ab{grid-template-columns:1fr}.ab-btns{justify-content:flex-start}.ab-btns .btn{margin:2px 8px 2px 0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ═══════ 면접 준비 ═══════ */
+:root{--content-scale:1}
+.vswitch{margin-top:16px}
+.stu-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+.stu-table th,.stu-table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.stu-table th{font-weight:600;color:var(--mid);font-size:13px}
+.stu-table td.act{white-space:nowrap;text-align:right}
+.stu-table .btn{min-height:34px;font-size:13px;padding:0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;background:var(--card);font-variant-numeric:tabular-nums}
+.chip.soon{border-color:var(--amber);background:var(--amber-soft)}
+.empty{color:var(--mid);font-size:14px;margin-top:12px}
+.field{display:grid;gap:4px;margin-top:12px;min-width:0}
+.field label{font-size:13px;font-weight:600}
+.field input,.field select,.field textarea{font:inherit;font-size:16px;min-height:44px;padding:8px 10px;border:1px solid #D9D5CE;border-radius:8px;background:var(--card);width:100%;color:var(--ink)}
+.field textarea{min-height:88px;line-height:1.6;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px var(--amber-soft)}
+.field .hint{font-size:13px;color:var(--mid)}
+.field .hint.ok{color:var(--ink)}
+.field .hint.err{color:var(--err)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0 16px}
+.toolrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+.toolrow .spacer{flex:1}
+.app{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--card);margin-top:12px}
+.app h4{font-size:15px;line-height:1.4;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.app h4 .dday{font-variant-numeric:tabular-nums;color:var(--amber-dark)}
+.app .sub{font-size:13px;color:var(--mid);margin-top:2px}
+.prof{margin-top:12px;background:var(--sub);padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.7}
+.prof dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:2px 14px}
+.prof dt{font-weight:600;color:var(--mid);font-size:13px}
+.prof dd{margin:0;min-width:0}
+.prof ul{margin:0;padding-left:18px}
+.prof details{margin-top:6px}
+.prof summary{cursor:pointer;font-weight:600;font-size:13px}
+.app .actions{margin-top:10px}
+.app .actions .btn{min-height:34px;font-size:13px;margin:0 8px 0 0}
+.stu-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:end}
+.stu-head .field{margin-top:0}
+h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
+.scale{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mid)}
+.scale input{width:120px;accent-color:var(--amber-dark)}
+.rec{margin-top:18px}
+.rec h4{font-size:15px;line-height:1.35}
+.rec .meta{font-size:13px;color:var(--mid);margin-left:8px;font-weight:400}
+.rec p{margin-top:6px;font-size:calc(15px * var(--content-scale));line-height:1.75;max-width:46em}
+.rec p.att{white-space:pre-line}
+.gradeblk{margin-top:24px}
+.gradeblk > h3{font-size:17px}
+.cal .day{display:grid;grid-template-columns:140px minmax(0,1fr);gap:4px 16px;padding:10px 0;border-top:1px solid var(--line)}
+.cal .day:first-child{border-top:0}
+.cal .d{font-weight:700;font-variant-numeric:tabular-nums}
+.cal .d small{display:block;font-weight:400;color:var(--mid);font-size:13px}
+.cal .ev{font-size:14px;line-height:1.6}
+.cal .warn{color:var(--err);font-weight:600;font-size:13px;margin-left:8px}
+@media (max-width:600px){.cal .day{grid-template-columns:1fr}.stu-head{grid-template-columns:1fr}.prof dl{grid-template-columns:1fr}.stu-table th:nth-child(3),.stu-table td:nth-child(3){display:none}}
+@media print{.vswitch,.actbar,.toolrow,.field,.stu-table .act,.app .actions{display:none!important}.prof{background:none;border:1px solid #E8E6E2}}
 </style>
 </head>
 <body>
@@ -151,9 +207,13 @@ body.has-bar footer{padding-bottom:140px}
   <h1>생기부 블라인드</h1>
   <p class="lead">NEIS에서 저장한 생기부 PDF에서 주민등록번호·주소·사진·이름 같은 개인정보를 <b>파일 안에서 지운</b> 사본을 만듭니다. 덮어 가리는 것이 아니라 글자와 그림을 빼는 방식이라 복사·검색해도 나오지 않고, 나머지 글은 원본처럼 읽고 고를 수 있습니다.</p>
   <p class="privacy">올린 파일은 이 브라우저 밖으로 나가지 않습니다. 인터넷 연결 없이도 동작합니다.</p>
+<div class="seg vswitch" role="group" aria-label="보기" id="viewSwitch">
+<button type="button" data-v="blind" aria-pressed="true">블라인드</button>
+<button type="button" data-v="hub" aria-pressed="false">면접 준비</button>
+</div>
 </header>
 
-<main>
+<main id="viewBlind">
 <section class="step" aria-labelledby="h1s">
   <h2 id="h1s"><span class="no">01</span>생기부 PDF 올리기</h2>
   <p class="desc">학생 한 명 파일도, 학급 전체를 한 번에 저장한 파일도 됩니다. 여러 개를 함께 넣어도 됩니다.</p>
@@ -211,6 +271,42 @@ body.has-bar footer{padding-bottom:140px}
 </section>
 </main>
 
+<main id="viewHub" hidden>
+<section class="step" aria-labelledby="hs1">
+<h2 id="hs1"><span class="no">01</span>담당 학생</h2>
+<p class="desc">블라인드 보기에서 PDF를 읽은 뒤 아래 막대의 ‘면접 준비에 등록’을 누르면 가린 글이 여기에 들어옵니다. 이름은 받지 않고 반·번호로만 구분합니다. 학생 자료는 이 브라우저 안(IndexedDB)에만 저장되고, 브라우저의 사이트 데이터를 지우면 함께 지워집니다.</p>
+<div id="stuList"></div>
+</section>
+<section class="step" id="stuDetail" hidden aria-labelledby="hs2">
+<h2 id="hs2"><span class="no">02</span><span id="stuTitle">학생</span></h2>
+<div class="stu-head">
+<div class="field"><label for="aliasIn">라벨 <span class="hint">(이름 대신 쓰는 표시. 예: 3-2 07)</span></label><input id="aliasIn" autocomplete="off"></div>
+<div><button class="btn" id="stuDel" type="button">이 학생 지우기</button></div>
+</div>
+<h3 class="sub-h">지원</h3>
+<div id="apps"></div>
+<form id="appForm" class="panel" style="margin-top:12px" autocomplete="off">
+<div class="grid2">
+<div class="field"><label for="univIn">대학 <span class="hint">(자료집에 있는 대학은 고르면 전형·비율·일정이 채워집니다)</span></label><input id="univIn" list="univList" placeholder="예: 전남대"><datalist id="univList"></datalist></div>
+<div class="field"><label for="admIn">전형</label><select id="admIn"><option value="">— 대학을 먼저 고르세요 —</option></select><input id="admFreeIn" hidden placeholder="전형 이름 (예: 학생부종합 일반전형)" aria-label="전형 이름 직접 적기"></div>
+<div class="field"><label for="unitIn">모집단위(학과)</label><input id="unitIn" placeholder="예: 국어국문학과"></div>
+<div class="field"><label for="dateIn">면접일 <span class="hint">(11/22, 11.22(토) 10:30, 11월 22일 오후 모두 됩니다)</span></label><input id="dateIn" placeholder="예: 12/2 13:00"><span class="hint" id="dateHint"></span></div>
+</div>
+<div class="field"><label for="profIn">프로파일 메모 <span class="hint">(평가영역 비율, 질문 성향, 유의사항처럼 세션에서 정리한 대학 프로파일을 붙여 넣는 곳. 질문 만들 때 그대로 씁니다)</span></label><textarea id="profIn"></textarea></div>
+<div class="toolrow"><button class="btn main" type="submit" id="appSave">지원 추가</button><button class="btn" type="button" id="appCancel" hidden>취소</button><span class="hint" id="appMsg" role="status"></span></div>
+</form>
+<h3 class="sub-h">생기부</h3>
+<div class="toolrow"><span class="hint">가린 글만 있습니다. 형광펜과 질문 만들기는 다음 단계에서 붙습니다.</span><span class="spacer"></span>
+<label class="scale"><span style="font-size:12px">가</span><input type="range" id="scaleIn" min="80" max="160" step="5" value="100" aria-label="본문 글자 크기"><span style="font-size:18px">가</span></label></div>
+<div id="recView"></div>
+</section>
+<section class="step" aria-labelledby="hs3">
+<h2 id="hs3"><span class="no">03</span>면접 달력</h2>
+<p class="desc">등록한 모든 학생의 면접일을 날짜순으로 모읍니다. 한 학생이 같은 날 두 곳이면 표시합니다.</p>
+<div class="cal" id="cal"></div>
+</section>
+</main>
+
 <footer>
   처음 쓰실 때는 결과 파일을 열어 지운 자리를 눈으로 한 번 살펴봐 주세요. 자동으로 찾지 못한 자리는 03에서 상자를 그려 지울 수 있습니다.
   스캔한(그림으로 된) 쪽은 글자 단위로 지울 수 없어, 그런 쪽이 있으면 따로 알려 드립니다.
@@ -223,6 +319,7 @@ body.has-bar footer{padding-bottom:140px}
     <div class="ab-btns">
       <button class="btn main" id="mkOne" type="button" disabled>이 파일 만들기</button>
       <button class="btn" id="mkAll" type="button" disabled>모두 만들기</button>
+<button class="btn" id="regHub" type="button" hidden>면접 준비에 등록</button>
       <a class="btn" id="abDl" hidden>내려받기</a>
       <button class="btn" id="abDlAll" type="button" hidden>모두 내려받기</button>
     </div>
@@ -2418,8 +2515,315 @@ function parseStudents(f) {
     attendance: s.parsed.attendance, unparsed: s.parsed.unparsed,
   }));
 }
+
+/* ═══════ 면접 준비 — 학생·지원·달력 ═══════
+   학생 자료는 IndexedDB(이 브라우저)에만 둔다. 이름은 어디에도 저장하지 않는다. */
+const HUB = { students: [], cards: null, cardsErr: "", cur: null, editing: null };
+const DB = { name: "myeonjeop-on-v1", store: "students" };
+function dbOpen() {
+  return new Promise((res, rej) => {
+    const q = indexedDB.open(DB.name, 1);
+    q.onupgradeneeded = () => q.result.createObjectStore(DB.store, { keyPath: "id" });
+    q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+  });
+}
+const dbReq = (mode, fn) => dbOpen().then(db => new Promise((res, rej) => { const q = fn(db.transaction(DB.store, mode).objectStore(DB.store)); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }));
+const dbAll = () => dbReq("readonly", st => st.getAll());
+const dbPut = o => dbReq("readwrite", st => st.put(o));
+const dbDel = id => dbReq("readwrite", st => st.delete(id));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+/* ---------- 날짜 ---------- */
+const WD = ["일", "월", "화", "수", "목", "금", "토"];
+/* "11/22", "11.22(토) 10:30", "11월 22일 오후 1시", "2026-12-02 13:00" → {date, time, period} */
+function parseKDate(raw, base = new Date()) {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  let y = null, m, d;
+  let mt = s.match(/(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})/);
+  if (mt) { y = +mt[1]; m = +mt[2]; d = +mt[3]; }
+  else { mt = s.match(/(\d{1,2})\s*[.\-/월]\s*(\d{1,2})/); if (!mt) return null; m = +mt[1]; d = +mt[2]; }
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (y === null) { y = base.getFullYear(); if (m < base.getMonth() + 1 - 6) y++; }   // 여섯 달 넘게 지난 달이면 내년
+  const rest = s.slice(mt.index + mt[0].length);
+  let time = null, period = /오전/.test(rest) ? "오전" : /오후/.test(rest) ? "오후" : null;
+  let tm = rest.match(/(\d{1,2})\s*:\s*(\d{2})/) || rest.match(/(\d{1,2})\s*시\s*(?:(\d{1,2})\s*분)?/);
+  if (tm) {
+    let h = +tm[1], mi = +(tm[2] || 0);
+    if (period === "오후" && h < 12) h += 12;
+    if (h <= 23 && mi <= 59) time = `${String(h).padStart(2, "0")}:${String(mi).padStart(2, "0")}`;
+  }
+  const dt = new Date(y, m - 1, d);
+  if (dt.getMonth() !== m - 1) return null;
+  return { date: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, time, period };
+}
+const isoToDate = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+const fmtDate = (iso, year = false) => { const dt = isoToDate(iso); return `${year ? dt.getFullYear() + ". " : ""}${dt.getMonth() + 1}. ${dt.getDate()}.(${WD[dt.getDay()]})`; };
+function dday(iso) { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((isoToDate(iso) - t) / 86400000); }
+const ddayText = n => n === 0 ? "오늘" : n > 0 ? `D-${n}` : `${-n}일 지남`;
+
+/* ---------- 대학 카드 ---------- */
+async function loadCards() {
+  try {
+    const r = await fetch("data/univ-cards.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    HUB.cards = await r.json();
+  } catch (e) { HUB.cards = null; HUB.cardsErr = "대학 카드 자료를 읽지 못했습니다(인터넷 연결이나 파일 위치 확인). 대학·전형은 직접 적을 수 있습니다."; }
+  const dl = $("univList");
+  if (dl) dl.innerHTML = (HUB.cards?.universities || []).map(u => `<option value="${esc(univLabel(u))}">${esc(u.name)}</option>`).join("");
+}
+const univLabel = u => u.short + (u.campus && !u.short.includes(u.campus) ? `(${u.campus})` : "");
+function findUniv(txt) {
+  const t = (txt || "").replace(/\s+/g, "");
+  if (!t || !HUB.cards) return null;
+  const us = HUB.cards.universities;
+  return us.find(u => univLabel(u) === t) || us.find(u => u.name === t || u.short === t) || us.find(u => u.name.startsWith(t) || univLabel(u).startsWith(t)) || null;
+}
+const findAdm = (u, id) => u?.admissions.find(a => a.id === id) || null;
+const STYLE_KO = { common: "공통 질문 중심", record: "생기부 세부 확인형", concept: "교과 개념 확인형", mixed: "혼합" };
+function stagesText(a) {
+  if (!a?.stages?.length) return "";
+  return a.stages.map(st => {
+    const parts = st.parts.map(p => p.pct != null ? `${p.label} ${p.pct}%` : p.points != null ? `${p.label} ${p.points}점` : p.label).join(" + ");
+    return `${st.name}${st.multiple ? `(${st.multiple})` : ""} ${parts}`;
+  }).join(" → ");
+}
+function schedText(a) {
+  return (a?.schedule || []).map(x => `${fmtDate(x.date)}${x.dateEnd ? "~" + fmtDate(x.dateEnd) : ""}${x.time ? " " + x.time : ""}${x.units ? " · " + x.units : ""}${x.note ? " (" + x.note + ")" : ""}`);
+}
+function profileHtml(app) {
+  const u = HUB.cards && app.univId ? HUB.cards.universities.find(x => x.id === app.univId) : null;
+  const a = findAdm(u, app.admId);
+  const rows = [];
+  if (a) {
+    rows.push(["선발", stagesText(a) + (a.interviewPct != null ? ` — 면접 ${a.interviewPct}%` : "")]);
+    rows.push(["면접", [a.interviewTypeRaw || a.interviewType, a.format, a.blind ? "블라인드" : ""].filter(Boolean).join(" · ")]);
+    const sc = schedText(a); if (sc.length) rows.push(["일정", sc.join("<br>")]);
+    if (a.criteria?.length) rows.push(["평가요소", a.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ")]);
+    if (a.questionStyle) rows.push(["질문 성향", STYLE_KO[a.questionStyle] || a.questionStyle]);
+    if (a.openingQuestions?.length) rows.push(["시작 질문", a.openingQuestions.map(esc).join("<br>")]);
+    if (a.notes?.length) rows.push(["유의", "<ul>" + a.notes.map(n => `<li>${esc(n)}</li>`).join("") + "</ul>"]);
+  }
+  if (app.profile) rows.push(["프로파일 메모", esc(app.profile).replace(/\n/g, "<br>")]);
+  if (!rows.length) return "";
+  let html = `<div class="prof"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+  if (a?.sampleQuestions?.length) html += `<details><summary>자료집 예시 문항 ${a.sampleQuestions.length}개</summary><ul>${a.sampleQuestions.map(q => `<li>${q.criterion ? `<span class="hint">[${esc(q.criterion)}${q.unit ? " · " + esc(q.unit) : ""}]</span> ` : ""}${esc(q.q)}${q.followUp ? ` <span class="hint">→ ${esc(q.followUp)}</span>` : ""}</li>`).join("")}</ul></details>`;
+  if (a?.pastQuestionsLink) html += `<div class="hint" style="margin-top:6px">기출: ${esc(a.pastQuestionsLink)}</div>`;
+  return html + "</div>";
+}
+
+/* ---------- 학생 등록 (블라인드 → 허브) ---------- */
+function maskedFileName(f) {
+  let base = f.name.replace(/\.pdf$/i, "").replace(/\d{6}-?\d{7}/g, "");
+  const names = [...(f.names?.student || []), ...(f.names?.family || []), ...(f.names?.teacher || [])].sort((x, y) => y.length - x.length);
+  for (const n of names) base = base.split(n).join("ㅇ".repeat(n.length));
+  return base;
+}
+async function registerFromFile(f) {
+  const parsed = parseStudents(f);
+  let added = 0, updated = 0;
+  for (const st of parsed) {
+    const sig = st.text.length + ":" + st.text.slice(0, 80);
+    const dup = HUB.students.find(x => x.label === st.label && x.sig === sig);
+    const rec = dup || { id: uid(), label: st.label, alias: st.label ? `${st.label.split("-")[0]}반 ${st.label.split("-")[1]}번` : "학생", createdAt: new Date().toISOString(), applications: [], highlights: [], memo: "" };
+    Object.assign(rec, { sig, source: { file: maskedFileName(f), pages: st.pages.map(p => p + 1) }, text: st.text, records: st.records, setuk: st.setuk, attendance: st.attendance, unparsed: st.unparsed, updatedAt: new Date().toISOString() });
+    await dbPut(rec);
+    if (dup) updated++; else { HUB.students.push(rec); added++; }
+  }
+  return { added, updated };
+}
+$("regHub").onclick = async () => {
+  const f = S.files[S.cur];
+  if (!f?.boxes) return;
+  const b = $("regHub"); b.disabled = true; b.textContent = "등록 중…";
+  try {
+    const r = await registerFromFile(f);
+    $("status").className = "status"; $("status").textContent = `면접 준비에 ${r.added}명을 등록했습니다${r.updated ? ` (${r.updated}명은 갱신)` : ""}. ‘면접 준비’ 보기에서 이어집니다.`;
+    setView("hub");
+  } catch (e) { $("status").className = "status err"; $("status").textContent = "오류: 등록하지 못했습니다 — " + (e?.message || e); }
+  b.disabled = false; b.textContent = "면접 준비에 등록";
+};
+
+/* ---------- 보기 전환 ---------- */
+const LEAD = {
+  blind: document.querySelector("header .lead").innerHTML,
+  hub: "블라인드로 가린 생기부 글을 학생·지원 대학별로 모아 면접 준비 자료를 만듭니다. 학생 자료는 이 브라우저 안에만 있고, 이름은 저장하지 않습니다.",
+};
+function setView(v) {
+  $("viewBlind").hidden = v !== "blind"; $("viewHub").hidden = v !== "hub";
+  $("actbar").hidden = v !== "blind" || !S.files.length;
+  document.body.classList.toggle("has-bar", v === "blind" && !!S.files.length);
+  document.querySelector("header .lead").innerHTML = LEAD[v];
+  for (const b of $("viewSwitch").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.v === v));
+  if (v === "hub") { renderStudents(); renderCal(); }
+  try { localStorage.setItem("blind-view", v); } catch { /* 무시 */ }
+}
+$("viewSwitch").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setView(b.dataset.v); });
+
+/* ---------- 학생 목록 ---------- */
+function nextApp(stu) {
+  const list = stu.applications.filter(a => a.date).map(a => ({ a, n: dday(a.date) })).sort((x, y) => x.n - y.n);
+  return list.find(x => x.n >= 0) || list[list.length - 1] || null;
+}
+function appTitle(a) {
+  const u = HUB.cards?.universities.find(x => x.id === a.univId);
+  const adm = findAdm(u, a.admId);
+  return [u ? univLabel(u) : a.univText, adm ? adm.name.replace(/^학생부\s*(종합|교과)\s*[-–]\s*/, "") : a.admText, a.unit].filter(Boolean).join(" · ");
+}
+function renderStudents() {
+  const host = $("stuList");
+  if (!HUB.students.length) { host.innerHTML = `<p class="empty">아직 등록한 학생이 없습니다. 블라인드 보기에서 PDF를 읽고 아래 막대의 ‘면접 준비에 등록’을 누르면 여기에 나타납니다.</p>`; return; }
+  const rows = HUB.students.slice().sort((x, y) => { const a = nextApp(x), b = nextApp(y); return (a ? a.n : 1e9) - (b ? b.n : 1e9) || x.alias.localeCompare(y.alias); });
+  host.innerHTML = `<div style="overflow-x:auto"><table class="stu-table"><thead><tr><th>라벨</th><th>지원</th><th>등록</th><th></th></tr></thead><tbody>${rows.map(st => `<tr>
+    <td><b>${esc(st.alias)}</b><div class="hint" style="font-size:12px">${esc(st.source?.file || "")}</div></td>
+    <td><div class="chips">${st.applications.length ? st.applications.map(a => { const n = a.date ? dday(a.date) : null; return `<span class="chip${n !== null && n >= 0 && n <= 14 ? " soon" : ""}">${esc(appTitle(a))}${a.date ? ` · ${fmtDate(a.date)} ${ddayText(n)}` : ""}</span>`; }).join("") : `<span class="hint">지원 없음</span>`}</div></td>
+    <td class="hint" style="white-space:nowrap">${fmtDate(st.createdAt.slice(0, 10))}</td>
+    <td class="act"><button class="btn" type="button" data-open="${st.id}">열기</button></td></tr>`).join("")}</tbody></table></div>`;
+  host.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
+}
+const stuOf = id => HUB.students.find(x => x.id === id);
+
+/* ---------- 학생 상세 ---------- */
+function openStudent(id) {
+  HUB.cur = id;
+  const st = stuOf(id);
+  $("stuDetail").hidden = false;
+  $("stuTitle").textContent = st.alias;
+  $("aliasIn").value = st.alias;
+  resetAppForm();
+  renderApps(); renderRecords();
+  $("stuDetail").scrollIntoView({ block: "start" });
+}
+$("aliasIn").onchange = async () => { const st = stuOf(HUB.cur); if (!st) return; st.alias = $("aliasIn").value.trim() || st.alias; $("aliasIn").value = st.alias; $("stuTitle").textContent = st.alias; await dbPut(st); renderStudents(); renderCal(); };
+$("stuDel").onclick = async () => {
+  const st = stuOf(HUB.cur); if (!st) return;
+  if (!confirm(`${st.alias} 학생의 자료(지원 ${st.applications.length}건 포함)를 이 브라우저에서 지웁니다. 되돌릴 수 없습니다.`)) return;
+  await dbDel(st.id); HUB.students = HUB.students.filter(x => x !== st); HUB.cur = null;
+  $("stuDetail").hidden = true; renderStudents(); renderCal();
+};
+function renderApps() {
+  const st = stuOf(HUB.cur), host = $("apps");
+  if (!st.applications.length) { host.innerHTML = `<p class="empty">아직 지원을 적지 않았습니다. 아래에서 대학·전형·면접일을 넣으면 이 학생의 지원 카드가 됩니다. 한 학생이 여러 곳에 지원하면 여러 번 추가합니다.</p>`; return; }
+  host.innerHTML = st.applications.map(a => `<article class="app" id="app-${a.id}">
+    <h4>${esc(appTitle(a))}${a.date ? ` <span class="dday">${fmtDate(a.date, true)}${a.time ? " " + a.time : a.period ? " " + a.period : ""} · ${ddayText(dday(a.date))}</span>` : ` <span class="hint">면접일 미정</span>`}</h4>
+    ${a.dateRaw && a.date ? `<div class="sub">입력: ${esc(a.dateRaw)}</div>` : ""}
+    ${profileHtml(a)}
+    <div class="actions"><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button></div></article>`).join("");
+  host.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editApp(b.dataset.edit));
+  host.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { st.applications = st.applications.filter(a => a.id !== b.dataset.del); await dbPut(st); renderApps(); renderStudents(); renderCal(); });
+}
+function resetAppForm() {
+  HUB.editing = null;
+  $("appForm").reset(); fillAdm(null); $("dateHint").textContent = ""; $("dateHint").className = "hint";
+  $("appSave").textContent = "지원 추가"; $("appCancel").hidden = true; $("appMsg").textContent = "";
+}
+function fillAdm(u, selected) {
+  const sel = $("admIn");
+  if (!u) { sel.hidden = true; $("admFreeIn").hidden = false; return; }
+  sel.hidden = false; $("admFreeIn").hidden = true;
+  sel.innerHTML = `<option value="">— 전형 고르기 —</option>` + u.admissions.map(a => `<option value="${a.id}"${a.id === selected ? " selected" : ""}>${esc(a.name)}${a.interviewPct != null ? ` (면접 ${a.interviewPct}%)` : ""}</option>`).join("") + `<option value="__free">직접 적기</option>`;
+}
+$("univIn").addEventListener("input", () => { const u = findUniv($("univIn").value); fillAdm(u); });
+$("admIn").addEventListener("change", () => {
+  const u = findUniv($("univIn").value), a = findAdm(u, $("admIn").value);
+  // 일정이 하나뿐이면 면접일 칸을 미리 채운다 (비어 있을 때만)
+  if (a && a.schedule?.length === 1 && !a.schedule[0].dateEnd && !$("dateIn").value.trim()) { $("dateIn").value = fmtDate(a.schedule[0].date, true) + (a.schedule[0].time ? " " + a.schedule[0].time : ""); $("dateIn").dispatchEvent(new Event("input")); }
+  else if (a && a.schedule?.length > 1 && !$("dateIn").value.trim()) { $("dateHint").textContent = "이 전형은 모집단위마다 날짜가 다릅니다: " + schedText(a).join(" / "); $("dateHint").className = "hint"; }
+});
+$("dateIn").addEventListener("input", () => {
+  const v = $("dateIn").value.trim(), h = $("dateHint");
+  if (!v) { h.textContent = ""; h.className = "hint"; return; }
+  const p = parseKDate(v);
+  if (!p) { h.textContent = "오류: 날짜를 읽지 못했습니다. 11/22 또는 2026.11.22 꼴로 적어 주세요."; h.className = "hint err"; return; }
+  h.textContent = `${fmtDate(p.date, true)}${p.time ? " " + p.time : p.period ? " " + p.period : ""} · ${ddayText(dday(p.date))}`; h.className = "hint ok";
+});
+function editApp(id) {
+  const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === id); if (!a) return;
+  HUB.editing = id;
+  const u = HUB.cards?.universities.find(x => x.id === a.univId);
+  $("univIn").value = u ? univLabel(u) : a.univText || "";
+  fillAdm(u, a.admId); if (!u || !a.admId) { $("admFreeIn").hidden = false; if (u) $("admIn").value = "__free"; } $("admFreeIn").value = a.admText || "";
+  $("unitIn").value = a.unit || ""; $("dateIn").value = a.dateRaw || ""; $("dateIn").dispatchEvent(new Event("input")); $("profIn").value = a.profile || "";
+  $("appSave").textContent = "고친 내용 저장"; $("appCancel").hidden = false;
+  $("appForm").scrollIntoView({ block: "start" });
+}
+$("appCancel").onclick = resetAppForm;
+$("appForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const st = stuOf(HUB.cur); if (!st) return;
+  const univTxt = $("univIn").value.trim(), u = findUniv(univTxt);
+  const admVal = $("admIn").value, a = u && admVal && admVal !== "__free" ? findAdm(u, admVal) : null;
+  const dateRaw = $("dateIn").value.trim(), p = dateRaw ? parseKDate(dateRaw) : null;
+  if (!univTxt) { $("appMsg").textContent = "오류: 대학을 적어 주세요."; return; }
+  if (dateRaw && !p) { $("appMsg").textContent = "오류: 면접일을 읽지 못했습니다."; return; }
+  const app = HUB.editing ? st.applications.find(x => x.id === HUB.editing) : { id: uid(), rounds: [] };
+  Object.assign(app, { univId: u?.id || null, univText: u ? "" : univTxt, admId: a?.id || null, admText: a ? "" : $("admFreeIn").value.trim(), unit: $("unitIn").value.trim(),
+    dateRaw, date: p?.date || null, time: p?.time || null, period: p?.period || null, profile: $("profIn").value.trim() });
+  if (!HUB.editing) st.applications.push(app);
+  await dbPut(st);
+  resetAppForm(); renderApps(); renderStudents(); renderCal();
+  $("appMsg").textContent = HUB.editing ? "저장했습니다." : "추가했습니다.";
+});
+/* 카드에 없는 전형은 '직접 적기'로 */
+$("admIn").addEventListener("change", () => { $("admFreeIn").hidden = $("admIn").value !== "__free"; });
+
+/* ---------- 생기부 열람 ---------- */
+const AREA_SORT = ["자율·자치활동", "자율활동", "자치활동", "동아리활동", "진로활동", "봉사활동"];
+function renderRecords() {
+  const st = stuOf(HUB.cur), host = $("recView");
+  const blocks = [];
+  if (st.attendance) blocks.push(`<div class="rec"><h4>출결상황</h4><p class="att">${esc(st.attendance)}</p></div>`);
+  for (const g of [1, 2, 3]) {
+    const recs = st.records.filter(r => r.grade === g).sort((a, b) => AREA_SORT.indexOf(a.area) - AREA_SORT.indexOf(b.area));
+    const subs = st.setuk.filter(x => x.grade === g);
+    if (!recs.length && !subs.length) continue;
+    let h = `<section class="gradeblk"><h3>${g}학년</h3>`;
+    for (const r of recs.filter(x => x.area !== "행동특성 및 종합의견")) h += `<div class="rec"><h4>${esc(r.area)}${r.hope ? `<span class="meta">희망분야 ${esc(r.hope)}</span>` : ""}<span class="meta">${neisBytes(r.text).toLocaleString()}B</span></h4><p>${esc(r.text)}</p></div>`;
+    for (const x of subs) h += `<div class="rec"><h4>${esc(x.subject)}${x.sem ? `<span class="meta">${x.sem}학기</span>` : ""}<span class="meta">${neisBytes(x.body).toLocaleString()}B</span></h4><p>${esc(x.body)}</p></div>`;
+    for (const r of recs.filter(x => x.area === "행동특성 및 종합의견")) h += `<div class="rec"><h4>행동특성 및 종합의견<span class="meta">${neisBytes(r.text).toLocaleString()}B</span></h4><p>${esc(r.text)}</p></div>`;
+    blocks.push(h + "</section>");
+  }
+  if (!blocks.length) blocks.push(`<p class="empty">영역을 가르지 못했습니다(이 판형은 아직 모릅니다). 가린 글 전체는 아래에 그대로 둡니다.</p>`);
+  blocks.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><p class="att">${esc(st.text)}</p></details>`);
+  if (st.unparsed?.length) blocks.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
+  host.innerHTML = blocks.join("");
+}
+$("scaleIn").addEventListener("input", () => { document.documentElement.style.setProperty("--content-scale", $("scaleIn").value / 100); try { localStorage.setItem("blind-scale", $("scaleIn").value); } catch { /* 무시 */ } });
+try { const sc = localStorage.getItem("blind-scale"); if (sc) { $("scaleIn").value = sc; document.documentElement.style.setProperty("--content-scale", sc / 100); } } catch { /* 무시 */ }
+
+/* ---------- 면접 달력 ---------- */
+function renderCal() {
+  const host = $("cal");
+  const evs = [];
+  for (const st of HUB.students) for (const a of st.applications) if (a.date) evs.push({ st, a });
+  if (!evs.length) { host.innerHTML = `<p class="empty">면접일이 적힌 지원이 아직 없습니다. 학생을 열어 지원을 추가하면 날짜순으로 모입니다.</p>`; return; }
+  const byDate = new Map();
+  for (const e of evs.sort((x, y) => x.a.date.localeCompare(y.a.date) || (x.a.time || "").localeCompare(y.a.time || ""))) (byDate.get(e.a.date) || byDate.set(e.a.date, []).get(e.a.date)).push(e);
+  host.innerHTML = [...byDate].map(([date, list]) => {
+    const cnt = new Map(); for (const e of list) cnt.set(e.st.id, (cnt.get(e.st.id) || 0) + 1);
+    return `<div class="day"><div class="d">${fmtDate(date, true)}<small>${ddayText(dday(date))} · ${list.length}건</small></div><div class="ev">${list.map(e => `<div>${esc(e.st.alias)} — ${esc(appTitle(e.a))}${e.a.time ? ` · ${e.a.time}` : e.a.period ? ` · ${e.a.period}` : ""}${cnt.get(e.st.id) > 1 ? `<span class="warn">같은 날 ${cnt.get(e.st.id)}곳 — 일정 확인</span>` : ""}</div>`).join("")}</div></div>`;
+  }).join("");
+}
+
+/* 아래 막대: 등록 단추는 읽은 파일이 있을 때만, 허브 보기에서는 막대 자체를 숨긴다 */
+const renderBarBlind = renderBar;
+renderBar = function () {
+  renderBarBlind();
+  $("regHub").hidden = !S.files[S.cur]?.boxes;
+  if ($("viewBlind").hidden) { $("actbar").hidden = true; document.body.classList.remove("has-bar"); }
+};
+
+/* ---------- 시작 ---------- */
+(async () => {
+  await loadCards();
+  try { HUB.students = await dbAll(); } catch { HUB.students = []; }
+  if (HUB.cardsErr) { const d = $("viewHub").querySelector(".desc"); d.textContent += " " + HUB.cardsErr; }
+  let v = "blind"; try { v = localStorage.getItem("blind-view") || "blind"; } catch { /* 무시 */ }
+  if (v === "hub" && HUB.students.length) setView("hub");
+})();
+
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile };
 </script>
 </body>
 </html>
