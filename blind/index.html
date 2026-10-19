@@ -5562,42 +5562,70 @@ $("keyCheck").onclick = async () => {
 function pluckJson(raw) {
   if (typeof raw !== "string") return raw;
   try { return JSON.parse(raw); } catch { /* 계속 */ }
-  for (let at = raw.indexOf("{"); at !== -1; at = raw.indexOf("{", at + 1)) {
-    let depth = 0, inStr = false, escd = false;
-    for (let k = at; k < raw.length; k++) {
-      const ch = raw[k];
-      if (inStr) { if (escd) escd = false; else if (ch === "\\") escd = true; else if (ch === '"') inStr = false; }
-      else if (ch === '"') inStr = true;
-      else if (ch === "{") depth++;
-      else if (ch === "}") { depth--; if (depth === 0) { try { return JSON.parse(raw.slice(at, k + 1)); } catch { break; } } }
-    }
+  const at = raw.indexOf("{"); if (at === -1) return null;
+  let depth = 0, inStr = false, escd = false;
+  for (let k = at; k < raw.length; k++) {
+    const ch = raw[k];
+    if (inStr) { if (escd) escd = false; else if (ch === "\\") escd = true; else if (ch === '"') inStr = false; }
+    else if (ch === '"') inStr = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}") { depth--; if (depth === 0) { try { return JSON.parse(raw.slice(at, k + 1)); } catch { return null; } } }
   }
-  return null;
+  return null;   // 닫히지 않음 — 잘린 응답. 안쪽 조각을 건지면 엉뚱한 결과가 되므로 건지지 않는다
 }
-async function callAI(system, user, schema, maxTokens = 16000) {
+/* 응답이 꼴을 갖췄는지 — 스키마의 필수 열쇠가 다 있어야 한다 */
+function checkShape(d, schema, stop, txt) {
+  const miss = (schema?.required || []).filter(k => !(d && typeof d === "object" && k in d));
+  if (!d || miss.length) {
+    const why = stop === "max_tokens" || stop === "MAX_TOKENS" ? "응답이 길이 한도에서 잘렸습니다" : !d ? "응답을 JSON으로 읽지 못했습니다" : `응답에 ${miss.join(", ")} 항목이 없습니다`;
+    throw new Error(`${why} (${(txt || "").length.toLocaleString()}자${stop ? `, 끝: ${stop}` : ""}). 앞부분: ${(txt || "").slice(0, 160).replace(/\s+/g, " ")}`);
+  }
+  return d;
+}
+/* 한 번의 호출. 한국어 JSON은 토큰을 많이 쓰고 Claude는 생각 토큰까지 max_tokens에 들어가므로 한도를 넉넉히 잡고, 긴 응답은 스트리밍으로 받는다(onProgress에 받은 글자 수) */
+async function callAI(system, user, schema, maxTokens = 48000, onProgress) {
   if (AI.provider === "gemini") {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model)}:generateContent?key=${encodeURIComponent(AI.key)}`, {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.4, maxOutputTokens: maxTokens } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.4, maxOutputTokens: Math.min(maxTokens, 65536) } }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`Google 응답 ${r.status}: ${j.error?.message || ""}`);
-    const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "";
-    if (!txt) throw new Error("응답이 비어 있습니다" + (j.candidates?.[0]?.finishReason ? ` (${j.candidates[0].finishReason})` : ""));
-    return pluckJson(txt);
+    const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "", fin = j.candidates?.[0]?.finishReason || "";
+    if (!txt) throw new Error("응답이 비어 있습니다" + (fin ? ` (${fin})` : "") + (j.promptFeedback?.blockReason ? ` — 차단: ${j.promptFeedback.blockReason}` : ""));
+    return checkShape(pluckJson(txt), schema, fin, txt);
   }
-  const body = { model: AI.model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
-  let r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
+  const body = { model: AI.model, max_tokens: maxTokens, stream: true, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
+  const post = () => fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
+  let r = await post();
   if (r.status === 400) {   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
     const t = await r.text();
-    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) }); }
+    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await post(); }
     else throw new Error(`Anthropic 응답 400: ${t.slice(0, 300)}`);
   }
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`Anthropic 응답 ${r.status}: ${j.error?.message || ""}`);
-  if (j.stop_reason === "refusal") throw new Error("모델이 요청을 거절했습니다.");
-  const txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
-  return pluckJson(txt);
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`Anthropic 응답 ${r.status}: ${j.error?.message || ""}`); }
+  let txt = "", stop = null, err = null;
+  if (/text\/event-stream/.test(r.headers.get("content-type") || "")) {
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf("\n\n")) !== -1) {
+        const ev = buf.slice(0, i); buf = buf.slice(i + 2);
+        const data = ev.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trim()).join("");
+        if (!data) continue; let j; try { j = JSON.parse(data); } catch { continue; }
+        if (j.type === "content_block_delta" && j.delta?.type === "text_delta") { txt += j.delta.text; if (onProgress) onProgress(txt.length); }
+        else if (j.type === "message_delta") stop = j.delta?.stop_reason || stop;
+        else if (j.type === "error") err = j.error?.message || "스트림 오류";
+      }
+    }
+  } else {   // 스트리밍을 안 주는 중계일 때
+    const j = await r.json().catch(() => ({}));
+    stop = j.stop_reason || null; txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
+  }
+  if (err) throw new Error(`Anthropic 스트림 오류: ${err}`);
+  if (stop === "refusal") throw new Error("모델이 요청을 거절했습니다.");
+  return checkShape(pluckJson(txt), schema, stop, txt);
 }
 
 /* ═══════ 예상 질문 세트 ═══════ */
@@ -5710,8 +5738,8 @@ async function generateQuestions(appId) {
   try {
     const bank = await loadBank();
     const { system, user } = buildPrompt(st, app, bank);
-    const data = await callAI(system, user, QSET_SCHEMA);
-    if (!data || !Array.isArray(data.sections)) throw new Error("응답에서 질문 세트를 읽지 못했습니다.");
+    const data = await callAI(system, user, QSET_SCHEMA, 64000, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
+    if (!Array.isArray(data.sections)) throw new Error("응답에서 질문 세트를 읽지 못했습니다 (sections 없음).");
     data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
     app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data };
     await dbPut(st);
@@ -6050,8 +6078,7 @@ async function aiRead(force) {
         say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model}`);
         const { system } = structPrompt(st);
         const user = lines.slice(chunks[c].from - 1, chunks[c].to).map((l, i) => `L${chunks[c].from + i}: ${l}`).join("\n");
-        const d = await callAI(system, user, STRUCT_SCHEMA);
-        if (!d) throw new Error("응답을 읽지 못했습니다.");
+        const d = await callAI(system, user, STRUCT_SCHEMA, 32000, n => say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model} · ${n.toLocaleString()}자 받음`));
         for (const r of d.records || []) { if (!(r.grade >= 1 && r.grade <= 3) || !r.area) continue; const k = `${r.grade}|${r.area}`; const o = recMap.get(k) || { grade: +r.grade, area: String(r.area), text: "", hope: "" }; o.text = joinLine(o.text, linesOf(st, [r], /^희\s*망\s*분\s*야\s*[:：]?\s*[^\n]*$/, true)); if (r.hope && !o.hope) o.hope = String(r.hope); recMap.set(k, o); }
         for (const x of d.setuk || []) { if (!(x.grade >= 1 && x.grade <= 3)) continue; const k = `${x.grade}|${x.sem || ""}|${x.subject || "(미분류)"}`; const o = setMap.get(k) || { grade: +x.grade, sem: String(x.sem || ""), subject: String(x.subject || "(미분류)"), body: "" }; o.body = joinLine(o.body, linesOf(st, [x], SUBJ_LABEL)); setMap.set(k, o); }
         attRanges.push(...(d.attendance || []));
@@ -6074,8 +6101,8 @@ async function aiRead(force) {
       const g = grades[gi];
       say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model}`);
       const { system, user } = analyzePrompt(st, blocks.filter(b => b.grade === g));
-      const d = await callAI(system, user, ANALYZE_SCHEMA);
-      if (!d || !Array.isArray(d.tags)) throw new Error(`${g}학년 응답에서 태그를 읽지 못했습니다.`);
+      const d = await callAI(system, user, ANALYZE_SCHEMA, 48000, n => say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model} · ${n.toLocaleString()}자 받음`));
+      if (!Array.isArray(d.tags)) throw new Error(`${g}학년 응답에서 태그를 읽지 못했습니다.`);
       for (const t of d.tags) {
         const ref = resolve(t.ref);
         if (!ref || !map[ref]) { dropped++; if (badRefs.length < 3) badRefs.push(String(t.ref)); continue; }
@@ -6122,7 +6149,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
