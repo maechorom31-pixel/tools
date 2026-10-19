@@ -207,6 +207,8 @@ body.print-share .share .qr{width:220px;height:220px;margin:0 auto}
 .qi .act button{border:0;background:none;color:var(--mid);font-size:12px;min-height:24px;padding:0 4px;cursor:pointer}
 @media (hover:hover){.qi .act button:hover{color:var(--amber-dark)}}
 .qi.star .no::after{content:"★";color:var(--amber);font-size:11px;display:block;line-height:1}
+.qi.hout,.qs .hout{opacity:.5}
+body.print-q .qi.hout,body.print-q .qs .hout{display:none!important}
 .qi.del{opacity:.4}
 .qi.del .q textarea{text-decoration:line-through}
 .scope{margin-top:10px;font-size:14px}
@@ -6000,6 +6002,7 @@ function qsetHtml(st, a) {
   let h = `<div class="print-only"><h3 style="font-size:18px">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · ${fmtDate(a.date, true)}` : ""}</h3><div class="hint">${esc(adm ? [adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · ") : "")}${adm?.criteria?.length ? " · " + adm.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · <span class="student-only">학생 배부본</span><span class="examiner-only">면접관용</span></div></div>${blindRule}`;
   h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-intro="${a.id}">${a.qset.data.extras?.intro ? "자기소개·마지막 말 다시" : "자기소개·마지막 말 초안"}</button><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button><select data-pkind aria-label="다른 인쇄물"><option value="">다른 인쇄물…</option>${Object.entries(PRINT_KINDS).map(([k, v]) => `<option value="${k}">${esc(v[0])}</option>`).join("")}</select><button class="btn main" type="button" data-share="${a.id}">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button>${a.share && a.share.status !== "off" && (a.qset.updatedAt || a.qset.createdAt) > a.share.publishedAt ? `<span class="hint" style="color:var(--amber-dark);font-weight:600">배포 뒤 고친 내용이 있습니다 — 다시 배포해야 학생 화면에 반영됩니다.</span>` : ""}</div>`;
   if (d.axes?.length) h += `<div class="axes"><b>서사 축</b> — ${d.axes.map(x => `<b>${esc(x.title)}</b>: ${esc(x.why)}`).join(" / ")}</div>`;
+  h += handoutHtml(st, a);
   h += extrasHtml(a);
   let n = 0;
   for (const sec of d.sections) {
@@ -6007,18 +6010,19 @@ function qsetHtml(st, a) {
     h += `<h5>${esc(SECTION_KO[sec.key] || sec.title)}<span class="n">${sec.items.length}</span></h5>`;
     sec.items.forEach((it, i) => {
       n++;
-      h += `<div class="qi${it.deleted ? " del" : ""}${it.star ? " star" : ""}${(it.q || "").trim() ? "" : " empty"}" data-sec="${esc(sec.key)}" data-i="${i}"><div class="no"></div>
+      const hk = handoutKeyOf(st, sec, it), hout = !handoutOn(a, hk);
+      h += `<div class="qi${it.deleted ? " del" : ""}${it.star ? " star" : ""}${hout ? " hout" : ""}${(it.q || "").trim() ? "" : " empty"}" data-sec="${esc(sec.key)}" data-i="${i}" data-hk="${esc(hk)}"><div class="no"></div>
         <div class="q"><textarea data-f="q" rows="1">${esc(it.q)}</textarea></div>
         <div class="act"><button type="button" data-a="star" title="중요 표시 — 학생 화면의 ‘중요 표시한 문항’ 모드와 실전 순서에서 먼저 나옵니다">${it.star ? "★ 중요" : "☆ 중요"}</button><button type="button" data-a="fu" title="꼬리질문 추가">+꼬리</button><button type="button" data-a="del">${it.deleted ? "되살림" : "지움"}</button></div>
         <div class="it"><span class="hint">확인 의도</span> <textarea data-f="intent" rows="1">${esc(it.intent)}</textarea></div>
         ${(it.followUps || []).map((f, j) => `<div class="fu${(f || "").trim() ? "" : " empty"}"><textarea data-f="fu" data-j="${j}" rows="1">${esc(f)}</textarea></div>`).join("")}
         ${(it.refs || []).map(r => { const id = resolveRef(st, r), t = id ? sentById(st, id) : ""; return t ? `<div class="ref"><mark>[${esc(id)}]</mark> ${esc(t)}</div>` : r ? `<div class="ref"><mark>[${esc(r)}]</mark> <span class="hint">근거 문장을 찾지 못함</span></div>` : ""; }).join("")}
-        <div class="meta">${it.criterion ? `<span class="crit">${esc(it.criterion)}</span>` : ""}${it.source ? `<span>출처: ${esc(it.source)}</span>` : ""}${it.answerHint ? `<span class="student-only">답변 방향: ${esc(it.answerHint)}</span>` : ""}</div>
+        <div class="meta">${hout ? `<span class="hint">배부 제외 (${esc(handoutLabel(hk))})</span>` : ""}${it.criterion ? `<span class="crit">${esc(it.criterion)}</span>` : ""}${it.source ? `<span>출처: ${esc(it.source)}</span>` : ""}${it.answerHint ? `<span class="student-only">답변 방향: ${esc(it.answerHint)}</span>` : ""}</div>
         <div class="student-only print-only"><div class="answer-line"></div><div class="answer-line"></div></div></div>`;
     });
     h += `<div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-add="${esc(sec.key)}" style="min-height:30px;font-size:13px">질문 추가</button></div>`;
   }
-  if (d.glossary?.length) h += `<h5>개념 사전<span class="n">${d.glossary.length}</span></h5><dl class="gloss">${d.glossary.map(g => `<dt>${esc(g.term)}</dt><dd>${esc(g.meaning)}<br><span class="use">면접 활용: ${esc(g.use)}</span></dd>`).join("")}</dl>`;
+  if (d.glossary?.length) h += `<div class="${handoutOn(a, "glossary") ? "" : "hout"}"><h5>개념 사전<span class="n">${d.glossary.length}${handoutOn(a, "glossary") ? "" : " · 배부 제외"}</span></h5><dl class="gloss">${d.glossary.map(g => `<dt>${esc(g.term)}</dt><dd>${esc(g.meaning)}<br><span class="use">면접 활용: ${esc(g.use)}</span></dd>`).join("")}</dl></div>`;
   if (d.notes?.length) h += `<h5>확인 필요</h5><ul class="hint" style="padding-left:18px">${d.notes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
   return h;
 }
@@ -6038,7 +6042,7 @@ function bindQset(st, a) {
   host.querySelectorAll("[data-print]").forEach(b => b.onclick = () => printQset(a.id, b.dataset.print));
   host.querySelectorAll("[data-pkind]").forEach(sel => sel.onchange = () => { const k = sel.value; sel.value = ""; if (k) printKind(a.id, k); });
   host.querySelectorAll("[data-intro]").forEach(b => b.onclick = () => genIntro(b.dataset.intro));
-  bindExtras(st, a);
+  bindExtras(st, a); bindHandout(st, a);
   host.querySelectorAll("[data-share]").forEach(b => b.onclick = () => publishShare(a.id));
 }
 function printQset(appId, mode) {
@@ -6092,7 +6096,7 @@ async function genIntro(appId) {
 function extrasHtml(a) {
   const ex = a.qset?.data?.extras; if (!ex?.intro) return "";
   const box = (k, label, sub, t) => `<div class="extra" data-x="${k}"><div class="lab">${label}<span class="hint">${sub}</span></div><textarea data-xf="${k}" rows="2">${esc(t)}</textarea></div>`;
-  return `<div class="extras"><h5>자기소개 · 마지막 말<span class="n">구조 예시 · ${esc(ex.introModel || "")} · 눌러서 고치기</span></h5>
+  return `<div class="extras${handoutOn(a, "extras") ? "" : " hout"}"><h5>자기소개 · 마지막 말<span class="n">구조 예시 · ${esc(ex.introModel || "")} · 눌러서 고치기${handoutOn(a, "extras") ? "" : " · 배부 제외"}</span></h5>
     ${box("intro", "1분 자기소개", ex.intro.structure ? "구조: " + esc(ex.intro.structure) : "", ex.intro.text)}
     ${box("short", "짧은 자기소개 (20~30초)", "", ex.short?.text || "")}
     ${box("last", "마지막으로 하고 싶은 말 (15초)", "", ex.last?.text || "")}
@@ -6128,6 +6132,39 @@ const BLIND_RULE_TXT = "블라인드 면접 규칙: 이름·출신 고교명·�
 function docHead(st, a, kind, who) {
   const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
   return `<h1>${esc(kind)}</h1><div class="meta">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · 면접 ${fmtDate(a.date, true)} (${ddayText(dday(a.date))})` : ""}${adm ? ` · ${esc([adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · "))}` : ""}${adm?.criteria?.length ? " · " + adm.criteria.map(c => esc(c.name) + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · ${who}</div>`;
+}
+/* 배부 범위 — 질문마다 근거 문장의 학년·영역 묶음(없으면 공통, 선생님 질문은 따로)을 보고 인쇄·배포에 넣을지 정한다 */
+const HKIND = { "창체": "창체", "전공세특": "전공 세특", "세특": "그 외 세특", "행특": "행특" };
+function handoutKeyOf(st, sec, it) { if (sec.key === "teacher") return "teacher"; if (!it.scope) it.scope = itemScope(st, it); return it.scope; }
+function handoutLabel(k) { if (k === "teacher") return "선생님 질문"; if (k === "공통") return "공통·근거 없음"; if (k === "glossary") return "개념 사전"; if (k === "extras") return "자기소개·마지막 말"; const [g, kind] = k.split("|"); return `${g}학년 ${HKIND[kind] || kind}`; }
+const handoutOn = (a, k) => !a.handout?.off?.length || !a.handout.off.includes(k);
+function handoutGroups(st, a) {
+  const g = new Map();
+  for (const sec of arrOf(a.qset?.data?.sections)) for (const it of arrOf(sec.items)) { if (it.deleted || !(it.q || "").trim()) continue; const k = handoutKeyOf(st, sec, it); g.set(k, (g.get(k) || 0) + 1); }
+  const d = a.qset?.data || {};
+  if (arrOf(d.glossary).length) g.set("glossary", arrOf(d.glossary).length);
+  if (d.extras?.intro?.text) g.set("extras", [d.extras.intro?.text, d.extras.short?.text, d.extras.last?.text].filter(Boolean).length);
+  const order = k => k === "teacher" ? 99 : k === "공통" ? 90 : k === "glossary" ? 95 : k === "extras" ? 97 : (4 - +k.split("|")[0]) * 10 + ["창체", "전공세특", "세특", "행특"].indexOf(k.split("|")[1]);
+  return [...g.entries()].map(([key, n]) => ({ key, n, label: handoutLabel(key), unit: key === "glossary" ? "개" : key === "extras" ? "편" : "문항" })).sort((x, y) => order(x.key) - order(y.key));
+}
+function handoutHtml(st, a) {
+  const gs = handoutGroups(st, a); if (gs.length < 2) return "";
+  const qg = g => g.unit === "문항", on = gs.filter(g => handoutOn(a, g.key)), cnt = on.filter(qg).reduce((n, g) => n + g.n, 0), all = gs.filter(qg).reduce((n, g) => n + g.n, 0);
+  const tail = on.filter(g => !qg(g)).map(g => g.label).join("·");
+  return `<details class="scope handout"><summary>배부 범위: ${on.length === gs.length ? "전체" : `${on.length}/${gs.length} 묶음`} · 질문 ${cnt}/${all}${tail ? ` + ${tail}` : ""} — 학생 배부본·면접관용 인쇄와 학생 연습용 배포에 들어갈 것</summary>
+    <p class="hint">끈 묶음은 화면에는 흐리게 남고, 인쇄물과 학생 화면에는 들어가지 않습니다. 제시문은 범위와 상관없이 들어갑니다. ‘개념 사전만’을 누르면 개념 사전 한 장이 됩니다.</p>
+    <div class="scopes">${gs.map(g => `<label class="sc${handoutOn(a, g.key) ? " on" : ""}"><input type="checkbox" data-hscope="${esc(g.key)}"${handoutOn(a, g.key) ? " checked" : ""}><b>${esc(g.label)}</b><span class="t">${g.n}${g.unit}</span></label>`).join("")}</div>
+    <div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-hall="on" style="min-height:30px;font-size:13px">모두</button><button class="btn" type="button" data-hall="3" style="min-height:30px;font-size:13px">3학년만</button><button class="btn" type="button" data-hall="3c" style="min-height:30px;font-size:13px">3학년 창체만</button><button class="btn" type="button" data-hall="3cs" style="min-height:30px;font-size:13px">3학년 창체+세특</button><button class="btn" type="button" data-hall="23" style="min-height:30px;font-size:13px">2·3학년</button><button class="btn" type="button" data-hall="gloss" style="min-height:30px;font-size:13px">개념 사전만</button><span class="hint">학년 단추는 공통·선생님 질문·개념 사전·자기소개를 켜진 채 둡니다. 빼려면 체크를 끄세요.</span></div></details>`;
+}
+function bindHandout(st, a) {
+  const host = $(`qs-${a.id}`); if (!host) return;
+  const save = async () => { a.qset.updatedAt = new Date().toISOString(); await dbPut(st); renderApps(); };
+  host.querySelectorAll("[data-hscope]").forEach(cb => cb.onchange = () => { const off = new Set(a.handout?.off || []); if (cb.checked) off.delete(cb.dataset.hscope); else off.add(cb.dataset.hscope); a.handout = { off: [...off] }; save(); });
+  host.querySelectorAll("[data-hall]").forEach(b => b.onclick = () => {
+    const m = b.dataset.hall, gs = handoutGroups(st, a);
+    const keep = g => { if (m === "gloss") return g.key === "glossary"; if (m === "on" || g.key === "teacher" || g.key === "공통" || g.key === "glossary" || g.key === "extras") return true; const [gr, kind] = g.key.split("|"); if (m === "3") return gr === "3"; if (m === "23") return gr >= "2"; if (m === "3c") return gr === "3" && kind === "창체"; if (m === "3cs") return gr === "3" && kind !== "행특"; return true; };
+    a.handout = { off: gs.filter(g => !keep(g)).map(g => g.key) }; save();
+  });
 }
 /* 질문 세트의 본 질문(지운 것·빈 것 제외) — 섹션 순서대로 */
 function mainItems(a, keys) {
@@ -6334,14 +6371,16 @@ function studentQuestions(a) {
   const out = []; let n = 0;
   if (!a.qset) return jesimunStudentItems(a, 0);
   const ex = a.qset.data.extras;
-  if (ex?.intro?.text) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
+  if (ex?.intro?.text && handoutOn(a, "extras")) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
+  const stH = HUB.students.find(x => x.applications.includes(a)) || stuOf(HUB.cur);
   for (const sec of arrOf(a.qset.data.sections)) arrOf(sec.items).forEach((it, i) => {
     if (it.deleted || !(it.q || "").trim()) return;
+    if (stH && !handoutOn(a, handoutKeyOf(stH, sec, it))) return;
     const base = { section: SECTION_KO[sec.key] || sec.title, secKey: sec.key, star: !!it.star, teacher: sec.key === "teacher" };
     out.push({ ...base, k: `${sec.key}:${i}`, n: ++n, q: it.q.trim(), intent: it.intent || "", hint: it.answerHint || "" });
     (it.followUps || []).forEach((f, j) => { if ((f || "").trim()) out.push({ ...base, k: `${sec.key}:${i}f${j}`, n: ++n, q: "↳ " + f.trim(), intent: it.intent || "", hint: "" }); });
   });
-  if (ex?.last?.text) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
+  if (ex?.last?.text && handoutOn(a, "extras")) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
   out.push(...jesimunStudentItems(a, n));
   return out;
 }
@@ -6664,7 +6703,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, resolveRef, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, resolveRef, handoutGroups, handoutKeyOf, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
