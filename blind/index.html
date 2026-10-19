@@ -4957,12 +4957,14 @@ function parseStudents(f) {
     const pages = g.pages.map(p => ({ lines: maskedPartLines(f, p), cells: f.pages[p].cells }));
     const parsed = parseRecords(pages);
     const [ban, no] = g.key.split("|");
-    return { label: ban && no ? `${ban}-${no}` : "", pages: g.pages, parsed,
+    const diag = pages.map((pg, i) => ({ page: g.pages[i] + 1, box: f.pages[g.pages[i]].box, cells: (pg.cells || []).map(c => [c.x0, c.y0, c.x1, c.y1].map(v => Math.round(v * 10) / 10)),
+      lines: pg.lines.map(l => ({ y: Math.round(l.y * 10) / 10, parts: l.parts.map(pt => ({ x: Math.round(pt.x * 10) / 10, s: Math.round(pt.size * 10) / 10, t: pt.text })) })) }));
+    return { label: ban && no ? `${ban}-${no}` : "", pages: g.pages, parsed, diag,
       text: pages.map(pg => pg.lines.map(l => l.text).join("\n")).join("\n\n") };
   });
   const lex = subjectLexicon(prelim.flatMap(s => Object.values(s.parsed.setuk)));
   return prelim.map(s => ({
-    label: s.label, pages: s.pages, text: s.text,
+    label: s.label, pages: s.pages, text: s.text, diag: s.diag,
     records: s.parsed.records.sort((a, b) => a.grade - b.grade),
     setuk: Object.entries(s.parsed.setuk).flatMap(([g, t]) => splitSubjects(t, lex).map(x => ({ grade: +g, ...x }))),
     attendance: s.parsed.attendance, unparsed: s.parsed.unparsed,
@@ -5081,7 +5083,7 @@ async function registerFromFile(f) {
     const dup = HUB.students.find(x => x.label === st.label && x.sig === sig);
     const nm = (f.names?.groups || []).find(g => g.pages.join() === st.pages.join())?.name || "";
     const rec = dup || { id: uid(), label: st.label, alias: (st.label ? `${st.label.split("-")[0]}반 ${st.label.split("-")[1]}번` : "학생") + (nm ? " " + nm : ""), createdAt: new Date().toISOString(), applications: [], highlights: [], memo: "" };
-    Object.assign(rec, { sig, source: { file: maskedFileName(f), pages: st.pages.map(p => p + 1) }, text: st.text, records: st.records, setuk: st.setuk, attendance: st.attendance, unparsed: st.unparsed, updatedAt: new Date().toISOString() });
+    Object.assign(rec, { sig, source: { file: maskedFileName(f), pages: st.pages.map(p => p + 1) }, text: st.text, diag: st.diag, records: st.records, setuk: st.setuk, attendance: st.attendance, unparsed: st.unparsed, updatedAt: new Date().toISOString() });
     await dbPut(rec);
     if (dup) updated++; else { HUB.students.push(rec); added++; }
   }
@@ -5368,12 +5370,19 @@ function renderRecords() {
     html.push(`<div class="rec" data-blk="${esc(b.key)}"><h4>${esc(b.title)}${b.isMajor ? `<span class="meta">전공 관련</span>` : ""}${b.hope ? `<span class="meta">희망분야 ${esc(b.hope)}</span>` : ""}<span class="meta">${bytes.toLocaleString()}B</span></h4><p>${b.sents.map(sn => sentHtml(st, b, sn)).join(" ")}</p></div>`);
   }
   if (g0) html.push("</section>");
+  const cov = parseCoverage(st);
   if (!blocks.length) html.push(`<p class="empty">규칙으로는 영역을 가르지 못한 판형입니다. 00에서 AI를 연결하고 위의 ‘AI로 읽기’를 누르면 AI가 영역·과목을 가른 뒤 읽습니다. 가린 글 전체는 아래에 그대로 둡니다.</p>`);
   else if (st.structuredBy) html.push(`<p class="hint">영역·과목은 AI(${esc(st.structuredBy)})가 가른 것입니다. 원문과 다르면 ‘AI로 영역 다시 가르기’로 다시 할 수 있습니다.</p>`);
-  html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><p class="att">${esc(st.text)}</p></details>`);
+  else html.push(`<p class="hint">지금 보이는 영역·과목은 규칙 밑그림입니다(글의 ${Math.round(cov * 100)}%). ‘AI로 읽기’를 누르면 AI가 경계를 다시 가른 뒤 학년별로 읽습니다.</p>`);
+  html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="diagDl" style="min-height:32px;font-size:13px">판형 진단 내려받기</button><span class="hint">영역이 잘못 갈렸을 때 — 가린 글과 줄 좌표만 든 JSON입니다(이름·번호 없음). 이 파일을 보내 주시면 그 판형에 맞게 고칩니다.</span></div><p class="att">${esc(st.text)}</p></details>`);
   if (st.unparsed?.length) html.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
   host.innerHTML = html.join("");
   host.querySelectorAll(".sent").forEach(el => el.addEventListener("click", onSentClick));
+  const dd = $("diagDl"); if (dd) dd.onclick = () => {
+    const out = { version: 1, label: st.label, structuredBy: st.structuredBy || "rule", records: st.records.map(r => ({ grade: r.grade, area: r.area, len: r.text.length })), setuk: st.setuk.map(x => ({ grade: x.grade, sem: x.sem, subject: x.subject, len: x.body.length })), unparsed: st.unparsed, pages: st.diag || null, text: st.diag ? undefined : st.text };
+    const blob = new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }), url = URL.createObjectURL(blob);
+    const el = document.createElement("a"); el.href = url; el.download = `판형진단_${st.label || "학생"}.json`; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
   renderLists(st, blocks); renderTagSum(st, blocks);
   $("printHead").textContent = `${st.alias} · ${st.applications.map(appTitle).join(" / ") || "지원 미정"} · 형광펜: 학종 평가요소 세부 항목`;
 }
@@ -5555,11 +5564,11 @@ function pluckJson(raw) {
   }
   return null;
 }
-async function callAI(system, user, schema) {
+async function callAI(system, user, schema, maxTokens = 16000) {
   if (AI.provider === "gemini") {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model)}:generateContent?key=${encodeURIComponent(AI.key)}`, {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.4 } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.4, maxOutputTokens: maxTokens } }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`Google 응답 ${r.status}: ${j.error?.message || ""}`);
@@ -5567,7 +5576,7 @@ async function callAI(system, user, schema) {
     if (!txt) throw new Error("응답이 비어 있습니다" + (j.candidates?.[0]?.finishReason ? ` (${j.candidates[0].finishReason})` : ""));
     return pluckJson(txt);
   }
-  const body = { model: AI.model, max_tokens: 16000, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
+  const body = { model: AI.model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
   let r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
   if (r.status === 400) {   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
     const t = await r.text();
@@ -5928,15 +5937,23 @@ const ANALYZE_SCHEMA = {
   },
   required: ["summary", "axes", "tags", "concepts", "praise", "vague", "weak", "notes"],
 };
+/* 본문을 다시 쓰게 하지 않고 줄 번호 범위만 받는다 — 길어도 잘리지 않고 원문이 그대로 남는다 */
 const STRUCT_SCHEMA = {
   type: "object",
   properties: {
-    attendance: { type: "string" },
-    records: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, area: { type: "string" }, hope: { type: "string" }, text: { type: "string" } }, required: ["grade", "area", "hope", "text"] } },
-    setuk: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, sem: { type: "string" }, subject: { type: "string" }, body: { type: "string" } }, required: ["grade", "sem", "subject", "body"] } },
+    attendance: { type: "array", items: { type: "object", properties: { from: { type: "integer" }, to: { type: "integer" } }, required: ["from", "to"] } },
+    records: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, area: { type: "string" }, hope: { type: "string" }, from: { type: "integer" }, to: { type: "integer" } }, required: ["grade", "area", "hope", "from", "to"] } },
+    setuk: { type: "array", items: { type: "object", properties: { grade: { type: "integer" }, sem: { type: "string" }, subject: { type: "string" }, from: { type: "integer" }, to: { type: "integer" } }, required: ["grade", "sem", "subject", "from", "to"] } },
   },
   required: ["attendance", "records", "setuk"],
 };
+const numberedLines = st => st.text.split("\n");
+/* 규칙 파서가 가른 글이 전체의 몇 할인지 — 절반이 안 되면 그 판형은 AI가 갈라야 한다 */
+function parseCoverage(st) {
+  const total = st.text.replace(/\s/g, "").length || 1;
+  const got = [...st.records.map(r => r.text), ...st.setuk.map(x => x.body), st.attendance || ""].join("").replace(/\s/g, "").length;
+  return got / total;
+}
 function analyzePrompt(st, blocks) {
   const major = [...majorSet(st)].join(", ");
   const overrides = Object.entries(st.highlights || {}).filter(([, o]) => o.tags || o.memo);
@@ -5957,54 +5974,99 @@ ${TAG_DEFS}
   return { system, user: `# 가린 생기부 (문장 번호)\n${recordText(st, blocks).replace(/ 〔태그: [^〕]*〕/g, "")}` };
 }
 function structPrompt(st) {
-  const system = `당신은 NEIS 학교생활기록부 출력물의 글을 항목별로 가르는 보조입니다. 입력은 PDF에서 뽑아 개인정보를 토큰([이름] 등)으로 바꾼 줄들입니다. 표 머리글·쪽 번호·발급 정보 줄은 버리고, 본문만 다음 셋으로 가릅니다.
-- attendance: '출결상황' 표의 줄들을 그대로(없으면 빈 문자열).
-- records: 창의적 체험활동(자율·자치활동/자율활동/동아리활동/진로활동/봉사활동)과 행동특성 및 종합의견을 학년별로. area는 이 이름 가운데 하나를 그대로. 진로활동의 '희망분야'는 hope에 따로. text는 그 칸의 본문 전체(줄바꿈으로 끊긴 문장을 이어 붙임, 내용은 바꾸지 않음).
-- setuk: 교과학습발달상황의 '세부능력 및 특기사항'을 학년·학기·과목별로. "(1학기)국어:"처럼 과목이 적혀 있으면 그 과목명을 subject로, 학기를 sem("1"/"2", 없으면 "")로. 성적표(원점수/평균 등)는 버립니다. 개인별 세부능력 특기사항은 subject "개인별 세특".
-내용을 요약하거나 고치지 않고 그대로 옮깁니다. 출력은 JSON만.`;
-  return { system, user: st.text };
+  const lines = numberedLines(st);
+  const system = `당신은 NEIS 학교생활기록부 출력물의 글을 항목별로 가르는 보조입니다. 입력은 PDF에서 뽑아 개인정보를 토큰([이름] 등)으로 바꾼 줄들이고, 줄마다 "L번호: " 머리가 붙어 있습니다. 글을 다시 쓰지 말고, 각 항목이 차지하는 줄 번호 범위(from~to, 둘 다 포함)만 돌려줍니다. 한 항목이 쪽을 넘어 끊겨 있으면 같은 항목을 범위마다 따로 적습니다(그러면 이어 붙입니다).
+- attendance: '출결상황' 표의 줄 범위(없으면 빈 배열).
+- records: 창의적 체험활동(자율·자치활동/자율활동/동아리활동/진로활동/봉사활동)과 행동특성 및 종합의견을 학년별로. area는 이 이름 가운데 하나를 그대로. 진로활동 칸 맨 위 '희망분야: …'는 hope에 그 값을 적고 범위에서는 빼도 됩니다. 표 머리글(학년·영역·시간·특기사항), 쪽 번호, 발급 정보 줄, '해당 사항 없음'은 범위에 넣지 않습니다.
+- setuk: 교과학습발달상황의 '세부능력 및 특기사항'을 학년·학기·과목별로. 본문 안에 "(1학기)국어:"처럼 과목이 적혀 있으면 그 과목이 시작하는 줄부터 다음 과목 전까지를 한 범위로 하고 subject에 과목명, sem에 "1"/"2"(없으면 "")를 적습니다. 성적표(원점수/평균(표준편차), 성취도, 석차등급 행)는 넣지 않습니다. 개인별 세부능력 특기사항은 subject "개인별 세특".
+출력은 JSON만.`;
+  return { system, user: lines.map((l, i) => `L${i + 1}: ${l}`).join("\n") };
+}
+function linesOf(st, ranges, strip) {
+  const lines = numberedLines(st), out = [];
+  for (const r of ranges || []) for (let i = Math.max(1, +r.from); i <= Math.min(lines.length, +r.to); i++) { let t = lines[i - 1].trim(); if (!t || REC_FOOTER.test(t)) continue; if (strip) t = t.replace(strip, "").trim(); if (t) out.push(t); }
+  return out.join("");
 }
 function aiStatus(st) { return st.ai ? `AI가 읽음 · ${st.ai.model} · ${new Date(st.ai.createdAt).toLocaleString("ko-KR")}` : ""; }
+/* 파서가 항목 머리글(창체·교과·행특)로 큼직하게 끊어 두면, AI는 덩어리마다 경계만 가른다 */
+function coarseChunks(lines) {
+  const marks = [];
+  lines.forEach((l, i) => { const m = l.trim().match(REC_SECTION); if (m) marks.push({ i, sec: +m[1] }); });
+  const chunks = [];
+  if (!marks.length) { for (let i = 0; i < lines.length; i += 220) chunks.push({ from: i + 1, to: Math.min(lines.length, i + 220) }); return chunks; }
+  for (let k = 0; k < marks.length; k++) {
+    const from = marks[k].i + 1, to = k + 1 < marks.length ? marks[k + 1].i : lines.length;
+    if ([2, 6, 7, 9].includes(marks[k].sec)) for (let i = from; i <= to; i += 260) chunks.push({ from: i, to: Math.min(to, i + 259), sec: marks[k].sec });
+  }
+  return chunks.length ? chunks : [{ from: 1, to: lines.length }];
+}
+const SYNTH_SCHEMA = { type: "object", properties: { summary: { type: "string" }, axes: { type: "array", items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" }, refs: { type: "array", items: { type: "string" } } }, required: ["title", "why", "refs"] } }, notes: { type: "array", items: { type: "string" } } }, required: ["summary", "axes", "notes"] };
 async function aiRead(force) {
   const st = stuOf(HUB.cur); if (!st) return;
   const msg = $("aiReadMsg"), b1 = $("aiRead"), b2 = $("aiStruct");
   if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
   b1.disabled = b2.disabled = true;
+  const say = t => { msg.textContent = t; };
   try {
-    let blocks = st._blocks || sentenceBlocks(st);
-    if (force || !blocks.length) {
-      msg.textContent = `${AI.model}로 영역·과목을 가르는 중…`;
-      const { system, user } = structPrompt(st);
-      const d = await callAI(system, user, STRUCT_SCHEMA);
-      if (!d || !Array.isArray(d.records)) throw new Error("응답에서 기록을 읽지 못했습니다.");
-      st.records = d.records.filter(r => r.text && r.grade >= 1 && r.grade <= 3).map(r => ({ grade: +r.grade, area: String(r.area), text: String(r.text).trim(), hope: r.hope || "" }));
-      st.setuk = (d.setuk || []).filter(x => x.body).map(x => ({ grade: +x.grade, sem: String(x.sem || ""), subject: String(x.subject || "(미분류)"), body: String(x.body).trim() }));
-      st.attendance = d.attendance || st.attendance; st.structuredBy = AI.model; st.ai = null; st.highlights = {}; st.marks = [];
-      blocks = st._blocks = sentenceBlocks(st);
-      await dbPut(st);
+    /* 1단계 — 경계 가르기 (덩어리마다 한 번). AI가 이미 갈라 둔 글이면 다시 하지 않는다 */
+    if (force || !st.structuredBy) {
+      const lines = numberedLines(st), chunks = coarseChunks(lines);
+      const recMap = new Map(), setMap = new Map(), attRanges = [];
+      for (let c = 0; c < chunks.length; c++) {
+        say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model}`);
+        const { system } = structPrompt(st);
+        const user = lines.slice(chunks[c].from - 1, chunks[c].to).map((l, i) => `L${chunks[c].from + i}: ${l}`).join("\n");
+        const d = await callAI(system, user, STRUCT_SCHEMA);
+        if (!d) throw new Error("응답을 읽지 못했습니다.");
+        for (const r of d.records || []) { if (!(r.grade >= 1 && r.grade <= 3) || !r.area) continue; const k = `${r.grade}|${r.area}`; const o = recMap.get(k) || { grade: +r.grade, area: String(r.area), text: "", hope: "" }; o.text += linesOf(st, [r], /^희\s*망\s*분\s*야\s*[:：]?\s*[^\n]*$/); if (r.hope && !o.hope) o.hope = String(r.hope); recMap.set(k, o); }
+        for (const x of d.setuk || []) { if (!(x.grade >= 1 && x.grade <= 3)) continue; const k = `${x.grade}|${x.sem || ""}|${x.subject || "(미분류)"}`; const o = setMap.get(k) || { grade: +x.grade, sem: String(x.sem || ""), subject: String(x.subject || "(미분류)"), body: "" }; o.body += linesOf(st, [x], SUBJ_LABEL); setMap.set(k, o); }
+        attRanges.push(...(d.attendance || []));
+      }
+      const records = [...recMap.values()].filter(r => r.text.trim()), setuk = [...setMap.values()].filter(x => x.body.trim());
+      if (!records.length && !setuk.length) throw new Error("AI가 영역을 가르지 못했습니다. ‘판형 진단 내려받기’ 파일을 보내 주시면 그 판형에 맞게 고치겠습니다.");
+      st.records = records; st.setuk = setuk;
+      if (attRanges.length) st.attendance = attRanges.flatMap(r => lines.slice(r.from - 1, r.to)).map(x => x.trim()).filter(Boolean).join("\n");
+      st.structuredBy = AI.model; st.ai = null; st.highlights = {}; st.marks = [];
+      st._blocks = null; await dbPut(st);
     }
-    msg.textContent = `${AI.model}로 읽는 중… (Opus는 1~2분 걸릴 수 있습니다)`;
-    const { system, user } = analyzePrompt(st, blocks);
-    const d = await callAI(system, user, ANALYZE_SCHEMA);
-    if (!d || !Array.isArray(d.tags)) throw new Error("응답에서 태그를 읽지 못했습니다.");
-    const map = refMap(blocks), tags = {};
+    /* 2단계 — 역량 검토 (학년별로 따로) */
+    const blocks = st._blocks = sentenceBlocks(st);
+    const grades = [...new Set(blocks.map(b => b.grade))].sort();
+    const tags = {}, lists = { concepts: [], praise: [], vague: [], weak: [] }, notes = [];
     let dropped = 0;
-    for (const t of d.tags) {
-      if (!map[t.ref]) { dropped++; continue; }
-      const ids = (t.tags || []).map(x => TAG_NAMES[String(x).replace(/^[^/]*\//, "").trim()] || (TAG_BY[x] ? x : null)).filter(Boolean).slice(0, 2);
-      if (ids.length) tags[t.ref] = { tags: ids, why: t.why || "" };
+    const map = refMap(blocks);
+    for (let gi = 0; gi < grades.length; gi++) {
+      const g = grades[gi];
+      say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model}`);
+      const { system, user } = analyzePrompt(st, blocks.filter(b => b.grade === g));
+      const d = await callAI(system, user, ANALYZE_SCHEMA);
+      if (!d || !Array.isArray(d.tags)) throw new Error(`${g}학년 응답에서 태그를 읽지 못했습니다.`);
+      for (const t of d.tags) {
+        if (!map[t.ref]) { dropped++; continue; }
+        const ids = (t.tags || []).map(x => TAG_NAMES[String(x).replace(/^[^/]*\//, "").trim()] || (TAG_BY[x] ? x : null)).filter(Boolean).slice(0, 2);
+        if (ids.length) tags[t.ref] = { tags: ids, why: t.why || "" };
+      }
+      for (const k of Object.keys(lists)) lists[k].push(...(d[k] || []).filter(x => x && x.w));
+      notes.push(...(d.notes || []));
     }
-    const keep = list => (list || []).filter(x => x && x.w);
-    st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: d.summary || "", axes: (d.axes || []).filter(a => a.title), tags,
-      lists: { concepts: keep(d.concepts), praise: keep(d.praise), vague: keep(d.vague), weak: keep(d.weak) }, notes: d.notes || [] };
+    /* 3단계 — 종합: 태그 달린 문장만 모아 서사 축·요약 */
+    say(`3단계 종합 — ${AI.model}`);
+    const digest = blocks.flatMap(b => b.sents.filter(sn => tags[refId(b, sn.i)]).map(sn => `[${refId(b, sn.i)}] (${b.grade}학년 ${b.title}) ${sn.t} 〔${tags[refId(b, sn.i)].tags.map(t => TAG_BY[t].name).join(", ")}〕`)).join("\n");
+    const major = [...majorSet(st)].join(", ");
+    const synth = await callAI(`당신은 대입 면접 지도 보조입니다. 아래는 한 학생의 생기부에서 평가요소 증거가 있다고 판단된 문장들입니다(번호·학년·영역·태그 포함). 이것만으로 다음을 냅니다.
+- axes: 면접 전체를 꿸 서사 축 후보 2~3개. 기준: 학생이 직접 한 행동 동사와 궁금증·문제의식이 있고 여러 학년·영역에 걸쳐 이어지는 활동. refs에 근거 문장 번호 2~4개(대괄호 안 값 그대로).
+- summary: 세 문장 안쪽 — 어떤 학생인지, 지원 전공과 맞닿는 지점, 면접에서 가장 먼저 확인할 것.
+- notes: 확인이 필요한 것("확인 필요: …").
+블라인드: 이름·학교·부모를 추정하지 않습니다. 출력은 JSON만, 한국어.${major ? ` 전공 관련 과목(교사 지정): ${major}` : ""}`, digest || "(증거 문장 없음)", SYNTH_SCHEMA);
+    st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: synth?.summary || "", axes: (synth?.axes || []).filter(a => a.title), tags, lists, notes: [...notes, ...(synth?.notes || [])] };
     await dbPut(st);
     renderRecords();
-    $("aiReadMsg").textContent = `읽었습니다 — 태그 ${Object.keys(tags).length}문장, 개념 ${st.ai.lists.concepts.length}, 방어 ${st.ai.lists.praise.length}, 진위 ${st.ai.lists.vague.length}, 약점 ${st.ai.lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림)` : ""}.`;
+    $("aiReadMsg").textContent = `읽었습니다 — ${grades.length}개 학년, 태그 ${Object.keys(tags).length}문장, 개념 ${lists.concepts.length}, 방어 ${lists.praise.length}, 진위 ${lists.vague.length}, 약점 ${lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림)` : ""}.`;
   } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
   b1.disabled = b2.disabled = false;
 }
 $("aiRead").onclick = () => aiRead(false);
-$("aiStruct").onclick = () => { if (confirm("AI가 가린 글 전체를 다시 영역·과목으로 가릅니다. 이 학생의 형광펜 수정·메모는 지워집니다. 계속할까요?")) aiRead(true); };
+$("aiStruct").onclick = () => { if (confirm("AI가 가린 글 전체를 다시 영역·과목으로 가른 뒤 읽습니다. 이 학생의 형광펜 수정·메모는 지워집니다. 계속할까요?")) aiRead(true); };
 
 /* 아래 막대: 등록 단추는 읽은 파일이 있을 때만, 허브 보기에서는 막대 자체를 숨긴다 */
 const renderBarBlind = renderBar;
@@ -6024,7 +6086,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, ANALYZE_SCHEMA, STRUCT_SCHEMA };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
