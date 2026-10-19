@@ -209,6 +209,15 @@ body.print-share .share .qr{width:220px;height:220px;margin:0 auto}
 .qi.star .no::after{content:"★";color:var(--amber);font-size:11px;display:block;line-height:1}
 .qi.del{opacity:.4}
 .qi.del .q textarea{text-decoration:line-through}
+.scope{margin-top:10px;font-size:14px}
+.scope summary{cursor:pointer;color:var(--amber-dark);font-weight:600}
+.scopes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;margin-top:8px}
+.sc{display:block;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;background:var(--card)}
+.sc.on{border-color:var(--amber-pale);background:var(--amber-soft)}
+.sc input{margin-right:6px;width:16px;height:16px;vertical-align:-2px}
+.sc b{font-weight:600}
+.sc .t{display:block;font-size:12px;color:var(--amber-dark);margin-left:22px;font-variant-numeric:tabular-nums}
+.sc .d{display:block;font-size:12px;color:var(--mid);margin-left:22px;line-height:1.4}
 .jes{margin-top:8px;border-top:1px solid var(--line);padding-top:4px}
 .jset{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .jset h6{font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
@@ -5240,6 +5249,7 @@ function renderApps() {
     <h4>${esc(appTitle(a))}${a.date ? ` <span class="dday">${fmtDate(a.date, true)}${a.time ? " " + a.time : a.period ? " " + a.period : ""} · ${ddayText(dday(a.date))}</span>` : ` <span class="hint">면접일 미정</span>`}</h4>
     ${a.dateRaw && a.date ? `<div class="sub">입력: ${esc(a.dateRaw)}</div>` : ""}
     ${profileHtml(a)}
+    ${scopeHtml(st, a)}
     <div class="actions"><button class="btn main" type="button" data-gen="${a.id}">${a.qset ? "예상 질문 다시 만들기" : "예상 질문 만들기"}</button><button class="btn" type="button" data-prompt="${a.id}">프롬프트 꾸러미</button><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button><span class="hint" id="genMsg-${a.id}" role="status"></span></div>
     <div class="promptbox" id="pbox-${a.id}" hidden></div>
     <div id="share-${a.id}">${shareHtml(st, a)}</div>
@@ -5250,6 +5260,7 @@ function renderApps() {
   st.applications.forEach(a => { if (a.qset) bindQset(st, a); });
   st.applications.forEach(a => bindShare(st, a));
   st.applications.forEach(a => bindJesimun(st, a));
+  st.applications.forEach(a => bindScope(st, a));
   host.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editApp(b.dataset.edit));
   host.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { st.applications = st.applications.filter(a => a.id !== b.dataset.del); await dbPut(st); renderApps(); renderStudents(); renderCal(); });
 }
@@ -5664,6 +5675,7 @@ async function callAI(system, user, schema, maxTokens = CLAUDE_MAX_OUT, onProgre
     if (!r.ok) throw new Error(`Google 응답 ${r.status}: ${j.error?.message || ""}`);
     const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "", fin = j.candidates?.[0]?.finishReason || "";
     if (!txt) throw new Error("응답이 비어 있습니다" + (fin ? ` (${fin})` : "") + (j.promptFeedback?.blockReason ? ` — 차단: ${j.promptFeedback.blockReason}` : ""));
+    AI.lastText = txt;
     return checkShape(pluckJson(txt), schema, fin, txt);
   }
   const cap = AI.caps?.[AI.model]; if (cap && maxTokens > cap) maxTokens = cap;
@@ -5699,6 +5711,7 @@ async function callAI(system, user, schema, maxTokens = CLAUDE_MAX_OUT, onProgre
   }
   if (err) throw new Error(`Anthropic 스트림 오류: ${err}`);
   if (stop === "refusal") throw new Error("모델이 요청을 거절했습니다.");
+  AI.lastText = txt;
   return checkShape(pluckJson(txt), schema, stop, txt);
 }
 
@@ -5757,9 +5770,45 @@ function bankFor(bank, u, unit) {
   const score = q => (q.unit && un && (q.unit.replace(/\s+/g, "").includes(un.slice(0, 2)) || un.includes(q.unit.replace(/\s+/g, "").slice(0, 2))) ? 3 : 0) + (q.common ? 2 : 0) + (q.kind === "실제 출제" ? 1 : 0) + (q.year === "2027" ? .5 : 0);
   return { qs: qs.sort((a, b) => score(b) - score(a)).slice(0, 45), tips: tips.slice(0, 10), stat: bank.universities[u.short] || bank.universities[univLabel(u)] || null };
 }
+/* 질문 생성에 넣을 생기부 범위 — 학년 × (창체 / 전공 세특 / 그 외 세특 / 행특) 묶음. 한국어는 글자 1.7자 ≈ 1토큰으로 어림한다 */
+const scopeKeyOf = b => `${b.grade}|${b.area === "세특" ? (b.isMajor ? "전공세특" : "세특") : b.area === "행동특성 및 종합의견" ? "행특" : "창체"}`;
+const tokEst = n => n / 1.7;
+function scopeGroups(st) {
+  const blocks = st._blocks || (st._blocks = sentenceBlocks(st)), g = new Map();
+  for (const b of blocks) {
+    const k = scopeKeyOf(b), o = g.get(k) || { key: k, grade: b.grade, kind: k.split("|")[1], chars: 0, titles: [], tagged: 0 };
+    o.chars += b.sents.reduce((n, sn) => n + sn.t.length, 0); o.tagged += b.sents.filter(sn => effTags(st, b, sn).length).length;
+    if (b.area === "세특") o.titles.push(b.title.replace(/\s+\d학기$/, "")); else if (!o.titles.includes(b.area)) o.titles.push(b.area);
+    g.set(k, o);
+  }
+  const KIND = { "창체": "창체", "전공세특": "전공 세특", "세특": "그 외 세특", "행특": "행특" }, ORDER = ["창체", "전공세특", "세특", "행특"];
+  return [...g.values()].sort((a, b) => b.grade - a.grade || ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind)).map(o => ({ ...o, label: `${o.grade}학년 ${KIND[o.kind]}`, detail: [...new Set(o.titles)].join(" · ") }));
+}
+const scopeOn = (app, key) => !app.scope || !Array.isArray(app.scope.off) || !app.scope.off.includes(key);
+function scopedBlocks(st, app) { const blocks = st._blocks || (st._blocks = sentenceBlocks(st)); return app?.scope?.off?.length ? blocks.filter(b => scopeOn(app, scopeKeyOf(b))) : blocks; }
+function scopeHtml(st, a) {
+  if (st.noRecord) return "";
+  const gs = scopeGroups(st); if (!gs.length) return "";
+  const on = gs.filter(g => scopeOn(a, g.key)), tot = tokEst(on.reduce((n, g) => n + g.chars, 0)), all = tokEst(gs.reduce((n, g) => n + g.chars, 0));
+  const fmtK = n => n >= 1000 ? `${(n / 1000).toFixed(1)}천` : String(Math.round(n));
+  return `<details class="scope"><summary>생기부 범위: ${on.length === gs.length ? "전체" : `${on.length}/${gs.length} 묶음`} · 약 ${fmtK(tot)} 토큰${on.length === gs.length ? "" : ` (전체 ${fmtK(all)})`} — 눌러서 고르기</summary>
+    <p class="hint">질문 생성·자기소개 초안에 넣을 부분만 켭니다. 지원 학과와 먼 과목이나 1학년 기록을 빼면 비용이 줄고, 서사 축은 켠 범위 안에서만 잡힙니다. 대학 카드·질문 은행은 범위와 상관없이 들어갑니다.</p>
+    <div class="scopes">${gs.map(g => `<label class="sc${scopeOn(a, g.key) ? " on" : ""}"><input type="checkbox" data-scope="${esc(g.key)}"${scopeOn(a, g.key) ? " checked" : ""}><b>${esc(g.label)}</b><span class="t">≈ ${fmtK(tokEst(g.chars))} 토큰${g.tagged ? ` · 태그 ${g.tagged}문장` : ""}</span><span class="d">${esc(g.detail)}</span></label>`).join("")}</div>
+    <div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-scope-all="on" style="min-height:30px;font-size:13px">모두 켜기</button><button class="btn" type="button" data-scope-all="3" style="min-height:30px;font-size:13px">3학년만</button><button class="btn" type="button" data-scope-all="23" style="min-height:30px;font-size:13px">2·3학년만</button><button class="btn" type="button" data-scope-all="tag" style="min-height:30px;font-size:13px">태그 있는 묶음만</button></div></details>`;
+}
+function bindScope(st, a) {
+  const host = $(`app-${a.id}`); if (!host) return;
+  const save = async () => { await dbPut(st); renderApps(); };
+  host.querySelectorAll("[data-scope]").forEach(cb => cb.onchange = () => { const off = new Set(a.scope?.off || []); if (cb.checked) off.delete(cb.dataset.scope); else off.add(cb.dataset.scope); a.scope = { off: [...off] }; save(); });
+  host.querySelectorAll("[data-scope-all]").forEach(b => b.onclick = () => {
+    const gs = scopeGroups(st), m = b.dataset.scopeAll;
+    const keep = g => m === "on" || (m === "3" && g.grade === 3) || (m === "23" && g.grade >= 2) || (m === "tag" && g.tagged > 0);
+    a.scope = { off: gs.filter(g => !keep(g)).map(g => g.key) }; save();
+  });
+}
 function buildPrompt(st, app, bank) {
   const u = HUB.cards?.universities.find(x => x.id === app.univId), a = findAdm(u, app.admId);
-  const blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const blocks = scopedBlocks(st, app);
   const L = autoLists(st, blocks);
   const bk = bankFor(bank, u, app.unit);
   const dur = (a?.duration || "").match(/\d+/)?.[0];
@@ -5813,14 +5862,42 @@ async function generateQuestions(appId) {
   try {
     const bank = await loadBank();
     const { system, user } = buildPrompt(st, app, bank);
-    const data = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
-    if (!Array.isArray(data.sections)) throw new Error("응답에서 질문 세트를 읽지 못했습니다 (sections 없음).");
-    data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
+    const raw = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
+    const data = normalizeQset(raw);
     app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data };
-    await dbPut(st);
-    renderApps();
-    $(`genMsg-${appId}`).textContent = `만들었습니다 — 질문 ${data.sections.reduce((n, s) => n + s.items.length, 0)}개. 문장을 눌러 바로 고칠 수 있습니다.`;
-  } catch (e) { msg.textContent = "오류: " + (e?.message || e); btn.disabled = false; }
+    await dbPut(st);   // 그리기에서 무슨 일이 나도 받은 응답은 남는다
+    const count = data.sections.reduce((n, s) => n + s.items.length, 0);
+    try { renderApps(); } catch (e2) { console.error(e2); msg.textContent = `저장은 했지만 화면을 그리지 못했습니다 (${e2?.message || e2}). 새로 고침해 보세요.`; return; }
+    $(`genMsg-${appId}`).textContent = `만들었습니다 — 질문 ${count}개. 문장을 눌러 바로 고칠 수 있습니다.`;
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "오류: " + (e?.message || e) + (AI.lastText ? " — 받은 응답은 ‘프롬프트 꾸러미’의 ‘마지막 AI 응답 들여오기’로 다시 읽을 수 있습니다." : "");
+    btn.disabled = false;
+  }
+}
+/* 응답 모양을 바로잡는다 — 섹션에 items가 없거나 문자열이 배열 자리에 오는 것처럼, 모델이 조금 다르게 돌려줘도 화면이 터지지 않게 */
+const strOf = v => v == null ? "" : typeof v === "string" ? v : typeof v === "object" ? (v.text || v.q || JSON.stringify(v)) : String(v);
+const arrOf = v => Array.isArray(v) ? v : v == null || v === "" ? [] : typeof v === "object" ? Object.values(v) : [v];
+function normalizeQset(raw) {
+  const d = raw && typeof raw === "object" ? raw : {};
+  const secs = arrOf(d.sections).map((sec, i) => {
+    const o = sec && typeof sec === "object" ? sec : { items: arrOf(sec) };
+    const key = String(o.key || Object.keys(SECTION_KO)[i] || "common").trim();
+    const items = arrOf(o.items || o.questions).map(it => {
+      const x = it && typeof it === "object" ? it : { q: strOf(it) };
+      return { q: strOf(x.q || x.question), intent: strOf(x.intent), criterion: strOf(x.criterion), refs: arrOf(x.refs).map(strOf).filter(Boolean), followUps: arrOf(x.followUps || x.followups || x.follow_ups).map(strOf).filter(Boolean), source: strOf(x.source), answerHint: strOf(x.answerHint || x.hint), ...(x.star ? { star: true } : {}), ...(x.deleted ? { deleted: true } : {}) };
+    }).filter(x => x.q);
+    return { key: SECTION_KO[key] ? key : "common", title: strOf(o.title) || SECTION_KO[key] || key, items };
+  }).filter(sec => sec.items.length);
+  // 같은 키가 둘이면 합친다
+  const byKey = new Map(); for (const sec of secs) { if (byKey.has(sec.key)) byKey.get(sec.key).items.push(...sec.items); else byKey.set(sec.key, sec); }
+  const sections = [...byKey.values()].sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
+  const axes = arrOf(d.axes).map(x => x && typeof x === "object" ? { title: strOf(x.title), why: strOf(x.why), refs: arrOf(x.refs).map(strOf).filter(Boolean) } : { title: strOf(x), why: "", refs: [] }).filter(x => x.title);
+  const glossary = arrOf(d.glossary).map(g => g && typeof g === "object" ? { term: strOf(g.term), meaning: strOf(g.meaning), use: strOf(g.use) } : { term: strOf(g), meaning: "", use: "" }).filter(g => g.term);
+  const notes = arrOf(d.notes).map(strOf).filter(Boolean);
+  const out = { ...d, axes, sections, glossary, notes };
+  if (!sections.length) throw new Error("응답에 질문이 하나도 없습니다 (sections 비어 있음).");
+  return out;
 }
 /* 키 없이: 프롬프트를 복사해 이 세션(Claude)에 붙여 넣고, 받은 JSON을 붙여 넣어 들여온다 */
 async function showPromptBox(appId) {
@@ -5831,18 +5908,20 @@ async function showPromptBox(appId) {
   const { system, user } = buildPrompt(st, app, bank);
   const full = `${system}\n\n---\n\n${user}\n\n---\n출력은 아래 JSON 꼴로만:\n${JSON.stringify({ axes: [{ title: "", why: "", refs: [] }], sections: [{ key: "core", title: "", items: [{ q: "", intent: "", criterion: "", refs: [], followUps: [], source: "", answerHint: "" }] }], glossary: [{ term: "", meaning: "", use: "" }], notes: [] })}`;
   box.hidden = false;
-  box.innerHTML = `<div class="toolrow" style="margin-top:8px"><button class="btn main" type="button" data-copy>프롬프트 복사</button><span class="hint">복사해서 Claude·Gemini 대화창에 붙여 넣으면 됩니다(약 ${Math.round(full.length / 2.2 / 1000)}천 토큰). 받은 JSON을 아래에 붙여 넣고 ‘들여오기’.</span></div>
+  box.innerHTML = `<div class="toolrow" style="margin-top:8px"><button class="btn main" type="button" data-copy>프롬프트 복사</button><span class="hint">복사해서 Claude·Gemini 대화창에 붙여 넣으면 됩니다(약 ${(tokEst(full.length) / 1000).toFixed(1)}천 토큰). 받은 JSON을 아래에 붙여 넣고 ‘들여오기’.</span></div>
     <textarea readonly aria-label="프롬프트">${esc(full)}</textarea>
     <textarea placeholder="받은 JSON 붙여 넣기" aria-label="받은 JSON" style="margin-top:8px;min-height:80px"></textarea>
-    <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" data-import>들여오기</button><span class="hint" data-msg></span></div>`;
+    <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" data-import>들여오기</button><button class="btn" type="button" data-import-last ${AI.lastText ? "" : "disabled"}>마지막 AI 응답 들여오기</button><span class="hint" data-msg></span></div>`;
   box.querySelector("[data-copy]").onclick = async () => { try { await navigator.clipboard.writeText(full); box.querySelector("[data-msg]").textContent = "복사했습니다."; } catch { box.querySelector("[data-msg]").textContent = "복사하지 못했습니다 — 위 칸을 전체 선택해 복사해 주세요."; } };
-  box.querySelector("[data-import]").onclick = async () => {
-    const data = pluckJson(box.querySelectorAll("textarea")[1].value);
-    if (!data || !Array.isArray(data.sections)) { box.querySelector("[data-msg]").textContent = "오류: JSON을 읽지 못했습니다."; return; }
-    data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
-    app.qset = { createdAt: new Date().toISOString(), provider: "paste", model: "붙여넣기", data };
-    await dbPut(st); renderApps();
+  const importText = async (txt, how) => {
+    try {
+      const data = normalizeQset(pluckJson(txt));
+      app.qset = { createdAt: new Date().toISOString(), provider: "paste", model: how, data };
+      await dbPut(st); renderApps();
+    } catch (e) { box.querySelector("[data-msg]").textContent = "오류: " + (e?.message || "JSON을 읽지 못했습니다."); }
   };
+  box.querySelector("[data-import]").onclick = () => importText(box.querySelectorAll("textarea")[1].value, "붙여넣기");
+  box.querySelector("[data-import-last]").onclick = () => importText(AI.lastText || "", "마지막 AI 응답");
 }
 /* ---------- 질문 세트 편집기 ---------- */
 function qsetHtml(st, a) {
@@ -5854,6 +5933,7 @@ function qsetHtml(st, a) {
   h += extrasHtml(a);
   let n = 0;
   for (const sec of d.sections) {
+    sec.items = arrOf(sec.items);
     h += `<h5>${esc(SECTION_KO[sec.key] || sec.title)}<span class="n">${sec.items.length}</span></h5>`;
     sec.items.forEach((it, i) => {
       n++;
@@ -5905,7 +5985,7 @@ const INTRO_SCHEMA = { type: "object", properties: {
   notes: { type: "array", items: { type: "string" } } }, required: ["intro", "short", "last", "notes"] };
 function introPrompt(st, a) {
   const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
-  const blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const blocks = scopedBlocks(st, a);
   const axes = a.qset?.data?.axes?.length ? a.qset.data.axes : st.ai?.axes || [];
   const tagged = blocks.flatMap(b => b.sents.filter(sn => effTags(st, b, sn).length).map(sn => `[${refId(b, sn.i)}] (${b.grade}학년 ${b.title}) ${sn.t} 〔${effTags(st, b, sn).map(t => TAG_BY[t]?.name).filter(Boolean).join(", ")}〕`));
   const system = `당신은 한국 고등학교 3학년 담임교사를 돕는 대입 면접 지도 보조입니다. 가린 생기부의 증거 문장과 서사 축으로 학생의 '1분 자기소개'와 '마지막으로 하고 싶은 말' 초안을 만듭니다. 이 초안은 외울 문장이 아니라 구조 예시입니다.
@@ -5930,8 +6010,10 @@ async function genIntro(appId) {
   msg.textContent = `${AI.model}로 자기소개·마지막 말 초안을 만드는 중…`;
   try {
     const { system, user } = introPrompt(st, a);
-    const d = await callAI(system, user, INTRO_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `자기소개·마지막 말 초안 만드는 중… ${n.toLocaleString()}자 받음`; });
-    a.qset.data.extras = { ...(a.qset.data.extras || {}), intro: d.intro, short: d.short, last: d.last, introNotes: d.notes || [], introAt: new Date().toISOString(), introModel: AI.model };
+    const d0 = await callAI(system, user, INTRO_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `자기소개·마지막 말 초안 만드는 중… ${n.toLocaleString()}자 받음`; });
+    const ob = v => v && typeof v === "object" ? v : { text: strOf(v) };
+    const d = { intro: { ...ob(d0.intro), text: strOf(ob(d0.intro).text), structure: strOf(ob(d0.intro).structure), refs: arrOf(ob(d0.intro).refs).map(strOf), blanks: arrOf(ob(d0.intro).blanks).map(strOf) }, short: { text: strOf(ob(d0.short).text) }, last: { text: strOf(ob(d0.last).text), refs: arrOf(ob(d0.last).refs).map(strOf) }, notes: arrOf(d0.notes).map(strOf) };
+    a.qset.data.extras = { ...(a.qset.data.extras || {}), intro: d.intro, short: d.short, last: d.last, introNotes: d.notes, introAt: new Date().toISOString(), introModel: AI.model };
     await dbPut(st); renderApps();
     $(`genMsg-${appId}`).textContent = `자기소개·마지막 말 초안을 만들었습니다 — 구조 예시이니 학생 말로 고쳐 쓰게 하세요${d.intro.blanks?.length ? ` (채울 빈칸 ${d.intro.blanks.length}개)` : ""}.`;
   } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
@@ -5979,7 +6061,7 @@ function docHead(st, a, kind, who) {
 /* 질문 세트의 본 질문(지운 것·빈 것 제외) — 섹션 순서대로 */
 function mainItems(a, keys) {
   const out = []; let n = 0;
-  for (const sec of a.qset?.data?.sections || []) { if (keys && !keys.includes(sec.key)) continue; for (const it of sec.items) { if (it.deleted || !(it.q || "").trim()) continue; out.push({ n: ++n, sec: sec.key, secName: SECTION_KO[sec.key] || sec.title, it }); } }
+  for (const sec of a.qset?.data?.sections || []) { if (keys && !keys.includes(sec.key)) continue; for (const it of arrOf(sec.items)) { if (it.deleted || !(it.q || "").trim()) continue; out.push({ n: ++n, sec: sec.key, secName: SECTION_KO[sec.key] || sec.title, it }); } }
   return out;
 }
 /* 태그가 붙은 문장이 있는 기록 단위 → 활동 개요 카드 재료 */
@@ -6082,7 +6164,12 @@ async function genJesimun(appId) {
   msg.textContent = `${AI.model}로 제시문 세트를 만드는 중…`;
   try {
     const { system, user } = jesimunPrompt(st, a, field.trim());
-    const d = await callAI(system, user, JES_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `제시문 세트 만드는 중… ${n.toLocaleString()}자 받음`; });
+    const d0 = await callAI(system, user, JES_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `제시문 세트 만드는 중… ${n.toLocaleString()}자 받음`; });
+    const d = { title: strOf(d0.title) || "예상 문항", field: strOf(d0.field) || field.trim(), map: strOf(d0.map), prepMinutes: Number(d0.prepMinutes) || 10, answerMinutes: Number(d0.answerMinutes) || 5,
+      passages: arrOf(d0.passages).map((p, i) => p && typeof p === "object" ? { label: strOf(p.label) || "(" + "가나다라"[i] + ")", text: strOf(p.text) } : { label: "(" + "가나다라"[i] + ")", text: strOf(p) }).filter(p => p.text),
+      questions: arrOf(d0.questions).map(q => q && typeof q === "object" ? { q: strOf(q.q || q.question), intent: strOf(q.intent), points: arrOf(q.points).map(strOf).filter(Boolean), bad: strOf(q.bad), good: strOf(q.good) } : { q: strOf(q), intent: "", points: [], bad: "", good: "" }).filter(q => q.q),
+      highlights: arrOf(d0.highlights).map(x => x && typeof x === "object" ? { passage: strOf(x.passage), quote: strOf(x.quote), note: strOf(x.note) } : { passage: "", quote: strOf(x), note: "" }).filter(x => x.quote), notes: arrOf(d0.notes).map(strOf).filter(Boolean) };
+    if (!d.passages.length || !d.questions.length) throw new Error("응답에 제시문이나 문항이 없습니다.");
     d.id = uid(); d.createdAt = new Date().toISOString(); d.model = AI.model;
     (a.jesimun = a.jesimun || []).push(d);
     await dbPut(st); renderApps();
@@ -6176,7 +6263,7 @@ function studentQuestions(a) {
   if (!a.qset) return jesimunStudentItems(a, 0);
   const ex = a.qset.data.extras;
   if (ex?.intro?.text) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
-  for (const sec of a.qset.data.sections) sec.items.forEach((it, i) => {
+  for (const sec of arrOf(a.qset.data.sections)) arrOf(sec.items).forEach((it, i) => {
     if (it.deleted || !(it.q || "").trim()) return;
     const base = { section: SECTION_KO[sec.key] || sec.title, secKey: sec.key, star: !!it.star, teacher: sec.key === "teacher" };
     out.push({ ...base, k: `${sec.key}:${i}`, n: ++n, q: it.q.trim(), intent: it.intent || "", hint: it.answerHint || "" });
@@ -6287,7 +6374,7 @@ function exportRetrace(st, a) {
     L.push("");
   }
   const qset = a.qset?.data;
-  if (qset) L.push(`## 이번 질문 세트가 덮은 것`, ...qset.sections.map(s => `- ${SECTION_KO[s.key] || s.title}: ${s.items.filter(x => !x.deleted && (x.q || "").trim()).length}문항`), "");
+  if (qset) L.push(`## 이번 질문 세트가 덮은 것`, ...arrOf(qset.sections).map(s => `- ${SECTION_KO[s.key] || s.title}: ${arrOf(s.items).filter(x => !x.deleted && (x.q || "").trim()).length}문항`), "");
   const text = L.join("\n");
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" }), url = URL.createObjectURL(blob);
   const el = document.createElement("a"); el.href = url; el.download = `면접연습_${st.alias.replace(/\s+/g, "")}_${(u ? univLabel(u) : a.univText || "대학").replace(/\s+/g, "")}.txt`; document.body.appendChild(el); el.click(); el.remove();
@@ -6499,7 +6586,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, scopeGroups, scopedBlocks, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
