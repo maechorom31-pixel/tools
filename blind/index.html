@@ -5496,7 +5496,7 @@ function renderCal() {
 
 
 /* ═══════ AI 연결 — 키는 sessionStorage, 호출은 브라우저 → 해당 회사 직접 ═══════ */
-const AI = { key: "", provider: "", model: "", models: [] };
+const AI = { key: "", provider: "", model: "", models: [], caps: {} };
 const KEY_STORE = "blind-ai-key", MODEL_STORE = "blind-ai-model";
 const providerOf = k => /^AIza/.test(k) ? "gemini" : /^sk-ant-/.test(k) ? "anthropic" : "";
 const PROVIDER_KO = { gemini: "Gemini(Google)", anthropic: "Claude(Anthropic)" };
@@ -5541,6 +5541,7 @@ async function listModels() {
   const r = await fetch("https://api.anthropic.com/v1/models?limit=100", { headers: ANTH_HEADERS() });
   if (!r.ok) throw new Error(`Anthropic 응답 ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
+  AI.caps = {}; for (const m of j.data || []) if (m.max_tokens) AI.caps[m.id] = m.max_tokens;
   return (j.data || []).map(m => m.id).sort((a, b) => (/opus-5|sonnet-5/.test(b) - /opus-5|sonnet-5/.test(a)) || b.localeCompare(a));
 }
 $("keyCheck").onclick = async () => {
@@ -5583,7 +5584,8 @@ function checkShape(d, schema, stop, txt) {
   return d;
 }
 /* 한 번의 호출. 한국어 JSON은 토큰을 많이 쓰고 Claude는 생각 토큰까지 max_tokens에 들어가므로 한도를 넉넉히 잡고, 긴 응답은 스트리밍으로 받는다(onProgress에 받은 글자 수) */
-async function callAI(system, user, schema, maxTokens = 48000, onProgress) {
+const CLAUDE_MAX_OUT = 128000;   // Opus 5.5·Sonnet 5.5·Haiku 5.5의 최대 출력. 스트리밍이라 시간 제한 걱정은 없다
+async function callAI(system, user, schema, maxTokens = CLAUDE_MAX_OUT, onProgress) {
   if (AI.provider === "gemini") {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model)}:generateContent?key=${encodeURIComponent(AI.key)}`, {
       method: "POST", headers: { "content-type": "application/json" },
@@ -5595,13 +5597,16 @@ async function callAI(system, user, schema, maxTokens = 48000, onProgress) {
     if (!txt) throw new Error("응답이 비어 있습니다" + (fin ? ` (${fin})` : "") + (j.promptFeedback?.blockReason ? ` — 차단: ${j.promptFeedback.blockReason}` : ""));
     return checkShape(pluckJson(txt), schema, fin, txt);
   }
+  const cap = AI.caps?.[AI.model]; if (cap && maxTokens > cap) maxTokens = cap;
   const body = { model: AI.model, max_tokens: maxTokens, stream: true, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
   const post = () => fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
   let r = await post();
-  if (r.status === 400) {   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
+  for (let tries = 0; r.status === 400 && tries < 2; tries++) {
     const t = await r.text();
-    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await post(); }
-    else throw new Error(`Anthropic 응답 400: ${t.slice(0, 300)}`);
+    const mt = t.match(/max_tokens[^0-9]{0,40}(\d{4,6})[^0-9]{1,30}(\d{4,6})/);   // "max_tokens: 128000 > 64000, which is the maximum allowed"
+    if (mt) { const lim = Math.min(+mt[1], +mt[2]); body.max_tokens = lim; AI.caps[AI.model] = lim; r = await post(); continue; }
+    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await post(); continue; }   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
+    throw new Error(`Anthropic 응답 400: ${t.slice(0, 300)}`);
   }
   if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`Anthropic 응답 ${r.status}: ${j.error?.message || ""}`); }
   let txt = "", stop = null, err = null;
@@ -5738,7 +5743,7 @@ async function generateQuestions(appId) {
   try {
     const bank = await loadBank();
     const { system, user } = buildPrompt(st, app, bank);
-    const data = await callAI(system, user, QSET_SCHEMA, 64000, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
+    const data = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
     if (!Array.isArray(data.sections)) throw new Error("응답에서 질문 세트를 읽지 못했습니다 (sections 없음).");
     data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
     app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data };
@@ -6078,7 +6083,7 @@ async function aiRead(force) {
         say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model}`);
         const { system } = structPrompt(st);
         const user = lines.slice(chunks[c].from - 1, chunks[c].to).map((l, i) => `L${chunks[c].from + i}: ${l}`).join("\n");
-        const d = await callAI(system, user, STRUCT_SCHEMA, 32000, n => say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model} · ${n.toLocaleString()}자 받음`));
+        const d = await callAI(system, user, STRUCT_SCHEMA, CLAUDE_MAX_OUT, n => say(`1단계 경계 가르기 ${c + 1}/${chunks.length} — ${AI.model} · ${n.toLocaleString()}자 받음`));
         for (const r of d.records || []) { if (!(r.grade >= 1 && r.grade <= 3) || !r.area) continue; const k = `${r.grade}|${r.area}`; const o = recMap.get(k) || { grade: +r.grade, area: String(r.area), text: "", hope: "" }; o.text = joinLine(o.text, linesOf(st, [r], /^희\s*망\s*분\s*야\s*[:：]?\s*[^\n]*$/, true)); if (r.hope && !o.hope) o.hope = String(r.hope); recMap.set(k, o); }
         for (const x of d.setuk || []) { if (!(x.grade >= 1 && x.grade <= 3)) continue; const k = `${x.grade}|${x.sem || ""}|${x.subject || "(미분류)"}`; const o = setMap.get(k) || { grade: +x.grade, sem: String(x.sem || ""), subject: String(x.subject || "(미분류)"), body: "" }; o.body = joinLine(o.body, linesOf(st, [x], SUBJ_LABEL)); setMap.set(k, o); }
         attRanges.push(...(d.attendance || []));
@@ -6101,7 +6106,7 @@ async function aiRead(force) {
       const g = grades[gi];
       say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model}`);
       const { system, user } = analyzePrompt(st, blocks.filter(b => b.grade === g));
-      const d = await callAI(system, user, ANALYZE_SCHEMA, 48000, n => say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model} · ${n.toLocaleString()}자 받음`));
+      const d = await callAI(system, user, ANALYZE_SCHEMA, CLAUDE_MAX_OUT, n => say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model} · ${n.toLocaleString()}자 받음`));
       if (!Array.isArray(d.tags)) throw new Error(`${g}학년 응답에서 태그를 읽지 못했습니다.`);
       for (const t of d.tags) {
         const ref = resolve(t.ref);
