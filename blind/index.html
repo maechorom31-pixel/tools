@@ -5374,12 +5374,12 @@ function renderRecords() {
   if (!blocks.length) html.push(`<p class="empty">규칙으로는 영역을 가르지 못한 판형입니다. 00에서 AI를 연결하고 위의 ‘AI로 읽기’를 누르면 AI가 영역·과목을 가른 뒤 읽습니다. 가린 글 전체는 아래에 그대로 둡니다.</p>`);
   else if (st.structuredBy) html.push(`<p class="hint">영역·과목은 AI(${esc(st.structuredBy)})가 가른 것입니다. 원문과 다르면 ‘AI로 영역 다시 가르기’로 다시 할 수 있습니다.</p>`);
   else html.push(`<p class="hint">지금 보이는 영역·과목은 규칙 밑그림입니다(글의 ${Math.round(cov * 100)}%). ‘AI로 읽기’를 누르면 AI가 경계를 다시 가른 뒤 학년별로 읽습니다.</p>`);
-  html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="diagDl" style="min-height:32px;font-size:13px">판형 진단 내려받기</button><span class="hint">영역이 잘못 갈렸을 때 — 가린 글과 줄 좌표만 든 JSON입니다(이름·번호 없음). 이 파일을 보내 주시면 그 판형에 맞게 고칩니다.</span></div><p class="att">${esc(st.text)}</p></details>`);
+  html.push(`<details class="rec"><summary class="hint" style="cursor:pointer">가린 글 전체 보기</summary><div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="diagDl" style="min-height:32px;font-size:13px">판형 진단 내려받기</button><span class="hint">영역이 잘못 갈렸을 때 — 가린 글과 줄 좌표만 든 JSON입니다(이름·번호 없음). 이 파일을 보내 주시면 그 판형에 맞게 고칩니다.${st.diag ? "" : " 이 학생은 좌표가 저장되기 전에 등록되어 가린 글만 담깁니다. PDF를 다시 올려 등록하면 좌표도 담깁니다."}</span></div><p class="att">${esc(st.text)}</p></details>`);
   if (st.unparsed?.length) html.push(`<p class="hint">가르지 못한 줄 ${st.unparsed.length}개 — 전체 보기에서 확인할 수 있습니다.</p>`);
   host.innerHTML = html.join("");
   host.querySelectorAll(".sent").forEach(el => el.addEventListener("click", onSentClick));
   const dd = $("diagDl"); if (dd) dd.onclick = () => {
-    const out = { version: 1, label: st.label, structuredBy: st.structuredBy || "rule", records: st.records.map(r => ({ grade: r.grade, area: r.area, len: r.text.length })), setuk: st.setuk.map(x => ({ grade: x.grade, sem: x.sem, subject: x.subject, len: x.body.length })), unparsed: st.unparsed, pages: st.diag || null, text: st.diag ? undefined : st.text };
+    const out = { version: 1, label: st.label, structuredBy: st.structuredBy || "rule", records: st.records.map(r => ({ grade: r.grade, area: r.area, len: r.text.length })), setuk: st.setuk.map(x => ({ grade: x.grade, sem: x.sem, subject: x.subject, len: x.body.length })), unparsed: st.unparsed, pages: st.diag || null, text: st.diag ? undefined : st.text, note: st.diag ? undefined : "좌표가 저장되기 전에 등록된 학생 — PDF를 다시 올려 등록하면 pages가 담깁니다." };
     const blob = new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }), url = URL.createObjectURL(blob);
     const el = document.createElement("a"); el.href = url; el.download = `판형진단_${st.label || "학생"}.json`; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
@@ -5912,6 +5912,19 @@ gasLoad();
 
 /* ═══════ AI로 읽기 — 형광펜·목록·서사 축을 AI가 판단, 판형을 못 가른 글은 AI가 가른다 ═══════ */
 function refMap(blocks) { const m = {}; for (const b of blocks) for (const sn of b.sents) m[refId(b, sn.i)] = { key: sentKey(b, sn.i), where: `${b.grade}학년 ${b.title}` }; return m; }
+/* AI가 돌려준 문장 번호를 관용적으로 읽는다: 대괄호·공백·'학년'을 빼고, 영역 전체 이름(동아리활동)·학기 없는 과목명(국어)·'세특-' 머리도 같은 문장으로 본다. 두 문장에 걸치는 별칭은 버린다 */
+function refNorm(s) { return String(s ?? "").replace(/[\[\]\s()（）]/g, "").replace(/학년/g, "").replace(/^(\d)[-–~·.]/, "$1-").replace(/[–~·]/g, "-"); }
+function refResolver(blocks) {
+  const canon = new Set(), alias = new Map();
+  const add = (a, id) => { a = refNorm(a); if (!a || a === id) return; alias.set(a, alias.has(a) && alias.get(a) !== id ? null : id); };
+  for (const b of blocks) for (const sn of b.sents) {
+    const id = refId(b, sn.i), n = sn.i + 1; canon.add(id); if (refNorm(id) !== id) alias.set(refNorm(id), id);
+    if (b.area === "세특") { const subj = b.title.replace(/\s+\d학기$/, ""), sem = b.title.match(/(\d)학기$/)?.[1] || "";
+      for (const h of ["", "세특-", "세부능력-", "교과-"]) { add(`${b.grade}-${h}${subj}-${n}`, id); if (sem) { add(`${b.grade}-${h}${subj}${sem}학기-${n}`, id); add(`${b.grade}-${h}(${sem}학기)${subj}-${n}`, id); add(`${b.grade}-${h}${sem}학기${subj}-${n}`, id); } } }
+    else { add(`${b.grade}-${b.area}-${n}`, id); add(`${b.grade}-${(AREA_SHORT[b.area] || b.area)}-${n}`, id); if (b.area === "행동특성 및 종합의견") { add(`${b.grade}-행동특성-${n}`, id); add(`${b.grade}-종합의견-${n}`, id); } if (/자율|자치/.test(b.area)) { add(`${b.grade}-자율자치활동-${n}`, id); add(`${b.grade}-자율-${n}`, id); } }
+  }
+  return raw => { const k = refNorm(raw); if (!k) return null; if (canon.has(k)) return k; return alias.get(k) || null; };
+}
 const TAG_DEFS = `학업역량/학업성취도 — 교과 성취 수준과 추이. 전공 과목만이 아니라 분석 도구가 되는 과목(확률과 통계·정보·한문 등)의 성취도 함께 본다.
 학업역량/학업태도 — 자발적 질문·추가 자료 탐색·수업 밖으로 이어 간 흔적. "성실히 참여함"은 흔적이 아니다.
 학업역량/탐구력 — 판정 기준을 문서로 만들었는가, 예외와 반대 해석까지 자료로 검토했는가. 결론보다 방법과 한계 인식이 증거다. "보고서를 작성함"만으로는 탐구력이 아니다.
@@ -6034,7 +6047,8 @@ async function aiRead(force) {
     const grades = [...new Set(blocks.map(b => b.grade))].sort();
     const tags = {}, lists = { concepts: [], praise: [], vague: [], weak: [] }, notes = [];
     let dropped = 0;
-    const map = refMap(blocks);
+    const map = refMap(blocks), resolve = refResolver(blocks), fixRef = x => { if (!x || typeof x !== "object") return x; const r = resolve(x.ref); return r ? { ...x, ref: r } : x; };
+    const badRefs = [];
     for (let gi = 0; gi < grades.length; gi++) {
       const g = grades[gi];
       say(`2단계 역량 검토 ${g}학년 (${gi + 1}/${grades.length}) — ${AI.model}`);
@@ -6042,11 +6056,12 @@ async function aiRead(force) {
       const d = await callAI(system, user, ANALYZE_SCHEMA);
       if (!d || !Array.isArray(d.tags)) throw new Error(`${g}학년 응답에서 태그를 읽지 못했습니다.`);
       for (const t of d.tags) {
-        if (!map[t.ref]) { dropped++; continue; }
+        const ref = resolve(t.ref);
+        if (!ref || !map[ref]) { dropped++; if (badRefs.length < 3) badRefs.push(String(t.ref)); continue; }
         const ids = (t.tags || []).map(x => TAG_NAMES[String(x).replace(/^[^/]*\//, "").trim()] || (TAG_BY[x] ? x : null)).filter(Boolean).slice(0, 2);
-        if (ids.length) tags[t.ref] = { tags: ids, why: t.why || "" };
+        if (ids.length) tags[ref] = { tags: ids, why: t.why || "" };
       }
-      for (const k of Object.keys(lists)) lists[k].push(...(d[k] || []).filter(x => x && x.w));
+      for (const k of Object.keys(lists)) lists[k].push(...(d[k] || []).filter(x => x && x.w).map(fixRef));
       notes.push(...(d.notes || []));
     }
     /* 3단계 — 종합: 태그 달린 문장만 모아 서사 축·요약 */
@@ -6058,10 +6073,10 @@ async function aiRead(force) {
 - summary: 세 문장 안쪽 — 어떤 학생인지, 지원 전공과 맞닿는 지점, 면접에서 가장 먼저 확인할 것.
 - notes: 확인이 필요한 것("확인 필요: …").
 블라인드: 이름·학교·부모를 추정하지 않습니다. 출력은 JSON만, 한국어.${major ? ` 전공 관련 과목(교사 지정): ${major}` : ""}`, digest || "(증거 문장 없음)", SYNTH_SCHEMA);
-    st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: synth?.summary || "", axes: (synth?.axes || []).filter(a => a.title), tags, lists, notes: [...notes, ...(synth?.notes || [])] };
+    st.ai = { createdAt: new Date().toISOString(), model: AI.model, summary: synth?.summary || "", axes: (synth?.axes || []).filter(a => a.title).map(a => ({ ...a, refs: (a.refs || []).map(resolve).filter(Boolean) })), tags, lists, notes: [...notes, ...(synth?.notes || [])] };
     await dbPut(st);
     renderRecords();
-    $("aiReadMsg").textContent = `읽었습니다 — ${grades.length}개 학년, 태그 ${Object.keys(tags).length}문장, 개념 ${lists.concepts.length}, 방어 ${lists.praise.length}, 진위 ${lists.vague.length}, 약점 ${lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림)` : ""}.`;
+    $("aiReadMsg").textContent = `읽었습니다 — ${grades.length}개 학년, 태그 ${Object.keys(tags).length}문장, 개념 ${lists.concepts.length}, 방어 ${lists.praise.length}, 진위 ${lists.vague.length}, 약점 ${lists.weak.length}${dropped ? ` (번호가 안 맞는 ${dropped}개는 버림: ${badRefs.join(", ")})` : ""}.`;
   } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
   b1.disabled = b2.disabled = false;
 }
@@ -6086,7 +6101,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
