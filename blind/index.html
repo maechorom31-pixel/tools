@@ -211,6 +211,14 @@ body.print-share .share .qr{width:220px;height:220px;margin:0 auto}
 body.print-q .qi.hout,body.print-q .qs .hout{display:none!important}
 .qi.del{opacity:.4}
 .qi.del .q textarea{text-decoration:line-through}
+details.qsbox{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+details.qsbox>summary{cursor:pointer;font-size:14px;list-style:none;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+details.qsbox>summary::-webkit-details-marker{display:none}
+details.qsbox>summary::before{content:"▸";color:var(--amber-dark);font-size:12px}
+details.qsbox[open]>summary::before{content:"▾"}
+details.qsbox>summary b{font-weight:600}
+body.print-q details.qsbox>summary{display:none}
+body.print-q details.qsbox{border:0;padding:0}
 .scope{margin-top:10px;font-size:14px}
 .scope summary{cursor:pointer;color:var(--amber-dark);font-weight:600}
 .scopes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;margin-top:8px}
@@ -5006,7 +5014,7 @@ function parseStudents(f) {
 
 /* ═══════ 면접 준비 — 학생·지원·달력 ═══════
    학생 자료는 IndexedDB(이 브라우저)에만 둔다. 이름은 어디에도 저장하지 않는다. */
-const HUB = { students: [], cards: null, cardsErr: "", cur: null, editing: null };
+const HUB = { open: new Set(), students: [], cards: null, cardsErr: "", cur: null, editing: null };
 const DB = { name: "myeonjeop-on-v1", store: "students" };
 function dbOpen() {
   return new Promise((res, rej) => {
@@ -5245,6 +5253,12 @@ async function removeStudent(id) {
   renderStudents(); renderCal();
 }
 $("stuDel").onclick = () => removeStudent(HUB.cur);
+/* 지원 카드의 질문 세트 묶음(질문·배포·제시문)은 접어 두고, 연 카드는 다시 그려도 열린 채로 둔다 */
+function qsSummary(st, a) {
+  const n = a.qset ? mainItems(a).length : 0, j = (a.jesimun || []).length;
+  const parts = [a.qset ? `질문 ${n}문항` : "질문 세트 없음", a.share ? (a.share.status === "off" ? "배포 닫힘" : `배포 중 · 답변 ${(a.rounds || []).length}회차`) : "", j ? `제시문 ${j}세트` : "", a.qset?.data?.extras?.intro ? "자기소개" : ""].filter(Boolean);
+  return `<b>질문·배포·제시문</b> <span class="hint">${esc(parts.join(" · "))} — 눌러서 ${HUB.open.has(a.id) ? "접기" : "펼치기"}</span>`;
+}
 function renderApps() {
   const st = stuOf(HUB.cur), host = $("apps");
   if (!st.applications.length) { host.innerHTML = `<p class="empty">아직 지원을 적지 않았습니다. 아래에서 대학·전형·면접일을 넣으면 이 학생의 지원 카드가 됩니다. 한 학생이 여러 곳에 지원하면 여러 번 추가합니다.</p>`; return; }
@@ -5255,9 +5269,11 @@ function renderApps() {
     ${scopeHtml(st, a)}
     <div class="actions"><button class="btn main" type="button" data-gen="${a.id}">${a.qset ? "예상 질문 다시 만들기" : "예상 질문 만들기"}</button>${a.qset ? `<button class="btn" type="button" data-more="${a.id}" title="지금 세트는 그대로 두고 겹치지 않는 질문을 더 받아 붙입니다">질문 더 만들기</button>` : ""}<select data-qty="${a.id}" aria-label="질문 분량" title="만들 질문 수">${Object.entries(QTY).map(([k, v]) => `<option value="${k}"${(a.qty || "more") === k ? " selected" : ""}>${esc(v.label)}</option>`).join("")}</select><button class="btn" type="button" data-prompt="${a.id}">프롬프트 꾸러미</button><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button><span class="hint" id="genMsg-${a.id}" role="status"></span></div>
     <div class="promptbox" id="pbox-${a.id}" hidden></div>
+    <details class="qsbox" data-qsbox="${a.id}"${HUB.open.has(a.id) ? " open" : ""}><summary>${qsSummary(st, a)}</summary>
     <div id="share-${a.id}">${shareHtml(st, a)}</div>
     <div class="qs" id="qs-${a.id}">${a.qset ? qsetHtml(st, a) : ""}</div>
-    <div id="jes-${a.id}">${jesimunHtml(st, a)}</div></article>`).join("");
+    <div id="jes-${a.id}">${jesimunHtml(st, a)}</div></details></article>`).join("");
+  host.querySelectorAll("details.qsbox").forEach(d => d.addEventListener("toggle", () => { if (d.open) HUB.open.add(d.dataset.qsbox); else HUB.open.delete(d.dataset.qsbox); }));
   host.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => generateQuestions(b.dataset.gen));
   host.querySelectorAll("[data-more]").forEach(b => b.onclick = () => generateQuestions(b.dataset.more, { add: true }));
   host.querySelectorAll("[data-qty]").forEach(sel => sel.onchange = async () => { const a = st.applications.find(x => x.id === sel.dataset.qty); if (a) { a.qty = sel.value; await dbPut(st); } });
@@ -5904,6 +5920,7 @@ async function generateQuestions(appId, opts = {}) {
     if (focus) { const all = fresh.sections.flatMap(sec => sec.items); fresh.sections = all.length ? [{ key: focus.key, title: SECTION_KO[focus.key] || focus.key, items: all }] : []; }
     const { data, kept } = add ? appendQset(st, app, fresh) : mergeQset(st, app, fresh, onKeys, partial);
     app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data, scopeKeys: onKeys };
+    HUB.open.add(app.id);
     await dbPut(st);   // 그리기에서 무슨 일이 나도 받은 응답은 남는다
     const count = add ? data.sections.reduce((n, s) => n + s.items.length, 0) - kept : fresh.sections.reduce((n, s) => n + s.items.length, 0);
     try { renderApps(); } catch (e2) { console.error(e2); msg.textContent = `저장은 했지만 화면을 그리지 못했습니다 (${e2?.message || e2}). 새로 고침해 보세요.`; return; }
@@ -6026,7 +6043,7 @@ async function showPromptBox(appId) {
     try {
       const data = normalizeQset(pluckJson(txt));
       app.qset = { createdAt: new Date().toISOString(), provider: "paste", model: how, data };
-      await dbPut(st); renderApps();
+      HUB.open.add(app.id); await dbPut(st); renderApps();
     } catch (e) { box.querySelector("[data-msg]").textContent = "오류: " + (e?.message || "JSON을 읽지 못했습니다."); }
   };
   box.querySelector("[data-import]").onclick = () => importText(box.querySelectorAll("textarea")[1].value, "붙여넣기");
@@ -6084,7 +6101,7 @@ function bindQset(st, a) {
   host.querySelectorAll("[data-share]").forEach(b => b.onclick = () => publishShare(a.id));
 }
 function printQset(appId, mode) {
-  const art = $(`app-${appId}`);
+  const art = $(`app-${appId}`); const box = art.querySelector("details.qsbox"); if (box && !box.open) { box.open = true; HUB.open.add(appId); }
   document.body.classList.add("print-q", `mode-${mode}`); art.classList.add("printing");
   const done = () => { document.body.classList.remove("print-q", "mode-student", "mode-examiner"); art.classList.remove("printing"); window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done); window.print(); setTimeout(done, 3000);
@@ -6319,7 +6336,7 @@ async function genJesimun(appId) {
     if (!d.passages.length || !d.questions.length) throw new Error("응답에 제시문이나 문항이 없습니다.");
     d.id = uid(); d.createdAt = new Date().toISOString(); d.model = AI.model;
     (a.jesimun = a.jesimun || []).push(d);
-    await dbPut(st); renderApps();
+    HUB.open.add(a.id); await dbPut(st); renderApps();
     $(`jesMsg-${appId}`).textContent = `제시문 세트를 만들었습니다 — 제시문 ${d.passages.length}개, 문항 ${d.questions.length}개. 해설은 교사용이며 사실·용어는 확인이 필요합니다.`;
   } catch (e) { msg.textContent = "오류: " + (e?.message || e); if (jb) jb.disabled = false; }
 }
