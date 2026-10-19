@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?= appTitle ?></title>
+<style>
+:root{--bg:#FAF9F7;--card:#FFFFFF;--sub:#F3F1ED;--ink:#1F1F1C;--mid:#6B6B6B;--line:#E8E6E2;--amber:#F59E0B;--amber-pale:#FCD68A;--amber-dark:#B45309;--amber-soft:#FDF6E7;--err:#9F2D20}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink)}
+body{min-height:100vh;min-height:100dvh;font:17px/1.65 Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--amber-dark);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+header{padding:8px 0 16px}
+h1{font-size:20px;line-height:1.3;font-weight:700}
+.sub{color:var(--mid);font-size:14px;margin-top:4px}
+.sub b{color:var(--amber-dark);font-weight:700;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px 22px;margin-top:12px}
+.step{font-size:14px;color:var(--mid);font-variant-numeric:tabular-nums}
+.sec{font-size:13px;color:var(--amber-dark);font-weight:700;margin-top:10px}
+.q{font-size:19px;line-height:1.5;font-weight:600;margin-top:6px}
+.intent{margin-top:12px;background:var(--sub);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.6;color:var(--ink)}
+.intent b{font-weight:600;color:var(--mid)}
+.timer{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;margin-top:16px}
+.timer .t{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;min-width:110px;line-height:1}
+.timer .t.over{color:var(--amber-dark)}
+.timer .hint{font-size:13px;color:var(--mid);margin-left:12px;line-height:1.5}
+.btn{display:-webkit-inline-box;display:inline-flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:10px;border:1px solid #D9D5CE;background:var(--card);font-weight:600;font-size:16px;margin-right:8px;margin-top:8px}
+.btn.main{background:var(--amber);border-color:var(--amber);color:#1A1A1A}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn:active{-webkit-transform:scale(.98);transform:scale(.98)}
+textarea{width:100%;min-height:120px;margin-top:14px;padding:12px;border:1px solid #D9D5CE;border-radius:10px;background:var(--card);font-size:17px;line-height:1.6;resize:vertical}
+textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px var(--amber-soft)}
+.lbl{display:block;font-size:14px;font-weight:600;margin-top:16px}
+.lbl span{font-weight:400;color:var(--mid)}
+.row{margin-top:14px}
+.msg{margin-top:12px;font-size:15px;line-height:1.6}
+.msg.err{color:var(--err)}
+.done li{margin:6px 0 0 18px;font-size:15px}
+.rule{font-size:14px;line-height:1.7;color:var(--mid);margin-top:10px}
+.prog{height:4px;background:var(--line);border-radius:2px;margin-top:14px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--amber);width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1 id="title"><?= appTitle ?></h1>
+<p class="sub" id="subt">연습 자료를 불러오는 중입니다…</p>
+</header>
+<main id="main">
+<section class="card" id="intro" hidden>
+<p>질문을 하나씩 보여 드립니다. ‘시작’을 누르면 시간이 가고, 말로 답하거나 아래 칸에 핵심만 적은 뒤 ‘다음’으로 넘어갑니다. 한 답은 1분을 넘기지 않는 것이 목표입니다.</p>
+<p class="rule">이 자료는 외우는 자료가 아니라 질문의 ‘확인 의도’를 준비하는 자료입니다. 이름·학교·부모님 직업은 어떤 답에도 넣지 않습니다.</p>
+<div class="row"><button class="btn main" id="startAll" type="button">연습 시작</button></div>
+</section>
+<section class="card" id="qcard" hidden>
+<div class="step" id="step"></div>
+<div class="prog"><i id="prog"></i></div>
+<div class="sec" id="sec"></div>
+<div class="q" id="q"></div>
+<div class="intent" id="intent"></div>
+<div class="timer"><div class="t" id="timer">0:00</div><div class="hint">‘시작’을 누르고 소리 내어 답해 보세요.<br>1분이 넘으면 색이 바뀝니다.</div></div>
+<div class="row"><button class="btn main" id="tStart" type="button">시작</button><button class="btn" id="tStop" type="button" disabled>멈춤</button></div>
+<label class="lbl" for="ans">답의 핵심 <span>(선택 — 말로만 해도 됩니다)</span></label>
+<textarea id="ans" placeholder="첫 문장과 근거 하나만 적어도 됩니다"></textarea>
+<div class="row"><button class="btn" id="prev" type="button">이전</button><button class="btn main" id="next" type="button">다음</button></div>
+</section>
+<section class="card" id="finish" hidden>
+<p>마지막 질문까지 왔습니다. 제출하면 선생님이 답변과 걸린 시간을 볼 수 있습니다.</p>
+<ul class="done" id="summary"></ul>
+<div class="row"><button class="btn" id="back" type="button">돌아가서 고치기</button><button class="btn main" id="submit" type="button">선생님께 제출</button></div>
+<p class="msg" id="msg" role="status" aria-live="polite"></p>
+</section>
+<section class="card" id="thanks" hidden>
+<p id="thanksMsg"></p>
+<div class="row"><button class="btn" id="again" type="button">한 번 더 연습</button></div>
+</section>
+<p class="msg err" id="fatal" hidden></p>
+</main>
+</div>
+<script>
+(function () {
+  var token = "<?!= token ?>";
+  var $ = function (id) { return document.getElementById(id); };
+  var set = null, qs = [], cur = 0, answers = [], tick = null, t0 = 0, acc = 0;
+  document.addEventListener("touchstart", function () {}, { passive: true });
+  function show(id) { ["intro", "qcard", "finish", "thanks"].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
+  function fmt(s) { var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
+  function fail(t) { $("fatal").hidden = false; $("fatal").textContent = "오류: " + t; $("subt").textContent = ""; }
+  if (!token) { fail("연습 링크에 토큰이 없습니다. 선생님이 주신 QR이나 링크로 다시 들어와 주세요."); return; }
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r || !r.ok) { fail(r && r.error ? r.error : "불러오지 못했습니다."); return; }
+    set = r; qs = r.questions || [];
+    answers = qs.map(function (q) { return { n: q.n, section: q.section, q: q.q, answer: "", seconds: 0 }; });
+    $("title").textContent = r.title || $("title").textContent;
+    var dd = "";
+    if (r.date) { var d = r.date.split("-"); var dt = new Date(+d[0], +d[1] - 1, +d[2]); var now = new Date(); now.setHours(0, 0, 0, 0); var n = Math.round((dt - now) / 86400000); dd = " · 면접 " + (+d[1]) + ". " + (+d[2]) + ". " + (n === 0 ? "오늘" : n > 0 ? "D-" + n : ""); }
+    $("subt").innerHTML = "질문 <b>" + qs.length + "</b>개" + dd + " · " + r.nextRound + "회차";
+    show("intro");
+  }).withFailureHandler(function (e) { fail((e && e.message) || "서버에 닿지 못했습니다. 잠시 뒤 다시 열어 주세요."); }).getSet(token);
+
+  function stopTimer() { if (tick) { clearInterval(tick); tick = null; acc += Math.round((Date.now() - t0) / 1000); } $("tStart").disabled = false; $("tStop").disabled = true; render(); }
+  function render() {
+    var q = qs[cur], a = answers[cur];
+    $("step").textContent = (cur + 1) + " / " + qs.length;
+    $("prog").style.width = Math.round((cur + 1) / qs.length * 100) + "%";
+    $("sec").textContent = q.section || "";
+    $("q").textContent = q.q;
+    $("intent").innerHTML = "<b>확인 의도</b> " + esc(q.intent || "") + (q.hint ? "<br><b>답의 흐름</b> " + esc(q.hint) : "");
+    var s = acc; $("timer").textContent = fmt(s); $("timer").className = "t" + (s > 60 ? " over" : "");
+    $("ans").value = a.answer;
+    $("prev").disabled = cur === 0;
+    $("next").textContent = cur === qs.length - 1 ? "마치기" : "다음";
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function save() { answers[cur].answer = $("ans").value; answers[cur].seconds = acc; }
+  function go(i) { save(); stopTimer(); cur = i; acc = answers[cur].seconds || 0; render(); show("qcard"); }
+  $("startAll").onclick = function () { cur = 0; acc = 0; render(); show("qcard"); };
+  $("tStart").onclick = function () { t0 = Date.now(); $("tStart").disabled = true; $("tStop").disabled = false; tick = setInterval(function () { var s = acc + Math.round((Date.now() - t0) / 1000); $("timer").textContent = fmt(s); $("timer").className = "t" + (s > 60 ? " over" : ""); }, 500); };
+  $("tStop").onclick = stopTimer;
+  $("prev").onclick = function () { if (cur > 0) go(cur - 1); };
+  $("next").onclick = function () {
+    if (cur < qs.length - 1) { go(cur + 1); return; }
+    save(); stopTimer();
+    var done = answers.filter(function (a) { return a.answer.replace(/\s/g, "") || a.seconds > 0; });
+    $("summary").innerHTML = done.length ? done.map(function (a) { return "<li>" + a.n + ". " + fmt(a.seconds) + (a.answer ? " — " + esc(a.answer.slice(0, 40)) + (a.answer.length > 40 ? "…" : "") : " (말로만)") + "</li>"; }).join("") : "<li>아직 시간을 재거나 적은 답이 없습니다. 돌아가서 한 문항이라도 해 보세요.</li>";
+    $("submit").disabled = !done.length;
+    $("msg").textContent = ""; $("msg").className = "msg";
+    show("finish");
+  };
+  $("back").onclick = function () { go(qs.length - 1); };
+  $("submit").onclick = function () {
+    var b = $("submit"); b.disabled = true; b.textContent = "제출 중…";
+    google.script.run.withSuccessHandler(function (r) {
+      $("thanksMsg").textContent = (r && r.round ? r.round + "회차 " : "") + "연습을 제출했습니다. 수고했어요. 선생님이 보고 이야기해 줄 거예요.";
+      show("thanks");
+      b.disabled = false; b.textContent = "선생님께 제출";
+    }).withFailureHandler(function (e) {
+      $("msg").className = "msg err"; $("msg").textContent = "오류: 제출하지 못했습니다 — " + ((e && e.message) || "") + " 잠시 뒤 다시 눌러 주세요.";
+      b.disabled = false; b.textContent = "선생님께 제출";
+    }).saveAnswers(token, answers);
+  };
+  $("again").onclick = function () { answers = qs.map(function (q) { return { n: q.n, section: q.section, q: q.q, answer: "", seconds: 0 }; }); cur = 0; acc = 0; render(); show("qcard"); };
+})();
+</script>
+</body>
+</html>
