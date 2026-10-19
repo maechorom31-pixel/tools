@@ -143,6 +143,59 @@ body.has-bar footer{padding-bottom:140px}
 @media (max-width:760px){.ab{grid-template-columns:1fr}.ab-btns{justify-content:flex-start}.ab-btns .btn{margin:2px 8px 2px 0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+
+/* ═══════ AI 연결 · 질문 세트 ═══════ */
+.aistat{font-size:13px;color:var(--mid);margin-left:12px;vertical-align:middle}
+.aistat b{color:var(--ink);font-weight:600}
+.keybox{margin-top:16px}
+.keybox .warn{background:var(--sub);padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.7;margin-top:12px}
+.keybox .warn b{font-weight:600}
+.qs{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.qs h5{font-size:15px;margin-top:18px;display:flex;align-items:baseline;gap:8px}
+.qs h5 .n{color:var(--mid);font-weight:400;font-size:13px}
+.axes{background:var(--sub);padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.6;margin-top:10px}
+.axes b{font-weight:600}
+.qi{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.qi .no{font-variant-numeric:tabular-nums;font-weight:700;color:var(--amber-dark);font-size:14px;padding-top:4px}
+.qi .q{font-size:15px;line-height:1.6}
+.qi .q textarea,.qi .it textarea{width:100%;font:inherit;line-height:1.55;border:1px solid transparent;border-radius:6px;padding:4px 6px;background:transparent;resize:vertical;min-height:30px;color:var(--ink)}
+.qi .it textarea{font-size:13px;color:var(--mid)}
+.qi textarea:focus{border-color:var(--amber-dark);background:var(--card);outline:none;box-shadow:0 0 0 3px var(--amber-soft)}
+.qi .meta{grid-column:2;font-size:12px;color:var(--mid);display:flex;flex-wrap:wrap;gap:4px 10px}
+.qi .meta .crit{color:var(--amber-dark);font-weight:600}
+.qi .ref{grid-column:2;font-size:13px;color:var(--mid);border-left:2px solid var(--amber-pale);padding-left:8px;line-height:1.5}
+.qi .ref mark{background:none;color:var(--amber-dark);font-weight:600}
+.qi .fu{grid-column:2;font-size:13px;color:var(--ink);padding-left:8px;display:flex;gap:4px;align-items:flex-start}
+.qi .fu::before{content:"→";color:var(--mid);padding-top:4px}
+.qi .fu textarea{flex:1;min-width:0}
+.qs{counter-reset:q}
+.qi{counter-increment:q}
+.qi .no::before{content:counter(q)}
+.qi>*:not(.no):not(.q):not(.act){grid-column:2}
+.qi .act{display:flex;flex-direction:column;gap:4px}
+.qi .act button{border:0;background:none;color:var(--mid);font-size:12px;min-height:24px;padding:0 4px;cursor:pointer}
+@media (hover:hover){.qi .act button:hover{color:var(--amber-dark)}}
+.qi.del{opacity:.4}
+.qi.del .q textarea{text-decoration:line-through}
+.gloss{font-size:14px;line-height:1.6;margin-top:8px}
+.gloss dt{font-weight:600;margin-top:6px}
+.gloss dd{margin:0;color:var(--ink)}
+.gloss dd .use{color:var(--mid);font-size:13px}
+.promptbox textarea{width:100%;min-height:160px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid #D9D5CE;border-radius:8px;white-space:pre-wrap}
+.print-only{display:none}
+/* 인쇄: 질문지 */
+body.print-q header,body.print-q #viewBlind,body.print-q #stuList,body.print-q .actbar,body.print-q footer,body.print-q section.step:not(#stuDetail),body.print-q .stu-head,body.print-q .toolrow,body.print-q .lists,body.print-q #recView,body.print-q #appForm,body.print-q #tagSum,body.print-q .app:not(.printing),body.print-q .app .actions,body.print-q .prof,body.print-q .qi .act,body.print-q .qs .toolrow,body.print-q .promptbox,body.print-q h3.sub-h,body.print-q #stuDetail>.desc,body.print-q #printHead,body.print-q .qs>.hint{display:none!important}
+body.print-q .print-only{display:block}
+body.print-q #stuDetail{border:0;padding:0}
+body.print-q .app{border:0;padding:0}
+body.print-q .qi{grid-template-columns:28px minmax(0,1fr);page-break-inside:avoid}
+body.print-q .qi textarea{border:0;padding:0;background:none;resize:none;overflow:hidden;height:auto}
+body.print-q.mode-student .examiner-only{display:none!important}
+body.print-q.mode-examiner .student-only{display:none!important}
+body.print-q .fu.empty,body.print-q .qi.del,body.print-q .qi.empty,body.print-q #stuDetail>h2,body.print-q .app>h4,body.print-q .app>.sub{display:none!important}
+body.print-q .qi{border-bottom:1px solid #E8E6E2}
+.blindrule{font-size:13px;line-height:1.7;border:1px solid #E8E6E2;padding:10px 12px;margin:10px 0 14px}
+.answer-line{border-bottom:1px dashed #BBB;height:22px;margin:4px 0 0 38px}
 /* ═══════ 형광펜 ═══════ */
 .sent{cursor:pointer;border-radius:3px;padding:1px 0}
 .sent.on{background:var(--amber-soft)}
@@ -250,7 +303,7 @@ h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
 <div class="seg vswitch" role="group" aria-label="보기" id="viewSwitch">
 <button type="button" data-v="blind" aria-pressed="true">블라인드</button>
 <button type="button" data-v="hub" aria-pressed="false">면접 준비</button>
-</div>
+</div><span class="aistat" id="aiStat" role="status">AI 미연결 — 연결하지 않아도 블라인드·형광펜은 그대로 됩니다</span>
 </header>
 
 <main id="viewBlind">
@@ -312,6 +365,18 @@ h3.sub-h{font-size:16px;margin-top:28px;padding-top:4px}
 </main>
 
 <main id="viewHub" hidden>
+<section class="step keybox" aria-labelledby="hs0">
+<h2 id="hs0"><span class="no">00</span>AI 연결 <span class="hint" style="font-weight:400;font-size:14px;margin-left:8px">(선택 — 예상 질문을 만들 때만 씁니다)</span></h2>
+<p class="desc">선생님 각자의 API 키로 브라우저에서 그 회사에 바로 보냅니다. 중간 서버는 없습니다. 키는 이 탭을 닫으면 사라집니다(sessionStorage). 키를 채팅이나 다른 곳에 올리지 마세요.</p>
+<div class="grid2">
+<div class="field"><label for="keyIn">API 키 <span class="hint">(Gemini는 AIza…, Claude는 sk-ant-… — 붙여 넣으면 회사를 알아봅니다)</span></label><input id="keyIn" type="password" autocomplete="off" placeholder="키 붙여 넣기"></div>
+<div class="field"><label for="modelIn">모델</label><select id="modelIn"><option value="">— 키를 넣고 ‘연결 확인’ —</option></select><span class="hint" id="modelHint"></span></div>
+</div>
+<div class="toolrow"><button class="btn main" type="button" id="keyCheck">연결 확인</button><button class="btn" type="button" id="keyClear">키 지우기</button><span class="hint" id="keyMsg" role="status" aria-live="polite"></span></div>
+<div class="warn"><b>보내는 것</b>: 예상 질문을 만들 때 그 학생의 가린 생기부 글(이름·학교·연락처 없음)과 지원 대학·학과, 형광펜 메모가 그 회사(Google 또는 Anthropic)로 갑니다. 실제 학생 자료는 학생·보호자 동의 뒤에 쓰세요.<br>
+<b>무료 Gemini 키</b>로 보낸 내용은 Google이 서비스 개선에 쓸 수 있습니다. 유료 API(Claude, 결제 등록한 Gemini)는 약관상 기본적으로 학습에 쓰이지 않습니다.<br>
+<b>비용</b>: 학생 1명·1회 질문 세트에 Gemini Flash는 거의 0원, Claude Sonnet 5.5는 150원 안팎, Opus 5.5는 300원 안팎입니다(입력 2만 토큰 기준 어림).</div>
+</section>
 <section class="step" aria-labelledby="hs1">
 <h2 id="hs1"><span class="no">01</span>담당 학생</h2>
 <p class="desc">블라인드 보기에서 PDF를 읽은 뒤 아래 막대의 ‘면접 준비에 등록’을 누르면 가린 글이 여기에 들어옵니다. 이름은 받지 않고 반·번호로만 구분합니다. 학생 자료는 이 브라우저 안(IndexedDB)에만 저장되고, 브라우저의 사이트 데이터를 지우면 함께 지워집니다.</p>
@@ -2754,7 +2819,12 @@ function renderApps() {
     <h4>${esc(appTitle(a))}${a.date ? ` <span class="dday">${fmtDate(a.date, true)}${a.time ? " " + a.time : a.period ? " " + a.period : ""} · ${ddayText(dday(a.date))}</span>` : ` <span class="hint">면접일 미정</span>`}</h4>
     ${a.dateRaw && a.date ? `<div class="sub">입력: ${esc(a.dateRaw)}</div>` : ""}
     ${profileHtml(a)}
-    <div class="actions"><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button></div></article>`).join("");
+    <div class="actions"><button class="btn main" type="button" data-gen="${a.id}">${a.qset ? "예상 질문 다시 만들기" : "예상 질문 만들기"}</button><button class="btn" type="button" data-prompt="${a.id}">프롬프트 꾸러미</button><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button><span class="hint" id="genMsg-${a.id}" role="status"></span></div>
+    <div class="promptbox" id="pbox-${a.id}" hidden></div>
+    <div class="qs" id="qs-${a.id}">${a.qset ? qsetHtml(st, a) : ""}</div></article>`).join("");
+  host.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => generateQuestions(b.dataset.gen));
+  host.querySelectorAll("[data-prompt]").forEach(b => b.onclick = () => showPromptBox(b.dataset.prompt));
+  st.applications.forEach(a => { if (a.qset) bindQset(st, a); });
   host.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editApp(b.dataset.edit));
   host.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { st.applications = st.applications.filter(a => a.id !== b.dataset.del); await dbPut(st); renderApps(); renderStudents(); renderCal(); });
 }
@@ -3043,6 +3113,292 @@ function renderCal() {
   }).join("");
 }
 
+
+/* ═══════ AI 연결 — 키는 sessionStorage, 호출은 브라우저 → 해당 회사 직접 ═══════ */
+const AI = { key: "", provider: "", model: "", models: [] };
+const KEY_STORE = "blind-ai-key", MODEL_STORE = "blind-ai-model";
+const providerOf = k => /^AIza/.test(k) ? "gemini" : /^sk-ant-/.test(k) ? "anthropic" : "";
+const PROVIDER_KO = { gemini: "Gemini(Google)", anthropic: "Claude(Anthropic)" };
+function aiLoad() {
+  try { AI.key = sessionStorage.getItem(KEY_STORE) || ""; AI.model = sessionStorage.getItem(MODEL_STORE) || ""; } catch { /* 무시 */ }
+  AI.provider = providerOf(AI.key);
+  if (AI.key) $("keyIn").value = AI.key;
+  if (AI.model) { $("modelIn").innerHTML = `<option value="${esc(AI.model)}" selected>${esc(AI.model)}</option>`; }
+  aiStat();
+}
+function aiStat() {
+  const ok = AI.key && AI.provider && AI.model;
+  $("aiStat").innerHTML = ok ? `AI 연결됨 — <b>${esc(PROVIDER_KO[AI.provider])} · ${esc(AI.model)}</b>` : AI.key && AI.provider ? `키 있음 — 모델을 고르면 연결됩니다` : "AI 미연결 — 연결하지 않아도 블라인드·형광펜은 그대로 됩니다";
+}
+$("keyIn").addEventListener("input", () => {
+  const k = $("keyIn").value.trim();
+  AI.key = k; AI.provider = providerOf(k);
+  try { k ? sessionStorage.setItem(KEY_STORE, k) : sessionStorage.removeItem(KEY_STORE); } catch { /* 무시 */ }
+  $("keyMsg").textContent = !k ? "" : AI.provider ? `${PROVIDER_KO[AI.provider]} 키로 보입니다. ‘연결 확인’을 누르면 쓸 수 있는 모델을 가져옵니다.` : "오류: Gemini(AIza…) 또는 Claude(sk-ant-…) 키만 쓸 수 있습니다.";
+  aiStat();
+});
+$("keyClear").onclick = () => { AI.key = AI.provider = AI.model = ""; $("keyIn").value = ""; $("modelIn").innerHTML = `<option value="">— 키를 넣고 ‘연결 확인’ —</option>`; try { sessionStorage.removeItem(KEY_STORE); sessionStorage.removeItem(MODEL_STORE); } catch { /* 무시 */ } $("keyMsg").textContent = "키를 지웠습니다."; aiStat(); };
+$("modelIn").addEventListener("change", () => { AI.model = $("modelIn").value; try { sessionStorage.setItem(MODEL_STORE, AI.model); } catch { /* 무시 */ } aiStat(); });
+const ANTH_HEADERS = () => ({ "content-type": "application/json", "x-api-key": AI.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" });
+async function listModels() {
+  if (AI.provider === "gemini") {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(AI.key)}&pageSize=200`);
+    if (!r.ok) throw new Error(`Google 응답 ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    const j = await r.json();
+    return (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent") && /gemini/.test(m.name) && !/embedding|image|tts|audio|live|vision/.test(m.name))
+      .map(m => m.name.replace(/^models\//, "")).sort((a, b) => (/flash/.test(b) - /flash/.test(a)) || b.localeCompare(a));
+  }
+  const r = await fetch("https://api.anthropic.com/v1/models?limit=100", { headers: ANTH_HEADERS() });
+  if (!r.ok) throw new Error(`Anthropic 응답 ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const j = await r.json();
+  return (j.data || []).map(m => m.id).sort((a, b) => (/opus-5|sonnet-5/.test(b) - /opus-5|sonnet-5/.test(a)) || b.localeCompare(a));
+}
+$("keyCheck").onclick = async () => {
+  if (!AI.key || !AI.provider) { $("keyMsg").textContent = "오류: 먼저 키를 넣어 주세요."; return; }
+  const b = $("keyCheck"); b.disabled = true; $("keyMsg").textContent = "확인 중…";
+  try {
+    AI.models = await listModels();
+    if (!AI.models.length) throw new Error("쓸 수 있는 모델이 없습니다.");
+    const prefer = AI.provider === "gemini" ? AI.models.find(m => /flash/.test(m) && !/lite|8b/.test(m)) || AI.models[0] : AI.models.find(m => /opus-5-5/.test(m)) || AI.models.find(m => /sonnet-5-5/.test(m)) || AI.models[0];
+    AI.model = AI.models.includes(AI.model) ? AI.model : prefer;
+    $("modelIn").innerHTML = AI.models.map(m => `<option value="${esc(m)}"${m === AI.model ? " selected" : ""}>${esc(m)}</option>`).join("");
+    try { sessionStorage.setItem(MODEL_STORE, AI.model); } catch { /* 무시 */ }
+    $("keyMsg").textContent = `연결됐습니다. 모델 ${AI.models.length}개 중 ${AI.model}을(를) 골라 두었습니다.`;
+    $("modelHint").textContent = AI.provider === "gemini" ? "처음이면 Flash 계열이 빠르고 비용이 거의 없습니다." : "중요하게 볼 학생은 Opus, 가볍게는 Sonnet.";
+  } catch (e) { $("keyMsg").textContent = "오류: " + (e?.message || e) + " — 키와 인터넷 연결을 확인해 주세요."; }
+  b.disabled = false; aiStat();
+};
+/* 본문에서 JSON 오브젝트만 건져낸다 (앞뒤에 말이 섞여도) */
+function pluckJson(raw) {
+  if (typeof raw !== "string") return raw;
+  try { return JSON.parse(raw); } catch { /* 계속 */ }
+  for (let at = raw.indexOf("{"); at !== -1; at = raw.indexOf("{", at + 1)) {
+    let depth = 0, inStr = false, escd = false;
+    for (let k = at; k < raw.length; k++) {
+      const ch = raw[k];
+      if (inStr) { if (escd) escd = false; else if (ch === "\\") escd = true; else if (ch === '"') inStr = false; }
+      else if (ch === '"') inStr = true;
+      else if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) { try { return JSON.parse(raw.slice(at, k + 1)); } catch { break; } } }
+    }
+  }
+  return null;
+}
+async function callAI(system, user, schema) {
+  if (AI.provider === "gemini") {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI.model)}:generateContent?key=${encodeURIComponent(AI.key)}`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.4 } }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`Google 응답 ${r.status}: ${j.error?.message || ""}`);
+    const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "";
+    if (!txt) throw new Error("응답이 비어 있습니다" + (j.candidates?.[0]?.finishReason ? ` (${j.candidates[0].finishReason})` : ""));
+    return pluckJson(txt);
+  }
+  const body = { model: AI.model, max_tokens: 16000, system, messages: [{ role: "user", content: user }], output_config: { effort: "high", format: { type: "json_schema", schema } } };
+  let r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) });
+  if (r.status === 400) {   // 구조화 출력이나 effort를 안 받는 모델이면 본문에서 JSON을 건진다
+    const t = await r.text();
+    if (/output_config|format|effort/.test(t)) { delete body.output_config; r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: ANTH_HEADERS(), body: JSON.stringify(body) }); }
+    else throw new Error(`Anthropic 응답 400: ${t.slice(0, 300)}`);
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Anthropic 응답 ${r.status}: ${j.error?.message || ""}`);
+  if (j.stop_reason === "refusal") throw new Error("모델이 요청을 거절했습니다.");
+  const txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
+  return pluckJson(txt);
+}
+
+/* ═══════ 예상 질문 세트 ═══════ */
+const QSET_SCHEMA = {
+  type: "object",
+  properties: {
+    axes: { type: "array", items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" }, refs: { type: "array", items: { type: "string" } } }, required: ["title", "why", "refs"] } },
+    sections: { type: "array", items: { type: "object", properties: {
+      key: { type: "string" }, title: { type: "string" },
+      items: { type: "array", items: { type: "object", properties: {
+        q: { type: "string" }, intent: { type: "string" }, criterion: { type: "string" }, refs: { type: "array", items: { type: "string" } },
+        followUps: { type: "array", items: { type: "string" } }, source: { type: "string" }, answerHint: { type: "string" } },
+        required: ["q", "intent", "criterion", "refs", "followUps", "source", "answerHint"] } } },
+      required: ["key", "title", "items"] } },
+    glossary: { type: "array", items: { type: "object", properties: { term: { type: "string" }, meaning: { type: "string" }, use: { type: "string" } }, required: ["term", "meaning", "use"] } },
+    notes: { type: "array", items: { type: "string" } },
+  },
+  required: ["axes", "sections", "glossary", "notes"],
+};
+const SECTION_ORDER = ["core", "concept", "defense", "truth", "report", "reading", "weak", "common"];
+const SECTION_KO = { core: "서사 축 활동 (꼬리질문 체인)", concept: "개념 검증", defense: "방어 질문", truth: "진위 확인", report: "탐구·보고서", reading: "독서", weak: "약점·공백", common: "공통 질문" };
+/* 생기부 문장에 번호를 붙여 모델이 인용하게 한다: [1-동아리-3] */
+const AREA_SHORT = { "자율·자치활동": "자율", "자율활동": "자율", "자치활동": "자치", "동아리활동": "동아리", "진로활동": "진로", "봉사활동": "봉사", "행동특성 및 종합의견": "행특", "세특": "세특" };
+function refId(b, i) { return `${b.grade}-${b.area === "세특" ? b.title.replace(/\s+/g, "") : AREA_SHORT[b.area] || b.area}-${i + 1}`; }
+function recordText(st, blocks) {
+  const out = [];
+  if (st.attendance) out.push("## 출결상황\n" + st.attendance);
+  let g0 = 0;
+  for (const b of blocks) {
+    if (b.grade !== g0) { g0 = b.grade; out.push(`\n## ${g0}학년`); }
+    out.push(`### ${b.title}${b.isMajor ? " (전공 관련 과목)" : ""}${b.hope ? ` — 희망분야: ${b.hope}` : ""}`);
+    for (const sn of b.sents) {
+      const k = sentKey(b, sn.i), o = st.highlights?.[k] || {}, tags = effTags(st, b, sn);
+      out.push(`[${refId(b, sn.i)}] ${sn.t}${tags.length ? ` 〔태그: ${tags.map(t => TAG_BY[t].name).join(", ")}〕` : ""}${o.memo ? ` 〔교사 메모: ${o.memo}〕` : ""}`);
+    }
+  }
+  return out.join("\n");
+}
+function sentById(st, id) {
+  for (const b of st._blocks || sentenceBlocks(st)) for (const sn of b.sents) if (refId(b, sn.i) === id) return sn.t;
+  return "";
+}
+let bankCache = null;
+async function loadBank() {
+  if (bankCache) return bankCache;
+  try { const r = await fetch("data/question-bank.json", { cache: "force-cache" }); if (!r.ok) throw 0; bankCache = await r.json(); } catch { bankCache = { questions: [], tips: [], universities: {} }; }
+  return bankCache;
+}
+function bankFor(bank, u, unit) {
+  if (!u) return { qs: [], tips: [], stat: null };
+  const names = new Set([u.short, univLabel(u), u.name]);
+  const qs = bank.questions.filter(q => names.has(q.university));
+  const tips = bank.tips.filter(t => names.has(t.university) && t.kind === "대학 공식 안내");
+  const un = (unit || "").replace(/\s+/g, "");
+  const score = q => (q.unit && un && (q.unit.replace(/\s+/g, "").includes(un.slice(0, 2)) || un.includes(q.unit.replace(/\s+/g, "").slice(0, 2))) ? 3 : 0) + (q.common ? 2 : 0) + (q.kind === "실제 출제" ? 1 : 0) + (q.year === "2027" ? .5 : 0);
+  return { qs: qs.sort((a, b) => score(b) - score(a)).slice(0, 45), tips: tips.slice(0, 10), stat: bank.universities[u.short] || bank.universities[univLabel(u)] || null };
+}
+function buildPrompt(st, app, bank) {
+  const u = HUB.cards?.universities.find(x => x.id === app.univId), a = findAdm(u, app.admId);
+  const blocks = st._blocks || (st._blocks = sentenceBlocks(st));
+  const L = autoLists(st, blocks);
+  const bk = bankFor(bank, u, app.unit);
+  const dur = (a?.duration || "").match(/\d+/)?.[0];
+  const prof = [];
+  prof.push(`대학: ${u ? u.name : app.univText} / 전형: ${a ? a.name : app.admText || "(미상)"} / 모집단위: ${app.unit || "(미상)"} / 면접일: ${app.date ? fmtDate(app.date, true) : "미정"}`);
+  if (a) {
+    prof.push(`선발: ${stagesText(a)}${a.interviewPct != null ? ` (면접 ${a.interviewPct}%)` : ""}`);
+    prof.push(`면접 형식: ${[a.interviewTypeRaw || a.interviewType, a.format, a.blind ? "블라인드" : ""].filter(Boolean).join(" · ")}`);
+    if (a.criteria?.length) prof.push(`공식 평가영역: ${a.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ")}`);
+    if (a.questionStyle) prof.push(`질문 성향: ${STYLE_KO[a.questionStyle]}`);
+    if (a.openingQuestions?.length) prof.push(`시작 질문: ${a.openingQuestions.join(" / ")}`);
+    if (a.notes?.length) prof.push(`유의사항: ${a.notes.join(" / ")}`);
+    if (a.sampleQuestions?.length) prof.push(`자료집 예시 문항:\n` + a.sampleQuestions.map(q => `- [${q.criterion || "-"}${q.unit ? " · " + q.unit : ""}] ${q.q}${q.followUp ? " → " + q.followUp : ""}`).join("\n"));
+  }
+  if (app.major) prof.push(`전공 관련 과목(교사 지정): ${app.major}`);
+  if (app.profile) prof.push(`교사가 정리한 프로파일 메모:\n${app.profile}`);
+  if (bk.stat?.frequentAreas) prof.push(`가이드북 질문 영역 빈도: ${Object.values(bk.stat.frequentAreas)[0]}`);
+  if (bk.qs.length) prof.push(`가이드북 질문 은행(같은 대학${bk.qs.some(q => q.unit) ? "·학과" : ""}, 출처 표기용):\n` + bk.qs.map(q => `- (${q.kind} ${q.year}${q.unit ? " · " + q.unit : " · 전 모집단위 공통"}) ${q.q}${q.followUp ? " → " + q.followUp : ""}`).join("\n"));
+  if (bk.tips.length) prof.push(`대학 공식 준비 안내:\n` + bk.tips.map(t => `- ${t.text}`).join("\n"));
+  const lists = [
+    L.concepts.length ? `개념·용어·책: ${L.concepts.map(x => x.w + (x.book ? "(책)" : "")).join(", ")}` : "",
+    L.praise.length ? `교사 평가 문구(방어 대상): ${L.praise.map(x => x.w).join(" / ")}` : "",
+    L.vague.length ? `역할이 흐린 문장(진위 확인 대상): ${L.vague.map(x => `[${x.key.replace("#", "-")}]`).length}개 — ${L.vague.map(x => x.w.slice(0, 40)).join(" / ")}` : "",
+    L.weak.length ? `약점·공백: ${L.weak.map(x => x.w).join(" / ")}` : "",
+  ].filter(Boolean).join("\n");
+  const system = `당신은 한국 고등학교 3학년 담임교사를 돕는 대입 면접 지도 보조입니다. 학생부종합전형 '서류확인 면접'의 예상 질문 세트를 만듭니다.
+전제: 면접관이 가진 자료는 생기부뿐이고 모든 질문은 생기부 문장에서 출발합니다. 면접관이 확인하려는 것은 '무엇을 했는가'(이미 읽었다)가 아니라 '그때 무슨 일이 있었는가'와 '그래서 무엇이 달라졌는가'입니다. 생성형 AI로 쓴 보고서가 흔해져 세특의 전문 용어·개념을 학생이 설명하지 못하면 서류 전체의 신뢰가 무너지므로 개념 검증을 소홀히 하지 않습니다.
+설계 규칙:
+1. 먼저 서사 축 2~3개를 고릅니다(면접 전체를 꿸 중심 활동군). 기준: 학생이 직접 한 행동 동사(만듦·조사함·제안함·표로 정리함)와 궁금증·문제의식이 있고, 여러 학년·영역에 걸쳐 이어지는 활동. 교사 태그·메모가 붙은 문장을 우선합니다.
+2. 모든 활동에 같은 수의 질문을 붙이지 않습니다. 서사 축 핵심 활동은 4단 꼬리질문 체인으로 깊게 — 사실(무엇을 했나) → 이유(왜 그 주제·방법인가, 자료 출처와 들인 시간) → 한계·대안·반론(지금 다시 한다면, 예상과 다른 결과의 원인, 반대 의견) → 확장·전이(다른 상황에 적용, 대학에서 더 공부하면 무엇이 달라지나). 주변 활동은 확인 질문 1~2개만.
+3. 탐구·보고서형 활동에는 '탐구 세 물음'을 꼬리로 답니다: 경쟁 설명(그 결과가 다른 원인 때문일 수는 없나) / 자료 한계(표본·사례 수로 결론을 어디까지 말할 수 있나) / 대학 심화.
+4. 질문마다 '확인 의도'를 한 문장으로 짝지웁니다("~할 수 있는가 / ~를 이해하는가 / ~를 구분하는가"). 의도 유형 다섯(개념을 자기 말로 / 선택 이유 / 다른 설명과 한계 / 전이 / 본인이 직접 했는가)이 한 활동에서 한쪽으로 몰리지 않게 합니다.
+5. 대학 프로파일을 반영합니다: 공식 평가영역 비율에 맞춰 질문 수를 배분하고 각 질문에 평가영역 이름을 criterion에 적습니다(없으면 학업역량/진로역량/공동체역량 중 하나). 질문 성향이 '공통 질문 중심'인 대학은 공통 질문 비중을 올립니다. 자료집 예시 문항과 가이드북 실제 출제 문항은 그 '묻는 방식'을 학생 활동에 옮겨 쓰고 source에 "자료집 예시" 또는 "가이드북 실제 출제 2027"처럼 출처를 적습니다. 규칙으로 만든 질문은 source를 "규칙"으로 둡니다.
+6. 분량: 면접 시간${dur ? ` ${dur}분` : "(미상이면 10분)"}에서 역산합니다. 본 질문 8~10개 + 꼬리질문. 서사 축 활동 4~5, 개념 검증 2~3, 방어 2~3, 진위 확인은 핵심 활동마다 1개, 약점 질문은 약점·공백 항목마다 1개, 공통 질문은 대학 성향에 따라 2~4개. 답변 1개는 40~60초를 넘기지 않게 answerHint에 구조(무엇→동기→과정→배움, 의견은 주장→근거→사례)만 적습니다.
+7. 블라인드: 학생 이름·고교명·부모 직업·사회경제적 지위를 묻거나 암시하는 질문을 만들지 않습니다. 생기부에 없는 사실을 지어 넣지 않습니다. 확인이 필요한 것은 notes에 "확인 필요: …"로 남깁니다.
+8. 각 질문의 refs에는 근거가 된 생기부 문장 번호([1-동아리-3]의 대괄호 안 "1-동아리-3")를 1~3개 적습니다. 공통 질문은 refs를 비워도 됩니다.
+9. 개념 사전(glossary)은 세특·창체에 나온 전문 개념·이론·책 가운데 면접에서 물을 만한 것 6~12개를 고르고, 뜻은 학생 눈높이 한두 문장, use는 학생 활동과 연결된 1인칭 문장 하나입니다. 사실이 불확실하면 meaning 끝에 "(확인 필요)"를 붙입니다.
+10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").
+sections의 key는 core, concept, defense, truth, report, reading, weak, common 가운데에서 쓰고 이 순서로 둡니다. 해당 항목이 없으면 그 섹션은 넣지 않습니다.`;
+  const user = `# 지원 카드와 대학 프로파일\n${prof.join("\n")}\n\n# 자동 추출 목록\n${lists || "(없음)"}\n\n# 가린 생기부 (문장 번호 · 교사 태그 · 메모)\n${recordText(st, blocks)}`;
+  return { system, user };
+}
+async function generateQuestions(appId) {
+  const st = stuOf(HUB.cur), app = st.applications.find(x => x.id === appId); if (!app) return;
+  const msg = $(`genMsg-${appId}`), btn = document.querySelector(`[data-gen="${appId}"]`);
+  if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요. 키 없이 쓰려면 ‘프롬프트 꾸러미’로 복사해 쓸 수 있습니다."; return; }
+  if (app.qset && !confirm("이미 만든 질문 세트가 있습니다. 새로 만들면 고친 내용까지 바뀝니다. 계속할까요?")) return;
+  btn.disabled = true; msg.textContent = `${AI.model}로 만드는 중… (Opus는 2~3분 걸릴 수 있습니다)`;
+  try {
+    const bank = await loadBank();
+    const { system, user } = buildPrompt(st, app, bank);
+    const data = await callAI(system, user, QSET_SCHEMA);
+    if (!data || !Array.isArray(data.sections)) throw new Error("응답에서 질문 세트를 읽지 못했습니다.");
+    data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
+    app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data };
+    await dbPut(st);
+    renderApps();
+    $(`genMsg-${appId}`).textContent = `만들었습니다 — 질문 ${data.sections.reduce((n, s) => n + s.items.length, 0)}개. 문장을 눌러 바로 고칠 수 있습니다.`;
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); btn.disabled = false; }
+}
+/* 키 없이: 프롬프트를 복사해 이 세션(Claude)에 붙여 넣고, 받은 JSON을 붙여 넣어 들여온다 */
+async function showPromptBox(appId) {
+  const st = stuOf(HUB.cur), app = st.applications.find(x => x.id === appId); if (!app) return;
+  const box = $(`pbox-${appId}`);
+  if (!box.hidden) { box.hidden = true; return; }
+  const bank = await loadBank();
+  const { system, user } = buildPrompt(st, app, bank);
+  const full = `${system}\n\n---\n\n${user}\n\n---\n출력은 아래 JSON 꼴로만:\n${JSON.stringify({ axes: [{ title: "", why: "", refs: [] }], sections: [{ key: "core", title: "", items: [{ q: "", intent: "", criterion: "", refs: [], followUps: [], source: "", answerHint: "" }] }], glossary: [{ term: "", meaning: "", use: "" }], notes: [] })}`;
+  box.hidden = false;
+  box.innerHTML = `<div class="toolrow" style="margin-top:8px"><button class="btn main" type="button" data-copy>프롬프트 복사</button><span class="hint">복사해서 Claude·Gemini 대화창에 붙여 넣으면 됩니다(약 ${Math.round(full.length / 2.2 / 1000)}천 토큰). 받은 JSON을 아래에 붙여 넣고 ‘들여오기’.</span></div>
+    <textarea readonly aria-label="프롬프트">${esc(full)}</textarea>
+    <textarea placeholder="받은 JSON 붙여 넣기" aria-label="받은 JSON" style="margin-top:8px;min-height:80px"></textarea>
+    <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" data-import>들여오기</button><span class="hint" data-msg></span></div>`;
+  box.querySelector("[data-copy]").onclick = async () => { try { await navigator.clipboard.writeText(full); box.querySelector("[data-msg]").textContent = "복사했습니다."; } catch { box.querySelector("[data-msg]").textContent = "복사하지 못했습니다 — 위 칸을 전체 선택해 복사해 주세요."; } };
+  box.querySelector("[data-import]").onclick = async () => {
+    const data = pluckJson(box.querySelectorAll("textarea")[1].value);
+    if (!data || !Array.isArray(data.sections)) { box.querySelector("[data-msg]").textContent = "오류: JSON을 읽지 못했습니다."; return; }
+    data.sections.sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
+    app.qset = { createdAt: new Date().toISOString(), provider: "paste", model: "붙여넣기", data };
+    await dbPut(st); renderApps();
+  };
+}
+/* ---------- 질문 세트 편집기 ---------- */
+function qsetHtml(st, a) {
+  const d = a.qset.data, u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
+  const blindRule = `<div class="blindrule student-only print-only">블라인드 면접 규칙: 이름·출신 고교명·고교 유형, 부모의 직업이나 사회경제적 지위를 암시하는 표현은 말하지 않습니다(실격 사유가 될 수 있습니다). 교복·명찰 없이 단정한 사복, 수험표·신분증 지참, 휴대폰은 대학 규정대로. 이 자료는 외우는 자료가 아니라 질문의 '확인 의도'를 준비하는 자료입니다 — 같은 의도의 질문은 표현이 달라도 한 답으로 통합니다.</div>`;
+  let h = `<div class="print-only"><h3 style="font-size:18px">${esc(st.alias)} · ${esc(appTitle(a))}${a.date ? ` · ${fmtDate(a.date, true)}` : ""}</h3><div class="hint">${esc(adm ? [adm.interviewTypeRaw, adm.format].filter(Boolean).join(" · ") : "")}${adm?.criteria?.length ? " · " + adm.criteria.map(c => c.name + (c.pct != null ? ` ${c.pct}%` : "")).join(" · ") : ""} · <span class="student-only">학생 배부본</span><span class="examiner-only">면접관용</span></div></div>${blindRule}`;
+  h += `<div class="toolrow" style="margin-top:0"><span class="hint">만든 때 ${new Date(a.qset.createdAt).toLocaleString("ko-KR")} · ${esc(a.qset.model)} · 질문을 누르면 바로 고쳐집니다(자동 저장)</span><span class="spacer"></span><button class="btn" type="button" data-print="student">학생 배부본 인쇄</button><button class="btn" type="button" data-print="examiner">면접관용 인쇄</button></div>`;
+  if (d.axes?.length) h += `<div class="axes"><b>서사 축</b> — ${d.axes.map(x => `<b>${esc(x.title)}</b>: ${esc(x.why)}`).join(" / ")}</div>`;
+  let n = 0;
+  for (const sec of d.sections) {
+    h += `<h5>${esc(SECTION_KO[sec.key] || sec.title)}<span class="n">${sec.items.length}</span></h5>`;
+    sec.items.forEach((it, i) => {
+      n++;
+      h += `<div class="qi${it.deleted ? " del" : ""}${(it.q || "").trim() ? "" : " empty"}" data-sec="${esc(sec.key)}" data-i="${i}"><div class="no"></div>
+        <div class="q"><textarea data-f="q" rows="1">${esc(it.q)}</textarea></div>
+        <div class="act"><button type="button" data-a="fu" title="꼬리질문 추가">+꼬리</button><button type="button" data-a="del">${it.deleted ? "되살림" : "지움"}</button></div>
+        <div class="it"><span class="hint">확인 의도</span> <textarea data-f="intent" rows="1">${esc(it.intent)}</textarea></div>
+        ${(it.followUps || []).map((f, j) => `<div class="fu${(f || "").trim() ? "" : " empty"}"><textarea data-f="fu" data-j="${j}" rows="1">${esc(f)}</textarea></div>`).join("")}
+        ${(it.refs || []).map(r => { const t = sentById(st, r); return t ? `<div class="ref"><mark>[${esc(r)}]</mark> ${esc(t)}</div>` : ""; }).join("")}
+        <div class="meta">${it.criterion ? `<span class="crit">${esc(it.criterion)}</span>` : ""}${it.source ? `<span>출처: ${esc(it.source)}</span>` : ""}${it.answerHint ? `<span class="student-only">답변 방향: ${esc(it.answerHint)}</span>` : ""}</div>
+        <div class="student-only print-only"><div class="answer-line"></div><div class="answer-line"></div></div></div>`;
+    });
+    h += `<div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-add="${esc(sec.key)}" style="min-height:30px;font-size:13px">질문 추가</button></div>`;
+  }
+  if (d.glossary?.length) h += `<h5>개념 사전<span class="n">${d.glossary.length}</span></h5><dl class="gloss">${d.glossary.map(g => `<dt>${esc(g.term)}</dt><dd>${esc(g.meaning)}<br><span class="use">면접 활용: ${esc(g.use)}</span></dd>`).join("")}</dl>`;
+  if (d.notes?.length) h += `<h5>확인 필요</h5><ul class="hint" style="padding-left:18px">${d.notes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  return h;
+}
+function bindQset(st, a) {
+  const host = $(`qs-${a.id}`), d = a.qset.data;
+  const save = () => dbPut(st);
+  const fit = ta => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; };
+  host.querySelectorAll("textarea").forEach(fit);
+  host.querySelectorAll(".qi").forEach(el => {
+    const sec = d.sections.find(x => x.key === el.dataset.sec), it = sec.items[+el.dataset.i];
+    el.querySelectorAll("textarea").forEach(ta => { ta.addEventListener("input", () => { fit(ta); if (ta.dataset.f === "fu") it.followUps[+ta.dataset.j] = ta.value; else it[ta.dataset.f] = ta.value; save(); }); });
+    el.querySelector("[data-a=del]").onclick = () => { it.deleted = !it.deleted; save(); renderApps(); };
+    el.querySelector("[data-a=fu]").onclick = () => { (it.followUps = it.followUps || []).push(""); save(); renderApps(); host.querySelector(`.qi[data-i="${el.dataset.i}"][data-sec="${sec.key}"] textarea[data-f=fu]:last-of-type`)?.focus(); };
+  });
+  host.querySelectorAll("[data-add]").forEach(b => b.onclick = () => { const sec = d.sections.find(x => x.key === b.dataset.add); sec.items.push({ q: "", intent: "", criterion: "", refs: [], followUps: [], source: "교사", answerHint: "" }); save(); renderApps(); });
+  host.querySelectorAll("[data-print]").forEach(b => b.onclick = () => printQset(a.id, b.dataset.print));
+}
+function printQset(appId, mode) {
+  const art = $(`app-${appId}`);
+  document.body.classList.add("print-q", `mode-${mode}`); art.classList.add("printing");
+  const done = () => { document.body.classList.remove("print-q", "mode-student", "mode-examiner"); art.classList.remove("printing"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done); window.print(); setTimeout(done, 3000);
+}
+aiLoad();
+
 /* 아래 막대: 등록 단추는 읽은 파일이 있을 때만, 허브 보기에서는 막대 자체를 숨긴다 */
 const renderBarBlind = renderBar;
 renderBar = function () {
@@ -3061,7 +3417,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps };
 </script>
 </body>
 </html>
