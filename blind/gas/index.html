@@ -187,7 +187,12 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
         }
         $("interim").innerHTML = interim ? '<span class="rec"></span>' + esc(interim) : '<span class="rec"></span>듣는 중…';
       };
-      rec.onerror = function (e) { $("interim").textContent = e && e.error === "not-allowed" ? "마이크 권한이 없어 받아 적지 못합니다. 직접 적어도 됩니다." : "받아 적기가 끊겼습니다. 다시 눌러 주세요."; recOn = false; $("dictate").textContent = "말로 받아 적기"; $("dictate").className = "btn"; };
+      rec.onerror = function (e) {
+        var code = e && e.error;
+        if (code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture") { $("interim").textContent = "이 화면에서는 마이크를 쓸 수 없어 받아 적기를 끕니다(권한이 막혔거나 지원되지 않음). 말로 답하고 핵심만 직접 적어 주세요."; $("dictate").hidden = true; SR = null; }
+        else $("interim").textContent = "받아 적기가 끊겼습니다. 다시 눌러 주세요.";
+        recOn = false; $("dictate").textContent = "말로 받아 적기"; $("dictate").className = "btn";
+      };
       rec.onend = function () { if (recOn) { try { rec.start(); } catch (e) { stopDictate(); } } };
       rec.start(); recOn = true;
       $("dictate").textContent = "받아 적기 멈춤"; $("dictate").className = "btn on"; $("interim").innerHTML = '<span class="rec"></span>듣는 중… (말한 문장이 아래 칸에 쌓입니다)';
