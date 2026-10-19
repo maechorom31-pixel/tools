@@ -7,8 +7,8 @@
 
 const SHEETS = {
   settings: { name: "설정", header: ["항목", "값"] },
-  sets: { name: "질문세트", header: ["토큰", "라벨", "제목", "면접일", "질문JSON", "만든때", "상태"] },
-  answers: { name: "답변", header: ["토큰", "회차", "번호", "섹션", "질문", "답변", "소요초", "제출때"] },
+  sets: { name: "질문세트", header: ["토큰", "라벨", "제목", "면접일", "질문JSON", "만든때", "상태", "한마디"] },
+  answers: { name: "답변", header: ["토큰", "회차", "번호", "섹션", "질문", "답변", "소요초", "제출때", "문항키"] },
 };
 const STATUS = { on: "배포중", off: "중지" };
 
@@ -22,8 +22,19 @@ function setup() {
   const st = ss.getSheetByName(SHEETS.settings.name);
   if (st.getLastRow() < 2) st.appendRow(["관리 비밀번호", ""]);
   if (st.getLastRow() < 3) st.appendRow(["앱 제목", "면접 연습"]);
+  ensureCols_();
   return "시트를 만들었습니다. 설정 시트 B2에 관리 비밀번호를 적어 주세요.";
 }
+/* 예전 판에서 만든 시트에 새 열(한마디·문항키)이 없으면 머리글 끝에 붙인다 */
+function ensureCols_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(SHEETS).forEach(k => {
+    const sh = ss.getSheetByName(SHEETS[k].name); if (!sh) return;
+    const head = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(String);
+    SHEETS[k].header.forEach(h => { if (head.indexOf(h) < 0) { head.push(h); sh.getRange(1, head.length).setValue(h); } });
+  });
+}
+function colOpt_(sh, label) { const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String); return head.indexOf(label); }
 function sheet_(k) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEETS[k].name);
@@ -53,7 +64,7 @@ function doPost(e) {
   if (String(req.pw || "") !== pw) return json_({ ok: false, error: "관리 비밀번호가 다릅니다." });
   try {
     if (req.action === "ping") return json_({ ok: true, title: setting_("앱 제목") || "면접 연습" });
-    if (req.action === "publish") return json_(publish_(req));
+    if (req.action === "publish") { ensureCols_(); return json_(publish_(req)); }
     if (req.action === "stop") return json_(setStatus_(req.token, STATUS.off));
     if (req.action === "resume") return json_(setStatus_(req.token, STATUS.on));
     if (req.action === "answers") return json_({ ok: true, rounds: answersFor_(req.token) });
@@ -68,7 +79,9 @@ function publish_(req) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const sh = sheet_("sets"), cT = col_(sh, "토큰");
-    const row = [req.token, String(req.alias || ""), String(req.title || ""), String(req.date || ""), JSON.stringify(qs), new Date(), STATUS.on];
+    const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const vals = { "토큰": req.token, "라벨": String(req.alias || ""), "제목": String(req.title || ""), "면접일": String(req.date || ""), "질문JSON": JSON.stringify(qs), "만든때": new Date(), "상태": STATUS.on, "한마디": String(req.note || "").slice(0, 500) };
+    const row = head.map(h => (h in vals) ? vals[h] : "");
     const rows = sh.getDataRange().getValues();
     for (let i = 1; i < rows.length; i++) if (String(rows[i][cT]) === req.token) { sh.getRange(i + 1, 1, 1, row.length).setValues([row]); return { ok: true, updated: true }; }
     sh.appendRow(row);
@@ -91,12 +104,13 @@ function answersFor_(token) {
   const sh = sheet_("answers"), rows = sh.getDataRange().getValues();
   if (rows.length < 2) return [];
   const c = {}; ["토큰", "회차", "번호", "섹션", "질문", "답변", "소요초", "제출때"].forEach(h => c[h] = col_(sh, h));
+  const cK = colOpt_(sh, "문항키");
   const byRound = {};
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i]; if (String(r[c["토큰"]]) !== token) continue;
     const k = String(r[c["회차"]]);
     if (!byRound[k]) byRound[k] = { round: Number(k), submittedAt: r[c["제출때"]] instanceof Date ? r[c["제출때"]].toISOString() : String(r[c["제출때"]]), items: [] };
-    byRound[k].items.push({ n: Number(r[c["번호"]]), section: String(r[c["섹션"]]), q: String(r[c["질문"]]), answer: String(r[c["답변"]]), seconds: Number(r[c["소요초"]]) || 0 });
+    byRound[k].items.push({ n: Number(r[c["번호"]]), k: cK >= 0 ? String(r[cK] || "") : "", section: String(r[c["섹션"]]), q: String(r[c["질문"]]), answer: String(r[c["답변"]]), seconds: Number(r[c["소요초"]]) || 0 });
   }
   return Object.keys(byRound).map(k => byRound[k]).sort((a, b) => a.round - b.round).map(r => { r.items.sort((a, b) => a.n - b.n); return r; });
 }
@@ -112,14 +126,30 @@ function doGet(e) {
 /* 학생 화면이 부르는 함수 — 토큰이 맞고 배포중일 때만 질문을 준다. 라벨(반·번호)은 주지 않는다 */
 function getSet(token) {
   const sh = sheet_("sets"), rows = sh.getDataRange().getValues();
-  const cT = col_(sh, "토큰"), cTi = col_(sh, "제목"), cD = col_(sh, "면접일"), cQ = col_(sh, "질문JSON"), cS = col_(sh, "상태");
+  const cT = col_(sh, "토큰"), cTi = col_(sh, "제목"), cD = col_(sh, "면접일"), cQ = col_(sh, "질문JSON"), cS = col_(sh, "상태"), cN = colOpt_(sh, "한마디");
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][cT]) !== token) continue;
     if (String(rows[i][cS]) !== STATUS.on) return { ok: false, error: "이 연습 링크는 닫혔습니다. 선생님께 여쭤보세요." };
     const date = rows[i][cD] instanceof Date ? Utilities.formatDate(rows[i][cD], "Asia/Seoul", "yyyy-MM-dd") : String(rows[i][cD] || "");
-    return { ok: true, title: String(rows[i][cTi]), date, questions: JSON.parse(rows[i][cQ]), nextRound: nextRound_(token) };
+    const questions = JSON.parse(rows[i][cQ]);
+    return { ok: true, title: String(rows[i][cTi]), date, questions, note: cN >= 0 ? String(rows[i][cN] || "") : "", nextRound: nextRound_(token), done: doneKeys_(token, questions) };
   }
   return { ok: false, error: "연습 링크를 찾지 못했습니다. 주소가 끊기지 않았는지 확인해 주세요." };
+}
+/* 지난 회차에 답한 문항(적은 답이 있거나 시간을 잰 것)의 문항키. 예전 답변 행에 문항키가 없으면 질문 글로 맞춘다 */
+function doneKeys_(token, questions) {
+  const sh = sheet_("answers"), rows = sh.getDataRange().getValues();
+  if (rows.length < 2) return [];
+  const cT = col_(sh, "토큰"), cQ = col_(sh, "질문"), cA = col_(sh, "답변"), cS = col_(sh, "소요초"), cK = colOpt_(sh, "문항키");
+  const byQ = {}; (questions || []).forEach(q => { if (q && q.k) byQ[String(q.q || "").trim()] = q.k; });
+  const out = {};
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]; if (String(r[cT]) !== token) continue;
+    if (!String(r[cA] || "").trim() && !(Number(r[cS]) > 0)) continue;
+    const k = cK >= 0 && r[cK] ? String(r[cK]) : byQ[String(r[cQ] || "").trim()];
+    if (k) out[k] = true;
+  }
+  return Object.keys(out);
 }
 function nextRound_(token) {
   const sh = sheet_("answers"), rows = sh.getDataRange().getValues();
@@ -137,7 +167,8 @@ function saveAnswers(token, answers) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const round = nextRound_(token), sh = sheet_("answers"), now = new Date();
-    const rows = list.map(a => [token, round, Number(a.n) || 0, String(a.section || ""), String(a.q || "").slice(0, 500), String(a.answer || "").slice(0, 5000), Number(a.seconds) || 0, now]);
+    const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const rows = list.map(a => { const v = { "토큰": token, "회차": round, "번호": Number(a.n) || 0, "섹션": String(a.section || ""), "질문": String(a.q || "").slice(0, 500), "답변": String(a.answer || "").slice(0, 5000), "소요초": Number(a.seconds) || 0, "제출때": now, "문항키": String(a.k || "").slice(0, 40) }; return head.map(h => (h in v) ? v[h] : ""); });
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
     return { ok: true, round, count: rows.length };
   } finally { lock.releaseLock(); }
