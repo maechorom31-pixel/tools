@@ -5846,7 +5846,8 @@ function buildPrompt(st, app, bank) {
 7. 블라인드: 학생 이름·고교명·부모 직업·사회경제적 지위를 묻거나 암시하는 질문을 만들지 않습니다. 생기부에 없는 사실을 지어 넣지 않습니다. 확인이 필요한 것은 notes에 "확인 필요: …"로 남깁니다.
 8. 각 질문의 refs에는 근거가 된 생기부 문장 번호([1-동아리-3]의 대괄호 안 "1-동아리-3")를 1~3개 적습니다. 공통 질문은 refs를 비워도 됩니다.
 9. 개념 사전(glossary)은 세특·창체에 나온 전문 개념·이론·책 가운데 면접에서 물을 만한 것 6~12개를 고르고, 뜻은 학생 눈높이 한두 문장, use는 학생 활동과 연결된 1인칭 문장 하나입니다. 사실이 불확실하면 meaning 끝에 "(확인 필요)"를 붙입니다.
-10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").${st.noRecord ? `
+10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").${app.scope?.off?.length && !st.noRecord ? `
+범위 안내 — 이번에는 생기부의 일부(${scopeGroups(st).filter(g => scopeOn(app, g.key)).map(g => g.label).join(", ")})만 넣었습니다. 다른 부분의 질문은 이미 따로 만들어 두었으니 이 범위의 문장에서만 질문을 만들고, 범위 밖 활동을 추측해 묻지 않습니다.` : ""}${st.noRecord ? `
 특례 — 이 학생은 생기부 없이 준비합니다(학생부교과 면접처럼 생기부를 보지 않는 면접). 서사 축(axes)은 비우고 core·concept·truth·report·reading 섹션은 빈 items로 둡니다. common 섹션에 지원 동기·학과 이해·학업 계획·인성·협업·시사 12~15개를, defense에 흔한 압박 질문 2~3개, weak에 교과 면접에서 흔히 묻는 약점 질문 2개를 둡니다. 대학 공개 문항과 가이드북 기출은 '묻는 방식'을 그대로 살려 source에 출처를 적습니다. refs는 모두 비웁니다. glossary는 학과 기초 개념 6~10개(모집요강·학과 소개 수준)로 채우되 불확실하면 "(확인 필요)"를 붙입니다.` : ""}
 sections의 key는 core, concept, defense, truth, report, reading, weak, common 가운데에서 쓰고 이 순서로 둡니다. 해당 항목이 없으면 그 섹션은 넣지 않습니다.`;
   const first = st.ai ? `# 1차 분석(AI ${st.ai.model})\n${st.ai.summary || ""}\n서사 축 후보: ${(st.ai.axes || []).map(a => `${a.title} — ${a.why} [${(a.refs || []).join(", ")}]`).join(" / ") || "(없음)"}${st.ai.notes?.length ? "\n확인 필요: " + st.ai.notes.join(" / ") : ""}\n\n` : "";
@@ -5857,18 +5858,20 @@ async function generateQuestions(appId) {
   const st = stuOf(HUB.cur), app = st.applications.find(x => x.id === appId); if (!app) return;
   const msg = $(`genMsg-${appId}`), btn = document.querySelector(`[data-gen="${appId}"]`);
   if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요. 키 없이 쓰려면 ‘프롬프트 꾸러미’로 복사해 쓸 수 있습니다."; return; }
-  if (app.qset && !confirm("이미 만든 질문 세트가 있습니다. 새로 만들면 고친 내용까지 바뀝니다. 계속할까요?")) return;
+  const groups = st.noRecord ? [] : scopeGroups(st), onKeys = groups.filter(g => scopeOn(app, g.key)).map(g => g.key), partial = groups.length > 0 && onKeys.length < groups.length;
+  if (app.qset && !confirm(partial ? `켠 범위(${groups.filter(g => onKeys.includes(g.key)).map(g => g.label).join(", ")})의 질문과 공통 질문만 새로 만들고, 나머지 범위의 질문·별표 친 질문·선생님 질문은 그대로 둡니다. 계속할까요?` : "이미 만든 질문 세트가 있습니다. 전체를 새로 만들면 고친 내용까지 바뀝니다(별표 친 질문과 선생님 질문은 남습니다). 계속할까요?")) return;
   btn.disabled = true; msg.textContent = `${AI.model}로 만드는 중… (Opus는 2~3분 걸릴 수 있습니다)`;
   try {
     const bank = await loadBank();
     const { system, user } = buildPrompt(st, app, bank);
     const raw = await callAI(system, user, QSET_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `${AI.model}로 만드는 중… ${n.toLocaleString()}자 받음`; });
-    const data = normalizeQset(raw);
-    app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data };
+    const fresh = normalizeQset(raw);
+    const { data, kept } = mergeQset(st, app, fresh, onKeys, partial);
+    app.qset = { createdAt: new Date().toISOString(), provider: AI.provider, model: AI.model, data, scopeKeys: onKeys };
     await dbPut(st);   // 그리기에서 무슨 일이 나도 받은 응답은 남는다
-    const count = data.sections.reduce((n, s) => n + s.items.length, 0);
+    const count = fresh.sections.reduce((n, s) => n + s.items.length, 0);
     try { renderApps(); } catch (e2) { console.error(e2); msg.textContent = `저장은 했지만 화면을 그리지 못했습니다 (${e2?.message || e2}). 새로 고침해 보세요.`; return; }
-    $(`genMsg-${appId}`).textContent = `만들었습니다 — 질문 ${count}개. 문장을 눌러 바로 고칠 수 있습니다.`;
+    $(`genMsg-${appId}`).textContent = `만들었습니다 — 새 질문 ${count}개${kept ? ` (이전 것 ${kept}개는 그대로 둠)` : ""}. 문장을 눌러 바로 고칠 수 있습니다.`;
   } catch (e) {
     console.error(e);
     msg.textContent = "오류: " + (e?.message || e) + (AI.lastText ? " — 받은 응답은 ‘프롬프트 꾸러미’의 ‘마지막 AI 응답 들여오기’로 다시 읽을 수 있습니다." : "");
@@ -5898,6 +5901,31 @@ function normalizeQset(raw) {
   const out = { ...d, axes, sections, glossary, notes };
   if (!sections.length) throw new Error("응답에 질문이 하나도 없습니다 (sections 비어 있음).");
   return out;
+}
+/* 질문이 어느 생기부 묶음에서 왔는지 — 근거 문장의 학년·영역. 근거가 없으면 "공통" */
+function itemScope(st, it) {
+  const blocks = st._blocks || (st._blocks = sentenceBlocks(st)), resolve = refResolver(blocks), byRef = {}; for (const b of blocks) for (const sn of b.sents) byRef[refId(b, sn.i)] = b;
+  for (const r of it.refs || []) { const id = resolve(r), b = id && byRef[id]; if (b) return scopeKeyOf(b); }
+  return "공통";
+}
+/* 새 세트를 기존 세트에 합본한다 — 켠 범위의 질문과 공통 질문은 새것으로, 끈 범위의 질문·별표·선생님 질문은 그대로. 서사 축·개념 사전은 제목·용어로 합침 */
+function mergeQset(st, app, fresh, onKeys, partial) {
+  for (const sec of fresh.sections) for (const it of sec.items) it.scope = itemScope(st, it);
+  const old = app.qset?.data; if (!old) return { data: fresh, kept: 0 };
+  for (const sec of arrOf(old.sections)) for (const it of arrOf(sec.items)) if (!it.scope) it.scope = itemScope(st, it);
+  const keep = (sec, it) => sec.key === "teacher" || it.star || (partial && it.scope !== "공통" && !onKeys.includes(it.scope));
+  const out = { ...fresh, sections: [] }, byKey = new Map();
+  let kept = 0;
+  for (const sec of arrOf(old.sections)) { const items = arrOf(sec.items).filter(it => keep(sec, it)); if (items.length) { byKey.set(sec.key, { key: sec.key, title: sec.title, items: items.slice() }); kept += items.length; } }
+  for (const sec of fresh.sections) { const o = byKey.get(sec.key); if (o) { const have = new Set(o.items.map(x => x.q.trim())); o.items.push(...sec.items.filter(x => !have.has(x.q.trim()))); } else byKey.set(sec.key, { ...sec, items: sec.items.slice() }); }
+  out.sections = [...byKey.values()].sort((a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key));
+  if (partial) {
+    const titles = new Set(fresh.axes.map(x => x.title)); out.axes = [...arrOf(old.axes).filter(x => !titles.has(x.title)), ...fresh.axes];
+    const terms = new Set(fresh.glossary.map(g => g.term)); out.glossary = [...arrOf(old.glossary).filter(g => !terms.has(g.term)), ...fresh.glossary];
+    out.notes = [...new Set([...arrOf(old.notes), ...fresh.notes])];
+  }
+  if (old.extras) out.extras = old.extras;
+  return { data: out, kept };
 }
 /* 키 없이: 프롬프트를 복사해 이 세션(Claude)에 붙여 넣고, 받은 JSON을 붙여 넣어 들여온다 */
 async function showPromptBox(appId) {
@@ -6586,7 +6614,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, scopeGroups, scopedBlocks, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
