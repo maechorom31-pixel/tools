@@ -55,6 +55,9 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
 .mode .d{display:block;font-size:13px;color:var(--mid);margin-left:26px;line-height:1.5}
 .mode .cnt{float:right;font-variant-numeric:tabular-nums;color:var(--amber-dark);font-weight:600;font-size:14px}
 .interim{font-size:14px;color:var(--mid);margin-top:6px;min-height:20px}
+.psgs{margin-top:10px}
+.psg{font-size:15px;line-height:1.7;padding:10px 12px;background:var(--sub);border-radius:8px;margin-top:8px}
+.psg b{color:var(--amber-dark)}
 .rec{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--err);margin-right:6px;vertical-align:-1px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -79,6 +82,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
 <div class="prog"><i id="prog"></i></div>
 <div class="sec" id="sec"></div>
 <div class="q" id="q"></div>
+<div class="psgs" id="psgs" hidden></div>
 <div class="intent" id="intent"></div>
 <div class="row"><button class="btn sm" id="speak" type="button" hidden>질문 읽어 주기</button></div>
 <div class="timer"><div class="t" id="timer">0:00</div><div class="hint">‘시작’을 누르고 소리 내어 답해 보세요.<br>1분이 넘으면 색이 바뀝니다.</div></div>
@@ -119,7 +123,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     if (m === "star") return all.filter(function (q) { return q.star; });
     if (m === "undone") return all.filter(function (q) { return !doneKeys[q.k]; });
     if (m === "exam") {
-      var main = all.filter(function (q) { return !q.follow; });
+      var main = all.filter(function (q) { return !q.follow && q.secKey !== "jesimun"; });
       var ranked = main.slice().sort(function (a, b) { return (EXAM_RANK[a.secKey] === undefined ? 5 : EXAM_RANK[a.secKey]) - (EXAM_RANK[b.secKey] === undefined ? 5 : EXAM_RANK[b.secKey]) || (b.star ? 1 : 0) - (a.star ? 1 : 0) || a.n - b.n; });
       var out = [], perSec = {};
       ranked.forEach(function (q) { var c = perSec[q.secKey] || 0; var cap = q.secKey === "core" ? 4 : q.secKey === "common" ? 2 : 1; if (q.star || c < cap) { out.push(q); perSec[q.secKey] = c + 1; } });
@@ -190,9 +194,10 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
       if (!tick) $("tStart").onclick();
     } catch (e) { $("interim").textContent = "이 브라우저에서는 받아 적기가 되지 않습니다. 직접 적어 주세요."; }
   }
-  $("speak").onclick = function () { speak(qs[cur].q.replace(/^↳\s*/, "")); };
+  $("speak").onclick = function () { var q = qs[cur]; speak(q.passages ? q.passages.map(function (p) { return p.text; }).join(" ") : q.q.replace(/^↳\s*/, "")); };
   $("dictate").onclick = function () { if (recOn) stopDictate(); else startDictate(); };
 
+  function limitOf(q) { return q.passages ? (q.prep || 10) * 60 : q.answerMin ? q.answerMin * 60 : 60; }
   function stopTimer() { if (tick) { clearInterval(tick); tick = null; acc += Math.round((Date.now() - t0) / 1000); } $("tStart").disabled = false; $("tStop").disabled = true; render(); }
   function render() {
     var q = qs[cur], a = answers[cur];
@@ -200,8 +205,12 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     $("prog").style.width = Math.round((cur + 1) / qs.length * 100) + "%";
     $("sec").innerHTML = esc(q.section || "") + (q.star ? '<span class="tag">중요</span>' : "") + (q.teacher ? '<span class="tag">선생님 질문</span>' : "") + (doneKeys[q.k] ? '<span class="tag">지난 회차에 답함</span>' : "");
     $("q").textContent = q.q;
-    $("intent").innerHTML = "<b>확인 의도</b> " + esc(q.intent || "") + (q.hint ? "<br><b>답의 흐름</b> " + esc(q.hint) : "");
-    var s = acc; $("timer").textContent = fmt(s); $("timer").className = "t" + (s > 60 ? " over" : "");
+    if (q.passages && q.passages.length) { $("psgs").hidden = false; $("psgs").innerHTML = q.passages.map(function (p) { return '<div class="psg"><b>(' + esc(p.label) + ')</b> ' + esc(p.text) + '</div>'; }).join(""); }
+    else { $("psgs").hidden = true; $("psgs").innerHTML = ""; }
+    var lim = limitOf(q);
+    $("intent").innerHTML = (q.passages ? "<b>준비 시간</b> " + q.prep + "분 — 문항을 먼저 읽고 제시문에서 정의·예시·한계 문장을 찾습니다. " : "<b>확인 의도</b> ") + esc(q.intent || "") + (q.hint ? "<br><b>답의 흐름</b> " + esc(q.hint) : "") + (q.answerMin && !q.passages ? "<br><b>답변 시간</b> " + q.answerMin + "분" : "");
+    $("qcard").querySelector(".timer .hint").innerHTML = q.passages ? "‘시작’을 누르고 제시문을 읽으며 메모하세요.<br>" + q.prep + "분이 넘으면 색이 바뀝니다." : "‘시작’을 누르고 소리 내어 답해 보세요.<br>" + (lim === 60 ? "1분" : Math.round(lim / 60) + "분") + "이 넘으면 색이 바뀝니다.";
+    var s = acc; $("timer").textContent = fmt(s); $("timer").className = "t" + (s > lim ? " over" : "");
     $("ans").value = a.answer;
     $("prev").disabled = cur === 0;
     $("next").textContent = cur === qs.length - 1 ? "마치기" : "다음";
@@ -214,7 +223,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     cur = 0; acc = 0; render(); show("qcard");
   }
   $("startAll").onclick = begin;
-  $("tStart").onclick = function () { t0 = Date.now(); $("tStart").disabled = true; $("tStop").disabled = false; tick = setInterval(function () { var s = acc + Math.round((Date.now() - t0) / 1000); $("timer").textContent = fmt(s); $("timer").className = "t" + (s > 60 ? " over" : ""); }, 500); };
+  $("tStart").onclick = function () { t0 = Date.now(); $("tStart").disabled = true; $("tStop").disabled = false; var lim = limitOf(qs[cur]); tick = setInterval(function () { var s = acc + Math.round((Date.now() - t0) / 1000); $("timer").textContent = fmt(s); $("timer").className = "t" + (s > lim ? " over" : ""); }, 500); };
   $("tStop").onclick = stopTimer;
   $("prev").onclick = function () { if (cur > 0) go(cur - 1); };
   $("next").onclick = function () {

@@ -209,6 +209,14 @@ body.print-share .share .qr{width:220px;height:220px;margin:0 auto}
 .qi.star .no::after{content:"★";color:var(--amber);font-size:11px;display:block;line-height:1}
 .qi.del{opacity:.4}
 .qi.del .q textarea{text-decoration:line-through}
+.jes{margin-top:8px;border-top:1px solid var(--line);padding-top:4px}
+.jset{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.jset h6{font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.jset h6 .n{color:var(--mid);font-weight:400;font-size:12px}
+.jset .psg{font-size:14px;line-height:1.7;margin-top:8px;padding:8px 10px;background:var(--sub);border-radius:6px}
+.jset .jq{margin:8px 0 0 18px;font-size:14px;line-height:1.6}
+.jset .hl mark{background:var(--amber-pale);padding:0 4px;border-radius:3px;font-weight:600;margin-right:4px}
+.jset .pt{margin-top:6px}.jset .pt ul{margin:2px 0 2px 16px}
 .extras{margin-top:10px}
 .extra{margin-top:8px}
 .extra .lab{font-size:13px;font-weight:600}
@@ -5144,8 +5152,8 @@ function renderStudents() {
   const host = $("stuList");
   if (!HUB.students.length) {
     host.innerHTML = `<p class="empty">아직 등록한 학생이 없습니다. 블라인드 보기에서 PDF를 읽고 아래 막대의 ‘면접 준비에 등록’을 누르면 여기에 나타납니다.</p>
-    <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="stuImportBtn" style="min-height:32px;font-size:13px">내보낸 파일 들여오기</button><input type="file" id="stuImport" accept="application/json,.json" hidden><span class="hint">다른 컴퓨터에서 ‘모두 내보내기(JSON)’로 받은 파일을 넣으면 그 학생들이 들어옵니다.</span></div>`;
-    bindImport(); return;
+    <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="stuImportBtn" style="min-height:32px;font-size:13px">내보낸 파일 들여오기</button><input type="file" id="stuImport" accept="application/json,.json" hidden><span class="hint">다른 컴퓨터에서 ‘모두 내보내기(JSON)’로 받은 파일을 넣으면 그 학생들이 들어옵니다.</span></div>${noRecordFormHtml()}`;
+    bindImport(); bindNoRecord(); return;
   }
   const rows = HUB.students.slice().sort((x, y) => { const a = nextApp(x), b = nextApp(y); return (a ? a.n : 1e9) - (b ? b.n : 1e9) || x.alias.localeCompare(y.alias); });
   host.innerHTML = `<div style="overflow-x:auto"><table class="stu-table"><thead><tr><th>라벨</th><th>지원</th><th>등록</th><th></th></tr></thead><tbody>${rows.map(st => `<tr>
@@ -5154,6 +5162,7 @@ function renderStudents() {
     <td class="hint" style="white-space:nowrap">${fmtDate(st.createdAt.slice(0, 10))}</td>
     <td class="act"><button class="btn" type="button" data-open="${st.id}">열기</button> <button class="btn" type="button" data-rm="${st.id}" title="이 학생 지우기" style="min-height:32px;font-size:13px">지우기</button></td></tr>`).join("")}</tbody></table></div>
   <div class="toolrow" style="margin-top:8px"><button class="btn" type="button" id="stuExport" style="min-height:32px;font-size:13px">모두 내보내기(JSON)</button><button class="btn" type="button" id="stuImportBtn" style="min-height:32px;font-size:13px">들여오기</button><input type="file" id="stuImport" accept="application/json,.json" hidden><button class="btn" type="button" id="stuClear" style="min-height:32px;font-size:13px">목록 모두 지우기</button><span class="hint">학생 ${HUB.students.length}명 — 자료는 이 브라우저에만 있습니다. 다른 컴퓨터로 옮기거나 보관하려면 내보내기 파일을 쓰세요(라벨·가린 글·형광펜·질문 세트·답변 포함. 이름이 든 라벨이 있으니 교사 컴퓨터에만 둡니다). ‘모두 지우기’ 뒤 같은 PDF를 다시 올리면 새 규칙으로 다시 가릅니다.</span></div>`;
+  host.insertAdjacentHTML("beforeend", noRecordFormHtml()); bindNoRecord();
   host.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openStudent(b.dataset.open));
   host.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => removeStudent(b.dataset.rm));
   $("stuExport").onclick = () => {
@@ -5190,6 +5199,19 @@ function bindImport() {
   };
 }
 const stuOf = id => HUB.students.find(x => x.id === id);
+/* 생기부 없이 등록 — 학생부교과 면접처럼 생기부를 보지 않는 면접. 대학 카드·질문 은행·공통 질문으로만 준비한다 */
+function noRecordFormHtml() {
+  return `<form class="toolrow" id="noRecForm" style="margin-top:8px"><input id="noRecAlias" placeholder="생기부 없이 추가 — 라벨(예: 3-2 07 한OO)" autocomplete="off" style="font:inherit;font-size:13px;min-height:32px;padding:0 8px;border:1px solid #D9D5CE;border-radius:8px;min-width:240px"><button class="btn" type="submit" style="min-height:32px;font-size:13px">생기부 없이 추가</button><span class="hint">학생부교과 면접처럼 생기부를 보지 않는 면접이면 — 대학 카드·공개 문항·기출로 공통 질문 중심 세트를 만듭니다.</span></form>`;
+}
+function bindNoRecord() {
+  const f = $("noRecForm"); if (!f) return;
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const alias = $("noRecAlias").value.trim(); if (!alias) return;
+    const rec = { id: uid(), label: "", alias, noRecord: true, createdAt: new Date().toISOString(), applications: [], highlights: {}, marks: [], memo: "", source: { file: "(생기부 없음)", pages: [] }, text: "", records: [], setuk: [], attendance: "", unparsed: [] };
+    await dbPut(rec); HUB.students.push(rec); renderStudents(); renderCal(); openStudent(rec.id);
+  };
+}
 
 /* ---------- 학생 상세 ---------- */
 function openStudent(id) {
@@ -5221,11 +5243,13 @@ function renderApps() {
     <div class="actions"><button class="btn main" type="button" data-gen="${a.id}">${a.qset ? "예상 질문 다시 만들기" : "예상 질문 만들기"}</button><button class="btn" type="button" data-prompt="${a.id}">프롬프트 꾸러미</button><button class="btn" type="button" data-edit="${a.id}">고치기</button><button class="btn" type="button" data-del="${a.id}">지우기</button><span class="hint" id="genMsg-${a.id}" role="status"></span></div>
     <div class="promptbox" id="pbox-${a.id}" hidden></div>
     <div id="share-${a.id}">${shareHtml(st, a)}</div>
-    <div class="qs" id="qs-${a.id}">${a.qset ? qsetHtml(st, a) : ""}</div></article>`).join("");
+    <div class="qs" id="qs-${a.id}">${a.qset ? qsetHtml(st, a) : ""}</div>
+    <div id="jes-${a.id}">${jesimunHtml(st, a)}</div></article>`).join("");
   host.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => generateQuestions(b.dataset.gen));
   host.querySelectorAll("[data-prompt]").forEach(b => b.onclick = () => showPromptBox(b.dataset.prompt));
   st.applications.forEach(a => { if (a.qset) bindQset(st, a); });
   st.applications.forEach(a => bindShare(st, a));
+  st.applications.forEach(a => bindJesimun(st, a));
   host.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editApp(b.dataset.edit));
   host.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { st.applications = st.applications.filter(a => a.id !== b.dataset.del); await dbPut(st); renderApps(); renderStudents(); renderCal(); });
 }
@@ -5424,7 +5448,8 @@ function renderRecords() {
   }
   if (g0) html.push("</section>");
   const cov = parseCoverage(st);
-  if (!blocks.length) html.push(`<p class="empty">규칙으로는 영역을 가르지 못한 판형입니다. 00에서 AI를 연결하고 위의 ‘AI로 읽기’를 누르면 AI가 영역·과목을 가른 뒤 읽습니다. 가린 글 전체는 아래에 그대로 둡니다.</p>`);
+  if (st.noRecord) html.push(`<p class="empty">생기부 없이 등록한 학생입니다. 학생부교과 면접처럼 생기부를 보지 않는 면접이면 지원 카드의 대학 자료(공개 문항·기출·공통 질문)로 예상 질문을 만듭니다. 생기부가 생기면 PDF로 다시 등록하세요.</p>`);
+  else if (!blocks.length) html.push(`<p class="empty">규칙으로는 영역을 가르지 못한 판형입니다. 00에서 AI를 연결하고 위의 ‘AI로 읽기’를 누르면 AI가 영역·과목을 가른 뒤 읽습니다. 가린 글 전체는 아래에 그대로 둡니다.</p>`);
   else if (st.structuredBy) html.push(`<p class="hint">영역·과목은 AI(${esc(st.structuredBy)})가 가른 것입니다. 원문과 다르면 ‘AI로 영역 다시 가르기’로 다시 할 수 있습니다.</p>`);
   else if (cov >= 0.5) html.push(`<p class="hint">영역·과목은 규칙으로 갈랐습니다(글의 ${Math.round(cov * 100)}%). ‘AI로 읽기’는 이 경계를 그대로 두고 역량만 읽습니다. 경계가 틀렸으면 ‘AI로 영역 다시 가르기’를 쓰세요.</p>`);
   else html.push(`<p class="hint">규칙이 글의 ${Math.round(cov * 100)}%만 갈랐습니다. ‘AI로 읽기’를 누르면 AI가 먼저 경계를 가른 뒤 학년별로 읽습니다.</p>`);
@@ -5772,10 +5797,11 @@ function buildPrompt(st, app, bank) {
 7. 블라인드: 학생 이름·고교명·부모 직업·사회경제적 지위를 묻거나 암시하는 질문을 만들지 않습니다. 생기부에 없는 사실을 지어 넣지 않습니다. 확인이 필요한 것은 notes에 "확인 필요: …"로 남깁니다.
 8. 각 질문의 refs에는 근거가 된 생기부 문장 번호([1-동아리-3]의 대괄호 안 "1-동아리-3")를 1~3개 적습니다. 공통 질문은 refs를 비워도 됩니다.
 9. 개념 사전(glossary)은 세특·창체에 나온 전문 개념·이론·책 가운데 면접에서 물을 만한 것 6~12개를 고르고, 뜻은 학생 눈높이 한두 문장, use는 학생 활동과 연결된 1인칭 문장 하나입니다. 사실이 불확실하면 meaning 끝에 "(확인 필요)"를 붙입니다.
-10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").
+10. 출력은 지정된 JSON만. 한국어, 존댓말 질문체("~했는데, ~인가요?").${st.noRecord ? `
+특례 — 이 학생은 생기부 없이 준비합니다(학생부교과 면접처럼 생기부를 보지 않는 면접). 서사 축(axes)은 비우고 core·concept·truth·report·reading 섹션은 빈 items로 둡니다. common 섹션에 지원 동기·학과 이해·학업 계획·인성·협업·시사 12~15개를, defense에 흔한 압박 질문 2~3개, weak에 교과 면접에서 흔히 묻는 약점 질문 2개를 둡니다. 대학 공개 문항과 가이드북 기출은 '묻는 방식'을 그대로 살려 source에 출처를 적습니다. refs는 모두 비웁니다. glossary는 학과 기초 개념 6~10개(모집요강·학과 소개 수준)로 채우되 불확실하면 "(확인 필요)"를 붙입니다.` : ""}
 sections의 key는 core, concept, defense, truth, report, reading, weak, common 가운데에서 쓰고 이 순서로 둡니다. 해당 항목이 없으면 그 섹션은 넣지 않습니다.`;
   const first = st.ai ? `# 1차 분석(AI ${st.ai.model})\n${st.ai.summary || ""}\n서사 축 후보: ${(st.ai.axes || []).map(a => `${a.title} — ${a.why} [${(a.refs || []).join(", ")}]`).join(" / ") || "(없음)"}${st.ai.notes?.length ? "\n확인 필요: " + st.ai.notes.join(" / ") : ""}\n\n` : "";
-  const user = `${first}# 지원 카드와 대학 프로파일\n${prof.join("\n")}\n\n# ${st.ai ? "AI가 뽑은" : "규칙으로 뽑은"} 목록\n${lists || "(없음)"}\n\n# 가린 생기부 (문장 번호 · 태그${st.ai ? "(AI·교사)" : "(규칙·교사)"} · 메모)\n${recordText(st, blocks)}`;
+  const user = `${first}# 지원 카드와 대학 프로파일\n${prof.join("\n")}\n\n# ${st.ai ? "AI가 뽑은" : "규칙으로 뽑은"} 목록\n${lists || "(없음)"}\n\n# 가린 생기부 (문장 번호 · 태그${st.ai ? "(AI·교사)" : "(규칙·교사)"} · 메모)\n${st.noRecord ? "(생기부 없음 — 공통 질문·대학 자료 중심)" : recordText(st, blocks)}`;
   return { system, user };
 }
 async function generateQuestions(appId) {
@@ -6021,6 +6047,95 @@ function printStrategy(st, a) {
     <h2>막혔을 때 쓰는 첫 문장 7종 (외워 두는 유일한 문장)</h2><table><tbody>${FIRST_LINES.map(([k, v]) => `<tr><td style="width:36%">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table>`;
   printDoc(`면접 전략 카드 · ${st.alias}`, body);
 }
+
+/* ═══════ 4단계 — 제시문 면접 연습: 계열별 예상 모의 문항 세트(제시문 2 + 문항 2~3 + 해설), 연습지 인쇄, 학생 화면 배포 ═══════ */
+const JES_SCHEMA = { type: "object", properties: {
+  title: { type: "string" }, field: { type: "string" }, map: { type: "string" }, prepMinutes: { type: "number" }, answerMinutes: { type: "number" },
+  passages: { type: "array", items: { type: "object", properties: { label: { type: "string" }, text: { type: "string" } }, required: ["label", "text"] } },
+  questions: { type: "array", items: { type: "object", properties: { q: { type: "string" }, intent: { type: "string" }, points: { type: "array", items: { type: "string" } }, bad: { type: "string" }, good: { type: "string" } }, required: ["q", "intent", "points", "bad", "good"] } },
+  highlights: { type: "array", items: { type: "object", properties: { passage: { type: "string" }, quote: { type: "string" }, note: { type: "string" } }, required: ["passage", "quote", "note"] } },
+  notes: { type: "array", items: { type: "string" } } }, required: ["title", "field", "map", "prepMinutes", "answerMinutes", "passages", "questions", "highlights", "notes"] };
+function jesField(unit) { const u = (unit || "").replace(/\s+/g, ""); for (const [re, name] of MAJOR_MAP) if (re.test(u)) return name; return ""; }
+function isJesimun(a) { const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId); return !!adm && (/제시문|MMI|혼합/.test(adm.interviewType || "") || /제시문|MMI/.test(adm.interviewTypeRaw || "")); }
+function jesimunPrompt(st, a, field) {
+  const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
+  const mmi = /MMI|의예|의학|간호|약학|보건/.test([adm?.interviewTypeRaw, a.unit].join(" "));
+  const system = `당신은 대학 제시문 면접(교대·서울대 일반전형·의학계열 MMI 등)의 출제·해설 보조입니다. 지원 학과 계열에 맞는 '예상 모의 문항' 세트 하나를 만듭니다.
+규칙:
+1. 제시문 2개(가·나). 각 350~600자, 직접 쓴 글입니다. 실존 저작을 인용·요약하지 않고 실존 인물·기관·통계를 끌어오지 않습니다(수치가 필요하면 "예시 수치"라고 밝힘). 두 제시문은 대립 구조이거나 한 제시문 안에 '하지만·다만'으로 시작하는 한계·전환 문장이 있어 양면을 줍니다.
+2. 문항 2~3개. 공통 패턴(선택+근거 / 단점 인식+보완 / 구체적 사례 요구 / 직업·전공 역할 연결) 가운데 둘 이상을 섞습니다. 문항마다 intent(출제 의도 한 줄), points(답변 포인트 2~4개 — 제시문 어느 문장을 근거로 무엇을 말해야 하는지), bad(추상적 답의 나쁜 예 한 문장), good(구체적 답의 좋은 예 — 외울 문장이 아니라 구조 예시, 2~3문장).
+${mmi ? "3. 의학·보건계열 MMI이면 상황 문항을 하나 넣고 points를 '두 입장의 장단점 인식 → 본인 선택과 근거 → 상대 입장 존중·조정' 순서로 적습니다." : "3. 교육계열이면 교사 역할 연결 문항을, 인문·사회계열이면 사례 적용 문항을 하나 넣습니다."}
+4. highlights: 문항을 풀 때 실제로 호출되는 문장 3~5개. passage는 "가"/"나", quote는 제시문 원문 그대로, note는 한두 문장(앞 문장은 그 구절이 무엇인지, 뒤 문장은 어느 문항에서 어떻게 쓰이는지). 해요체.
+5. map: 세트 한 줄 지도 — 제시문들을 꿰는 한 단어, 문항들이 그 축의 어디를 묻는지, 준비 시간을 어떻게 쓸지(첫 몇 분은 정의·예시·한계 문장 찾기).
+6. prepMinutes·answerMinutes: 대학 정보에 준비·답변 시간이 있으면 그대로, 없으면 10과 5.
+7. title에 "예상 문항"을 넣고 field에 계열을 적습니다. 블라인드: 이름·학교를 넣지 않습니다. notes에는 확인이 필요한 것을 적습니다. 출력은 JSON만, 한국어.`;
+  const user = `# 지원\n${u ? u.name : a.univText} · ${adm ? adm.name : a.admText || ""} · ${a.unit || ""} · 계열: ${field || "(모름 — 모집단위에서 추정)"}
+${adm ? `면접 형식: ${[adm.interviewTypeRaw || adm.interviewType, adm.format, adm.duration].filter(Boolean).join(" · ")}${adm.notes?.length ? "\n유의사항: " + adm.notes.join(" / ") : ""}${adm.sampleQuestions?.length ? "\n자료집 예시 문항:\n" + adm.sampleQuestions.slice(0, 8).map(q => "- " + q.q).join("\n") : ""}` : ""}${a.profile ? `\n교사 메모: ${a.profile}` : ""}
+# 요청\n이 계열의 최근 사회·교육 이슈 가운데 하나를 골라 예상 모의 문항 세트 하나를 만들어 주세요.${(a.jesimun || []).length ? ` 이미 만든 세트의 주제(${a.jesimun.map(s => s.title).join(" / ")})와 겹치지 않게 합니다.` : ""}`;
+  return { system, user };
+}
+async function genJesimun(appId) {
+  const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a) return;
+  const msg = $(`jesMsg-${appId}`);
+  if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
+  const field = prompt("제시문 계열을 적어 주세요(예: 교육 / 인문 / 사회 / 자연·공학 / 의약·보건 / 예체능).", jesField(a.unit) || ""); if (field === null) return;
+  msg.textContent = `${AI.model}로 제시문 세트를 만드는 중…`;
+  try {
+    const { system, user } = jesimunPrompt(st, a, field.trim());
+    const d = await callAI(system, user, JES_SCHEMA, CLAUDE_MAX_OUT, n => { msg.textContent = `제시문 세트 만드는 중… ${n.toLocaleString()}자 받음`; });
+    d.id = uid(); d.createdAt = new Date().toISOString(); d.model = AI.model;
+    (a.jesimun = a.jesimun || []).push(d);
+    await dbPut(st); renderApps();
+    $(`jesMsg-${appId}`).textContent = `제시문 세트를 만들었습니다 — 제시문 ${d.passages.length}개, 문항 ${d.questions.length}개. 해설은 교사용이며 사실·용어는 확인이 필요합니다.`;
+  } catch (e) { msg.textContent = "오류: " + (e?.message || e); }
+}
+function jesimunHtml(st, a) {
+  const sets = a.jesimun || [], on = isJesimun(a);
+  let h = `<div class="jes"><div class="toolrow" style="margin-top:12px"><span class="hint"><b>제시문 면접 연습</b> — ${on ? "이 전형은 제시문(또는 MMI) 면접이 있습니다." : "이 전형은 서류 기반이지만 필요하면 만들 수 있습니다."} 계열별 예상 모의 문항(직접 쓴 제시문 2개 + 문항 2~3개 + 해설)을 만듭니다.</span><span class="spacer"></span><button class="btn${on ? " main" : ""}" type="button" data-jes="${a.id}" style="min-height:32px;font-size:13px">제시문 세트 만들기</button><span class="hint" id="jesMsg-${a.id}" role="status"></span></div>`;
+  sets.forEach((s, i) => {
+    h += `<section class="jset" data-jid="${s.id}"><h6>${esc(s.title)}<span class="n">${esc(s.field || "")} · 준비 ${s.prepMinutes}분 · 답변 ${s.answerMinutes}분 · ${esc(s.model || "")}</span></h6>
+      <p class="hint">${esc(s.map || "")}</p>
+      ${s.passages.map(p => `<div class="psg"><b>(${esc(p.label.replace(/[()]/g, ""))})</b> ${esc(p.text)}</div>`).join("")}
+      <ol class="jq">${s.questions.map(q => `<li><b>${esc(q.q)}</b><div class="hint">출제 의도: ${esc(q.intent)}</div></li>`).join("")}</ol>
+      <details class="hint"><summary style="cursor:pointer">해설 (교사용) — 형광 문장 ${s.highlights.length}개 · 답변 포인트</summary>
+        ${s.highlights.map((x, k) => `<div class="hl"><mark>${k + 1}</mark> (${esc(x.passage)}) “${esc(x.quote)}” — ${esc(x.note)}</div>`).join("")}
+        ${s.questions.map((q, k) => `<div class="pt"><b>${k + 1}. ${esc(q.q)}</b><ul>${q.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul><div>나쁜 예: ${esc(q.bad)}</div><div>좋은 예(구조): ${esc(q.good)}</div></div>`).join("")}
+        ${s.notes?.length ? `<div>${s.notes.map(esc).join(" / ")}</div>` : ""}</details>
+      <div class="toolrow" style="margin-top:6px"><button class="btn" type="button" data-jprint="${s.id}" style="min-height:32px;font-size:13px">연습지 인쇄</button><button class="btn" type="button" data-jprint="${s.id}" data-answer="1" style="min-height:32px;font-size:13px">해설지 인쇄</button><button class="btn" type="button" data-jdel="${s.id}" style="min-height:32px;font-size:13px">지우기</button><span class="hint">배포하면 학생 화면에도 제시문과 준비 시간이 갑니다.</span>${a.qset ? "" : `<button class="btn main" type="button" data-share="${a.id}" style="min-height:32px;font-size:13px">${a.share ? "학생 연습용 다시 배포" : "학생 연습용 배포(QR)"}</button>`}</div></section>`;
+  });
+  return h + `</div>`;
+}
+function bindJesimun(st, a) {
+  const host = $(`jes-${a.id}`); if (!host) return;
+  host.querySelectorAll("[data-jes]").forEach(b => b.onclick = () => genJesimun(b.dataset.jes));
+  host.querySelectorAll("[data-share]").forEach(b => b.onclick = () => publishShare(a.id));
+  host.querySelectorAll("[data-jdel]").forEach(b => b.onclick = async () => { if (!confirm("이 제시문 세트를 지울까요?")) return; a.jesimun = (a.jesimun || []).filter(s => s.id !== b.dataset.jdel); await dbPut(st); renderApps(); });
+  host.querySelectorAll("[data-jprint]").forEach(b => b.onclick = () => { const s = (a.jesimun || []).find(x => x.id === b.dataset.jprint); if (s) printJesimun(st, a, s, !!b.dataset.answer); });
+}
+function printJesimun(st, a, s, withAnswer) {
+  const lab = p => p.label.replace(/[()]/g, "");
+  let body = docHead(st, a, withAnswer ? "제시문 해설지" : "제시문 연습지", withAnswer ? "교사용 — 답보다 근거를 먼저" : "학생용 — 문항을 먼저 읽고 제시문에 들어갑니다") +
+    `<div class="rule">실전 조건: 준비 ${s.prepMinutes}분 · 답변 ${s.answerMinutes}분 · 메모 가능(대학 규정 확인). ${esc(s.title)} — ${esc(s.field || "")} 계열 예상 모의 문항입니다(기출이 아닙니다).</div>
+    <h2>문항</h2><ol>${s.questions.map(q => `<li>${esc(q.q)}</li>`).join("")}</ol>
+    <h2>제시문</h2>${s.passages.map(p => `<p><b>(${esc(lab(p))})</b> ${esc(p.text)}</p>`).join("")}`;
+  if (!withAnswer) body += `<h2 style="page-break-before:always">백지 노트</h2><table><thead><tr><th style="width:12%">제시문</th><th>핵심어</th><th>정의 문장</th><th>한계·전환 문장</th></tr></thead><tbody>${s.passages.map(p => `<tr><td>(${esc(lab(p))})</td><td style="height:70pt"></td><td></td><td></td></tr>`).join("")}</tbody></table>
+    ${s.questions.map((q, i) => `<h3>${i + 1}. ${esc(q.q)}</h3><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>`).join("")}`;
+  else body += `<h2 style="page-break-before:always">해설</h2><p>${esc(s.map)}</p>
+    <h3>제시문 분석 — 형광 문장</h3>${s.highlights.map((x, k) => `<div class="ev"><b>${k + 1}</b> (${esc(x.passage)}) “${esc(x.quote)}”<div class="small">${esc(x.note)}</div></div>`).join("")}
+    <h3>문항 분석·답변 포인트</h3>${s.questions.map((q, k) => `<div class="q"><div class="qt"><span class="no">${k + 1}</span>${esc(q.q)}</div><div class="it">출제 의도: ${esc(q.intent)}</div><ul>${q.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul><div class="small">나쁜 예: ${esc(q.bad)}</div><div class="small">좋은 예(구조): ${esc(q.good)}</div></div>`).join("")}
+    ${s.notes?.length ? `<p class="small">${s.notes.map(esc).join(" / ")}</p>` : ""}<p class="small">출처: AI 예상 문항(${esc(s.model || "")}, ${new Date(s.createdAt).toLocaleDateString("ko-KR")}). 사실·용어·제도는 검증 전입니다.</p>`;
+  printDoc(`${withAnswer ? "제시문 해설지" : "제시문 연습지"} · ${st.alias}`, body);
+}
+/* 학생 화면용: 제시문 세트 → 제시문 읽기 항목 + 문항 항목 (답변 포인트는 학생에게 가지 않는다) */
+function jesimunStudentItems(a, n0) {
+  const out = []; let n = n0;
+  (a.jesimun || []).forEach((s, i) => {
+    out.push({ k: `jes:${s.id}:p`, n: ++n, section: "제시문 면접", secKey: "jesimun", star: false, teacher: false, q: `〔제시문 읽기〕 ${s.title}`, intent: s.map || "", hint: "", passages: s.passages.map(p => ({ label: p.label.replace(/[()]/g, ""), text: p.text })), prep: s.prepMinutes || 10, answerMin: s.answerMinutes || 5 });
+    s.questions.forEach((q, j) => out.push({ k: `jes:${s.id}:q${j}`, n: ++n, section: "제시문 면접", secKey: "jesimun", star: false, teacher: false, q: q.q, intent: "제시문의 문장을 근거로 선택과 이유를 둘 이상, 반대쪽의 장단점까지 말합니다.", hint: "", answerMin: s.answerMinutes || 5 }));
+  });
+  return out;
+}
+
 const PRINT_KINDS = { cards: ["활동 개요 카드 (학생용)", printCards], worksheet: ["답변 구성 워크시트 (학생용)", printWorksheet], strategy: ["면접 전략 카드 (학생·교사)", printStrategy], score: ["모의면접 평가표 (교사용)", printScoreSheet] };
 function printKind(appId, kind) { const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a || !PRINT_KINDS[kind]) return; PRINT_KINDS[kind][1](st, a); }
 
@@ -6058,6 +6173,7 @@ const newToken = () => { const a = new Uint8Array(24); crypto.getRandomValues(a)
 /* 질문 세트 → 학생용 질문 목록 (지운 것·빈 것 제외, 꼬리질문은 뒤따르는 항목으로) */
 function studentQuestions(a) {
   const out = []; let n = 0;
+  if (!a.qset) return jesimunStudentItems(a, 0);
   const ex = a.qset.data.extras;
   if (ex?.intro?.text) out.push({ k: "intro", n: ++n, section: "1분 자기소개", secKey: "intro", star: true, teacher: false, q: "1분 자기소개를 해 주세요.", intent: "서류 요약이 아니라 도입 — 궁금증 → 직접 한 일 → 달라진 것 → 지원 학과와 닿는 지점", hint: ex.intro.text });
   for (const sec of a.qset.data.sections) sec.items.forEach((it, i) => {
@@ -6067,10 +6183,11 @@ function studentQuestions(a) {
     (it.followUps || []).forEach((f, j) => { if ((f || "").trim()) out.push({ ...base, k: `${sec.key}:${i}f${j}`, n: ++n, q: "↳ " + f.trim(), intent: it.intent || "", hint: "" }); });
   });
   if (ex?.last?.text) out.push({ k: "last", n: ++n, section: "마지막으로 하고 싶은 말", secKey: "last", star: true, teacher: false, q: "마지막으로 하고 싶은 말이 있나요?", intent: "새 이야기가 아니라 앞에서 말한 활동이 모이는 자리 — 15초", hint: ex.last.text });
+  out.push(...jesimunStudentItems(a, n));
   return out;
 }
 async function publishShare(appId) {
-  const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a?.qset) return;
+  const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a || (!a.qset && !(a.jesimun || []).length)) return;
   const msg = $(`genMsg-${appId}`);
   const qs = studentQuestions(a);
   if (!qs.length) { msg.textContent = "오류: 배포할 질문이 없습니다."; return; }
@@ -6297,6 +6414,7 @@ const SYNTH_SCHEMA = { type: "object", properties: { summary: { type: "string" }
 async function aiRead(force) {
   const st = stuOf(HUB.cur); if (!st) return;
   const msg = $("aiReadMsg"), b1 = $("aiRead"), b2 = $("aiStruct");
+  if (st.noRecord) { msg.textContent = "생기부 없이 등록한 학생이라 읽을 글이 없습니다. 지원 카드에서 바로 ‘예상 질문 만들기’를 누르세요."; return; }
   if (!AI.key || !AI.model) { msg.textContent = "오류: 00 AI 연결에서 키와 모델을 먼저 고르세요."; return; }
   b1.disabled = b2.disabled = true;
   const say = t => { msg.textContent = t; };
@@ -6381,7 +6499,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
