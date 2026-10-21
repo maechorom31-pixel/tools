@@ -6441,6 +6441,12 @@ function studentQuestions(a) {
   out.push(...jesimunStudentItems(a, n));
   return out;
 }
+/* 시트에 보내는 라벨 — 반·번호만. 이름이 든 별칭은 이 브라우저 밖으로 내보내지 않는다 */
+function shareLabel(st) {
+  if (st.label && /^\d+-\d+$/.test(st.label)) { const [b, n] = st.label.split("-"); return `${b}반 ${n}번`; }
+  const m = (st.alias || "").match(/^(\d+(?:반|학년)?\s*[-–]?\s*\d+(?:반|번)?(?:\s+\d+번?)?)/); if (m) return m[1].trim();
+  return (st.alias || "학생").replace(/\s*[가-힣]{2,4}$/, "").trim() || "학생";
+}
 async function publishShare(appId) {
   const st = stuOf(HUB.cur), a = st.applications.find(x => x.id === appId); if (!a || (!a.qset && !(a.jesimun || []).length)) return;
   const msg = $(`genMsg-${appId}`);
@@ -6450,7 +6456,7 @@ async function publishShare(appId) {
   msg.textContent = "시트에 올리는 중…";
   try {
     const token = a.share?.token || newToken(), note = a.share?.note || "";
-    await gasCall({ action: "publish", token, alias: st.alias, title: appTitle(a), date: a.date || "", questions: qs, note });
+    await gasCall({ action: "publish", token, alias: shareLabel(st), title: appTitle(a), date: a.date || "", questions: qs, note });
     a.share = { token, note, url: GAS.url.replace(/\?.*$/, "") + "?t=" + token, publishedAt: new Date().toISOString(), status: "on", count: qs.length };
     await dbPut(st); renderApps();
     $(`genMsg-${appId}`).textContent = `학생 연습용으로 올렸습니다 — 질문 ${qs.length}개. 아래 QR이나 링크를 학생에게 주세요.`;
@@ -6521,7 +6527,7 @@ async function addTeacherQuestion(st, a, q, why, refsQ) {
   sec.items.push({ q, intent: why, criterion: "", refs: [], followUps: [], source: "선생님", answerHint: "", star: true, addedAt: new Date().toISOString(), after: (refsQ || [])[0] || "" });
   await dbPut(st);
   if (a.share && a.share.status !== "off" && GAS.url && GAS.pw) {
-    try { await gasCall({ action: "publish", token: a.share.token, alias: st.alias, title: appTitle(a), date: a.date || "", questions: studentQuestions(a), note: a.share.note || "" }); a.share.count = studentQuestions(a).length; a.share.publishedAt = new Date().toISOString(); await dbPut(st); renderApps(); $(`share-${a.id}`).querySelector("[data-smsg]").textContent = "선생님 질문을 붙여 학생 화면에도 보냈습니다."; }
+    try { await gasCall({ action: "publish", token: a.share.token, alias: shareLabel(st), title: appTitle(a), date: a.date || "", questions: studentQuestions(a), note: a.share.note || "" }); a.share.count = studentQuestions(a).length; a.share.publishedAt = new Date().toISOString(); await dbPut(st); renderApps(); $(`share-${a.id}`).querySelector("[data-smsg]").textContent = "선생님 질문을 붙여 학생 화면에도 보냈습니다."; }
     catch (e) { renderApps(); $(`share-${a.id}`).querySelector("[data-smsg]").textContent = "질문은 붙였지만 학생 화면에 보내지 못했습니다: " + (e?.message || e) + " — ‘학생 연습용 다시 배포’를 눌러 주세요."; }
   } else renderApps();
 }
@@ -6760,7 +6766,7 @@ renderBar = function () {
 })();
 
 /* 자동 검증용 — 화면 동작에는 쓰지 않는다 */
-window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, resolveRef, handoutGroups, handoutKeyOf, appendQset, QTY, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
+window.__blind = { S, buildLines, effectiveBoxes, build, extractStudents, parseStudents, HUB, parseKDate, setView, registerFromFile, autoTags, splitSents, sentenceBlocks, autoLists, guessMajor, AI, buildPrompt, loadBank, pluckJson, QSET_SCHEMA, stuOf, dbPut, renderApps, GAS, studentQuestions, exportRetrace, aiRead, analyzePrompt, structPrompt, refResolver, refNorm, joinLine, linesOf, removeStudent, checkShape, callAI, addTeacherQuestion, genIntro, printKind, activityUnits, mainItems, introPrompt, printDoc, genJesimun, jesimunPrompt, jesimunStudentItems, isJesimun, jesField, normalizeQset, adaptQset, strictSchema, resolveRef, handoutGroups, handoutKeyOf, appendQset, QTY, shareLabel, scopeGroups, scopedBlocks, mergeQset, itemScope, ANALYZE_SCHEMA, STRUCT_SCHEMA, parseCoverage };
 </script>
 </body>
 </html>
