@@ -154,6 +154,7 @@ function getSet(token) {
     if (String(rows[i][cS]) !== STATUS.on) return { ok: false, error: "이 연습 링크는 닫혔습니다. 선생님께 여쭤보세요." };
     const date = rows[i][cD] instanceof Date ? Utilities.formatDate(rows[i][cD], "Asia/Seoul", "yyyy-MM-dd") : String(rows[i][cD] || "");
     const questions = JSON.parse(readJson_(sh, head, rows[i]));
+    questions.forEach((q, j) => { if (q && !q.k) q.k = "q" + j; });   // 예전 판으로 올린 세트에는 문항키가 없다
     return { ok: true, title: String(rows[i][cTi]), date, questions, note: cN >= 0 ? String(rows[i][cN] || "") : "", nextRound: nextRound_(token), done: doneKeys_(token, questions) };
   }
   return { ok: false, error: "연습 링크를 찾지 못했습니다. 주소가 끊기지 않았는지 확인해 주세요." };
@@ -186,6 +187,7 @@ function saveAnswers(token, answers) {
   const set = getSet(token); if (!set.ok) throw new Error(set.error);
   const list = Array.isArray(answers) ? answers.filter(a => a && (String(a.answer || "").trim() || Number(a.seconds) > 0)) : [];
   if (!list.length) throw new Error("적은 답변이 없습니다.");
+  ensureCols_();   // 예전 판 답변 시트에 '문항키' 열이 없으면 붙인다
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const round = nextRound_(token), sh = sheet_("answers"), now = new Date();
