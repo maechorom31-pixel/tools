@@ -34,6 +34,24 @@ function ensureCols_() {
     SHEETS[k].header.forEach(h => { if (head.indexOf(h) < 0) { head.push(h); sh.getRange(1, head.length).setValue(h); } });
   });
 }
+/* 시트 한 칸은 50,000자까지. 긴 JSON은 45,000자씩 '질문JSON', '질문JSON2', '질문JSON3'… 칸에 나눠 쓰고 읽을 때 이어 붙인다 */
+const CHUNK = 45000;
+function chunkCols_(sh, n) {   // n개의 조각 칸이 있게 하고 열 번호 배열을 돌려준다
+  let head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const cols = [];
+  for (let i = 1; i <= n; i++) {
+    const label = i === 1 ? "질문JSON" : "질문JSON" + i;
+    let c = head.indexOf(label);
+    if (c < 0) { head.push(label); sh.getRange(1, head.length).setValue(label); c = head.length - 1; }
+    cols.push(c);
+  }
+  return cols;
+}
+function readJson_(sh, head, row) {
+  let out = String(row[head.indexOf("질문JSON")] || "");
+  for (let i = 2; ; i++) { const c = head.indexOf("질문JSON" + i); if (c < 0 || !row[c]) break; out += String(row[c]); }
+  return out;
+}
 function colOpt_(sh, label) { const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String); return head.indexOf(label); }
 function sheet_(k) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -79,13 +97,16 @@ function publish_(req) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const sh = sheet_("sets"), cT = col_(sh, "토큰");
+    const json = JSON.stringify(qs), parts = []; for (let i = 0; i < json.length; i += CHUNK) parts.push(json.slice(i, i + CHUNK));
+    chunkCols_(sh, Math.max(parts.length, 1));
     const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
-    const vals = { "토큰": req.token, "라벨": String(req.alias || ""), "제목": String(req.title || ""), "면접일": String(req.date || ""), "질문JSON": JSON.stringify(qs), "만든때": new Date(), "상태": STATUS.on, "한마디": String(req.note || "").slice(0, 500) };
+    const vals = { "토큰": req.token, "라벨": String(req.alias || "").replace(/\s*[가-힣]{2,4}$/, m => /반|번/.test(m) ? m : ""), "제목": String(req.title || ""), "면접일": String(req.date || ""), "만든때": new Date(), "상태": STATUS.on, "한마디": String(req.note || "").slice(0, 500) };
+    head.forEach((h, i) => { const m = h.match(/^질문JSON(\d*)$/); if (m) vals[h] = parts[m[1] ? Number(m[1]) - 1 : 0] || ""; });
     const row = head.map(h => (h in vals) ? vals[h] : "");
     const rows = sh.getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) if (String(rows[i][cT]) === req.token) { sh.getRange(i + 1, 1, 1, row.length).setValues([row]); return { ok: true, updated: true }; }
+    for (let i = 1; i < rows.length; i++) if (String(rows[i][cT]) === req.token) { sh.getRange(i + 1, 1, 1, row.length).setValues([row]); return { ok: true, updated: true, chunks: parts.length }; }
     sh.appendRow(row);
-    return { ok: true, updated: false };
+    return { ok: true, updated: false, chunks: parts.length };
   } finally { lock.releaseLock(); }
 }
 function setStatus_(token, status) {
@@ -97,7 +118,7 @@ function setStatus_(token, status) {
 function listSets_() {
   const sh = sheet_("sets"), rows = sh.getDataRange().getValues(), head = rows[0].map(String);
   const out = [];
-  for (let i = 1; i < rows.length; i++) { const r = {}; head.forEach((h, j) => { if (h !== "질문JSON") r[h] = rows[i][j] instanceof Date ? rows[i][j].toISOString() : rows[i][j]; }); out.push(r); }
+  for (let i = 1; i < rows.length; i++) { const r = {}; head.forEach((h, j) => { if (!/^질문JSON/.test(h)) r[h] = rows[i][j] instanceof Date ? rows[i][j].toISOString() : rows[i][j]; }); out.push(r); }
   return out;
 }
 function answersFor_(token) {
@@ -126,12 +147,13 @@ function doGet(e) {
 /* 학생 화면이 부르는 함수 — 토큰이 맞고 배포중일 때만 질문을 준다. 라벨(반·번호)은 주지 않는다 */
 function getSet(token) {
   const sh = sheet_("sets"), rows = sh.getDataRange().getValues();
-  const cT = col_(sh, "토큰"), cTi = col_(sh, "제목"), cD = col_(sh, "면접일"), cQ = col_(sh, "질문JSON"), cS = col_(sh, "상태"), cN = colOpt_(sh, "한마디");
+  const head = rows[0].map(String);
+  const cT = col_(sh, "토큰"), cTi = col_(sh, "제목"), cD = col_(sh, "면접일"), cS = col_(sh, "상태"), cN = colOpt_(sh, "한마디");
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][cT]) !== token) continue;
     if (String(rows[i][cS]) !== STATUS.on) return { ok: false, error: "이 연습 링크는 닫혔습니다. 선생님께 여쭤보세요." };
     const date = rows[i][cD] instanceof Date ? Utilities.formatDate(rows[i][cD], "Asia/Seoul", "yyyy-MM-dd") : String(rows[i][cD] || "");
-    const questions = JSON.parse(rows[i][cQ]);
+    const questions = JSON.parse(readJson_(sh, head, rows[i]));
     return { ok: true, title: String(rows[i][cTi]), date, questions, note: cN >= 0 ? String(rows[i][cN] || "") : "", nextRound: nextRound_(token), done: doneKeys_(token, questions) };
   }
   return { ok: false, error: "연습 링크를 찾지 못했습니다. 주소가 끊기지 않았는지 확인해 주세요." };
