@@ -11,6 +11,9 @@ const SHEETS = {
   answers: { name: "답변", header: ["토큰", "회차", "번호", "섹션", "질문", "답변", "소요초", "제출때", "문항키"] },
 };
 const STATUS = { on: "배포중", off: "중지" };
+/* 녹음 전사용 Gemini 키 — 설정 시트의 'Gemini 키' 칸이 우선이고, 비어 있으면 아래 따옴표 안의 값을 씁니다.
+ * 이 파일을 Apps Script 편집기(선생님만 보는 곳)에 붙여 넣은 뒤 거기서만 채우세요. 깃허브에 올리는 파일에는 비워 둡니다. */
+const GEMINI_KEY_FALLBACK = "";
 
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -22,6 +25,9 @@ function setup() {
   const st = ss.getSheetByName(SHEETS.settings.name);
   if (st.getLastRow() < 2) st.appendRow(["관리 비밀번호", ""]);
   if (st.getLastRow() < 3) st.appendRow(["앱 제목", "면접 연습"]);
+  const labels = st.getDataRange().getValues().map(r => String(r[0]).trim());
+  if (labels.indexOf("Gemini 키") < 0) st.appendRow(["Gemini 키", ""]);
+  if (labels.indexOf("전사 모델") < 0) st.appendRow(["전사 모델", "gemini-2.5-flash"]);
   ensureCols_();
   return "시트를 만들었습니다. 설정 시트 B2에 관리 비밀번호를 적어 주세요.";
 }
@@ -87,6 +93,7 @@ function doPost(e) {
     if (req.action === "resume") return json_(setStatus_(req.token, STATUS.on));
     if (req.action === "answers") return json_({ ok: true, rounds: answersFor_(req.token) });
     if (req.action === "list") return json_({ ok: true, sets: listSets_() });
+    if (req.action === "transcribe") return json_({ ok: true, result: transcribe_(req.audio, req.mime, "interview", req.hint) });
     return json_({ ok: false, error: "모르는 요청: " + req.action });
   } catch (err) { return json_({ ok: false, error: String(err && err.message || err) }); }
 }
@@ -136,6 +143,34 @@ function answersFor_(token) {
   return Object.keys(byRound).map(k => byRound[k]).sort((a, b) => a.round - b.round).map(r => { r.items.sort((a, b) => a.n - b.n); return r; });
 }
 
+/* ---------- 녹음 전사 — 설정 시트의 Gemini 키로 이 스크립트가 Gemini를 부른다. 키는 시트 밖으로 나가지 않는다 ---------- */
+function geminiKey_() { return setting_("Gemini 키") || GEMINI_KEY_FALLBACK; }
+function transcribe_(b64, mime, mode, hint) {
+  const key = geminiKey_(); if (!key) throw new Error("설정 시트에 'Gemini 키'가 비어 있습니다.");
+  if (!b64 || String(b64).length < 100) throw new Error("오디오 자료가 비어 있습니다.");
+  if (String(b64).length > 26 * 1024 * 1024) throw new Error("녹음 파일이 너무 큽니다(약 19MB까지). 나눠서 올려 주세요.");
+  const model = setting_("전사 모델") || "gemini-2.5-flash";
+  const rules = mode === "interview"
+    ? "이 녹음은 고등학교 모의면접(면접관 교사와 학생)입니다. 화자를 면접관/학생으로 구분하고 확신이 없으면 '모름'으로 적습니다."
+    : "이 녹음은 학생이 혼자 면접 답변을 연습한 것입니다. 화자는 모두 학생입니다.";
+  const prompt = rules + " 들리는 대로 한국어로 전사합니다. 추임새('어', '음', '그게', '진짜')와 말 더듬, 끊긴 말을 지우지 않고 그대로 적습니다 — 피드백 재료입니다. 발화가 바뀌거나 30초가 지나면 새 segment를 만들고 t에는 시작 시각을 mm:ss로 적습니다. 들리지 않는 곳은 (불명)으로 적습니다. 사람 이름·학교명이 들리면 [이름]·[학교]로 바꿉니다. notes에는 녹음 상태(잡음·끊김)만 적습니다. 출력은 JSON만." + (hint ? " 참고: " + String(hint).slice(0, 300) : "");
+  const schema = { type: "object", properties: { segments: { type: "array", items: { type: "object", properties: { t: { type: "string" }, who: { type: "string" }, text: { type: "string" } }, required: ["t", "who", "text"] } }, notes: { type: "array", items: { type: "string" } } }, required: ["segments", "notes"] };
+  const body = { contents: [{ parts: [{ inlineData: { mimeType: mime || "audio/mp4", data: b64 } }, { text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.2, maxOutputTokens: 16384 } };
+  const res = UrlFetchApp.fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key), { method: "post", contentType: "application/json", payload: JSON.stringify(body), muteHttpExceptions: true });
+  const code = res.getResponseCode(), txt = res.getContentText();
+  if (code !== 200) { let m = ""; try { m = JSON.parse(txt).error.message; } catch (e) { m = txt.slice(0, 200); } throw new Error("Gemini 응답 " + code + ": " + m); }
+  const j = JSON.parse(txt);
+  const out = ((j.candidates || [])[0] || {}).content; const text = out && out.parts ? out.parts.map(p => p.text || "").join("") : "";
+  if (!text) throw new Error("전사 결과가 비어 있습니다" + (((j.candidates || [])[0] || {}).finishReason ? " (" + j.candidates[0].finishReason + ")" : "") + ".");
+  let d; try { d = JSON.parse(text); } catch (e) { const i = text.indexOf("{"), k = text.lastIndexOf("}"); d = JSON.parse(text.slice(i, k + 1)); }
+  const segs = (d.segments || []).map(x => ({ t: String(x.t || ""), who: String(x.who || ""), text: String(x.text || "") })).filter(x => x.text);
+  return { model, segments: segs, notes: d.notes || [], text: segs.map(x => (x.t ? "[" + x.t + "] " : "") + (x.who && mode === "interview" ? x.who + ": " : "") + x.text).join("\n") };
+}
+/* 학생 화면이 부르는 전사 — 토큰이 맞고 배포 중일 때만 */
+function transcribeAnswer(token, b64, mime) {
+  const set = getSet(token); if (!set.ok) throw new Error(set.error);
+  return transcribe_(b64, mime, "self", "");
+}
 /* ---------- 학생 페이지 (GET ?t=토큰) ---------- */
 function doGet(e) {
   const token = String((e && e.parameter && e.parameter.t) || "").trim();
@@ -155,7 +190,7 @@ function getSet(token) {
     const date = rows[i][cD] instanceof Date ? Utilities.formatDate(rows[i][cD], "Asia/Seoul", "yyyy-MM-dd") : String(rows[i][cD] || "");
     const questions = JSON.parse(readJson_(sh, head, rows[i]));
     questions.forEach((q, j) => { if (q && !q.k) q.k = "q" + j; });   // 예전 판으로 올린 세트에는 문항키가 없다
-    return { ok: true, title: String(rows[i][cTi]), date, questions, note: cN >= 0 ? String(rows[i][cN] || "") : "", nextRound: nextRound_(token), done: doneKeys_(token, questions) };
+    return { ok: true, title: String(rows[i][cTi]), date, questions, note: cN >= 0 ? String(rows[i][cN] || "") : "", nextRound: nextRound_(token), done: doneKeys_(token, questions), canTranscribe: !!geminiKey_() };
   }
   return { ok: false, error: "연습 링크를 찾지 못했습니다. 주소가 끊기지 않았는지 확인해 주세요." };
 }

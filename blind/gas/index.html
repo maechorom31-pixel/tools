@@ -94,6 +94,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
 <div class="row"><button class="btn main" id="tStart" type="button">시작</button><button class="btn" id="tStop" type="button" disabled>멈춤</button><button class="btn" id="dictate" type="button" hidden>말로 받아 적기</button></div>
 <div class="interim" id="interim"></div>
 <label class="lbl" for="ans">답의 핵심 <span>(선택 — 말로만 해도 됩니다)</span></label>
+<div class="row" id="recRow" hidden><button class="btn sm" id="recPick" type="button">녹음 파일 올리기 → 글로</button><input type="file" id="recFile" accept="audio/*,video/mp4,.m4a,.mp3,.wav,.webm,.aac,.ogg" hidden><span class="interim" id="recMsg" style="display:inline-block;margin-left:8px"></span></div>
 <textarea id="ans" placeholder="첫 문장과 근거 하나만 적어도 됩니다"></textarea>
 <div class="row"><button class="btn" id="prev" type="button">이전</button><button class="btn main" id="next" type="button">다음</button></div>
 </section>
@@ -169,6 +170,7 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
     if (r.date) { var d = r.date.split("-"); var dt = new Date(+d[0], +d[1] - 1, +d[2]); var now = new Date(); now.setHours(0, 0, 0, 0); var n = Math.round((dt - now) / 86400000); dd = " · 면접 " + (+d[1]) + ". " + (+d[2]) + ". " + (n === 0 ? "오늘" : n > 0 ? "D-" + n : ""); }
     $("subt").innerHTML = "질문 <b>" + all.length + "</b>개" + dd + " · " + r.nextRound + "회차";
     if (r.note) { $("noteBox").hidden = false; $("note").textContent = r.note; }
+    if (r.canTranscribe && window.FileReader) $("recRow").hidden = false;
     var fresh = all.filter(function (q) { return q.teacher; }).length;
     if (fresh) { $("teacherNew").hidden = false; $("teacherNew").innerHTML = "선생님이 지난 답변을 보고 남긴 질문이 <b>" + fresh + "</b>개 있습니다. 문항 머리에 ‘선생님 질문’이라고 표시됩니다."; }
     if (r.nextRound > 1 && pick("undone").length && pick("undone").length < all.length) mode = "undone";
@@ -219,6 +221,27 @@ textarea:focus{border-color:var(--amber-dark);outline:none;box-shadow:0 0 0 3px 
       if (!tick) $("tStart").onclick();
     } catch (e) { $("interim").textContent = "이 브라우저에서는 받아 적기가 되지 않습니다. 직접 적어 주세요."; }
   }
+  /* 녹음 파일 → 선생님 시트의 Gemini 키로 전사(앱스 스크립트가 대신 부름). 마이크 권한이 막혀도 파일 올리기는 된다 */
+  $("recPick").onclick = function () { $("recFile").click(); };
+  $("recFile").onchange = function () {
+    var f = $("recFile").files[0]; if (!f) return;
+    if (f.size > 19 * 1024 * 1024) { $("recMsg").textContent = "파일이 너무 큽니다(19MB까지). 짧게 나눠 녹음해 주세요."; $("recFile").value = ""; return; }
+    var btn = $("recPick"); btn.disabled = true; $("recMsg").textContent = "올리는 중… (" + Math.round(f.size / 1024) + "KB)";
+    var rd = new FileReader();
+    rd.onload = function () {
+      var b64 = String(rd.result).split(",")[1] || "";
+      var mime = f.type || (/\.m4a$/i.test(f.name) ? "audio/mp4" : /\.mp3$/i.test(f.name) ? "audio/mpeg" : /\.wav$/i.test(f.name) ? "audio/wav" : /\.webm$/i.test(f.name) ? "audio/webm" : "audio/mp4");
+      $("recMsg").textContent = "글로 바꾸는 중… (1~2분 걸릴 수 있어요)";
+      google.script.run.withSuccessHandler(function (r) {
+        var t = r && r.text ? r.text.replace(/^\[\d+:\d+\] /gm, "") : "";
+        if (t) { var v = $("ans").value; $("ans").value = (v ? v.replace(/\s+$/, "") + "\n" : "") + t; answers[cur].answer = $("ans").value; keepDraft(); $("recMsg").textContent = "녹음을 글로 옮겼습니다. 틀린 곳은 고쳐 주세요."; }
+        else $("recMsg").textContent = "들리는 말이 없었습니다.";
+        btn.disabled = false; $("recFile").value = "";
+      }).withFailureHandler(function (e) { $("recMsg").textContent = "오류: " + ((e && e.message) || "전사하지 못했습니다."); btn.disabled = false; $("recFile").value = ""; }).transcribeAnswer(token, b64, mime);
+    };
+    rd.onerror = function () { $("recMsg").textContent = "파일을 읽지 못했습니다."; btn.disabled = false; };
+    rd.readAsDataURL(f);
+  };
   $("speak").onclick = function () { var q = qs[cur]; speak(q.passages ? q.passages.map(function (p) { return p.text; }).join(" ") : q.q.replace(/^↳\s*/, "")); };
   $("dictate").onclick = function () { if (recOn) stopDictate(); else startDictate(); };
 

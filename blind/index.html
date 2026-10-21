@@ -228,6 +228,11 @@ body.print-q details.qsbox{border:0;padding:0}
 .sc b{font-weight:600}
 .sc .t{display:block;font-size:12px;color:var(--amber-dark);margin-left:22px;font-variant-numeric:tabular-nums}
 .sc .d{display:block;font-size:12px;color:var(--mid);margin-left:22px;line-height:1.4}
+.trbox{margin-top:8px;border-top:1px solid var(--line);padding-top:4px}
+.tr{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tr h6{font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.tr h6 .n{color:var(--mid);font-weight:400;font-size:12px}
+.tr textarea{width:100%;font:inherit;font-size:13px;line-height:1.6;margin-top:6px;padding:8px;border:1px solid #E8E6E2;border-radius:6px;background:var(--sub);resize:vertical;white-space:pre-wrap}
 .jes{margin-top:8px;border-top:1px solid var(--line);padding-top:4px}
 .jset{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .jset h6{font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
@@ -5257,7 +5262,7 @@ $("stuDel").onclick = () => removeStudent(HUB.cur);
 function qsSummary(st, a) {
   const n = a.qset ? mainItems(a).length : 0, j = (a.jesimun || []).length;
   const parts = [a.qset ? `질문 ${n}문항` : "질문 세트 없음", a.share ? (a.share.status === "off" ? "배포 닫힘" : `배포 중 · 답변 ${(a.rounds || []).length}회차`) : "", j ? `제시문 ${j}세트` : "", a.qset?.data?.extras?.intro ? "자기소개" : ""].filter(Boolean);
-  return `<b>질문·배포·제시문</b> <span class="hint">${esc(parts.join(" · "))} — 눌러서 ${HUB.open.has(a.id) ? "접기" : "펼치기"}</span>`;
+  return `<b>질문·배포·제시문</b> <span class="hint">${esc([...parts, (a.transcripts || []).length ? `전사 ${a.transcripts.length}건` : ""].filter(Boolean).join(" · "))} — 눌러서 ${HUB.open.has(a.id) ? "접기" : "펼치기"}</span>`;
 }
 function renderApps() {
   const st = stuOf(HUB.cur), host = $("apps");
@@ -5272,7 +5277,8 @@ function renderApps() {
     <details class="qsbox" data-qsbox="${a.id}"${HUB.open.has(a.id) ? " open" : ""}><summary>${qsSummary(st, a)}</summary>
     <div id="share-${a.id}">${shareHtml(st, a)}</div>
     <div class="qs" id="qs-${a.id}">${a.qset ? qsetHtml(st, a) : ""}</div>
-    <div id="jes-${a.id}">${jesimunHtml(st, a)}</div></details></article>`).join("");
+    <div id="jes-${a.id}">${jesimunHtml(st, a)}</div>
+    <div id="tr-${a.id}">${transcribeHtml(st, a)}</div></details></article>`).join("");
   host.querySelectorAll("details.qsbox").forEach(d => d.addEventListener("toggle", () => { if (d.open) HUB.open.add(d.dataset.qsbox); else HUB.open.delete(d.dataset.qsbox); }));
   host.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => generateQuestions(b.dataset.gen));
   host.querySelectorAll("[data-more]").forEach(b => b.onclick = () => generateQuestions(b.dataset.more, { add: true }));
@@ -5282,6 +5288,7 @@ function renderApps() {
   st.applications.forEach(a => bindShare(st, a));
   st.applications.forEach(a => bindJesimun(st, a));
   st.applications.forEach(a => bindScope(st, a));
+  st.applications.forEach(a => bindTranscribe(st, a));
   host.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editApp(b.dataset.edit));
   host.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { st.applications = st.applications.filter(a => a.id !== b.dataset.del); await dbPut(st); renderApps(); renderStudents(); renderCal(); });
 }
@@ -6478,7 +6485,7 @@ function shareHtml(st, a) {
     </div>
     <div class="qr" aria-label="학생 연습 링크 QR">${svg}</div>
   </div>
-  <div class="rounds" id="rounds-${a.id}">${rounds.length ? roundsHtml(a) : `<p class="hint">아직 불러온 답변이 없습니다. 학생이 제출한 뒤 ‘답변 불러오기’를 누르면 회차별로 여기에 쌓입니다.</p>`}</div>`;
+  <div class="rounds" id="rounds-${a.id}">${rounds.length ? roundsHtml(a) : `<p class="hint">아직 불러온 답변이 없습니다. 학생이 제출한 뒤 ‘답변 불러오기’를 누르면 회차별로 여기에 쌓입니다.${(a.transcripts || []).length ? ` <button class="btn" type="button" data-export style="min-height:30px;font-size:13px">복기 재료 내보내기(전사만)</button>` : ""}</p>`}</div>`;
 }
 function roundsHtml(a) {
   const c = a.comments || {};
@@ -6531,6 +6538,38 @@ async function addTeacherQuestion(st, a, q, why, refsQ) {
     catch (e) { renderApps(); $(`share-${a.id}`).querySelector("[data-smsg]").textContent = "질문은 붙였지만 학생 화면에 보내지 못했습니다: " + (e?.message || e) + " — ‘학생 연습용 다시 배포’를 눌러 주세요."; }
   } else renderApps();
 }
+/* ═══════ 모의면접 녹음 전사 — 녹음 파일을 Apps Script에 보내면 설정 시트의 Gemini 키로 전사해 돌려준다. 키는 시트 밖으로 나오지 않는다 ═══════ */
+function transcribeHtml(st, a) {
+  const list = a.transcripts || [];
+  return `<div class="trbox"><div class="toolrow" style="margin-top:12px"><span class="hint"><b>모의면접 녹음 전사</b> — 녹음 파일(m4a·mp3·wav·webm, 19MB까지)을 올리면 선생님 시트의 Gemini 키로 전사합니다. 음성이 Google로 가며, 이름·학교명은 [이름]·[학교]로 바뀝니다. 추임새는 그대로 둡니다(피드백 재료).</span><span class="spacer"></span><button class="btn" type="button" data-trpick="${a.id}" style="min-height:32px;font-size:13px">녹음 파일 올려 전사</button><input type="file" data-trfile="${a.id}" accept="audio/*,video/mp4,.m4a,.mp3,.wav,.webm,.aac,.ogg" hidden><span class="hint" data-trmsg role="status"></span></div>
+    ${list.map(t => `<section class="tr" data-tid="${t.id}"><h6>${esc(t.name)}<span class="n">${new Date(t.createdAt).toLocaleString("ko-KR")} · ${esc(t.model || "")} · ${t.segments.length}구간${t.notes?.length ? " · " + esc(t.notes.join(" / ")) : ""}</span></h6>
+      <textarea data-trtext="${t.id}" rows="6">${esc(t.text)}</textarea>
+      <div class="toolrow" style="margin-top:4px"><button class="btn" type="button" data-trcopy="${t.id}" style="min-height:30px;font-size:13px">복사</button><button class="btn" type="button" data-trdel="${t.id}" style="min-height:30px;font-size:13px">지우기</button><span class="hint">고친 내용은 자동 저장되고 ‘복기 재료 내보내기’에 함께 들어갑니다.</span></div></section>`).join("")}</div>`;
+}
+function bindTranscribe(st, a) {
+  const host = $(`tr-${a.id}`); if (!host) return;
+  const msg = host.querySelector("[data-trmsg]"), pick = host.querySelector("[data-trpick]"), file = host.querySelector("[data-trfile]");
+  pick.onclick = () => { if (!GAS.url || !GAS.pw) { msg.textContent = "오류: 00 단계 ‘학생 배포’에 웹 앱 주소와 비밀번호를 먼저 넣어 주세요. 전사는 그 시트의 Gemini 키로 합니다."; return; } file.click(); };
+  file.onchange = async () => {
+    const f = file.files[0]; if (!f) return;
+    if (f.size > 19 * 1024 * 1024) { msg.textContent = "오류: 파일이 너무 큽니다(19MB까지). 나눠서 올려 주세요."; file.value = ""; return; }
+    pick.disabled = true; msg.textContent = `읽는 중… (${Math.round(f.size / 1024)}KB)`;
+    try {
+      const b64 = await new Promise((res, rej) => { const rd = new FileReader(); rd.onload = () => res(String(rd.result).split(",")[1] || ""); rd.onerror = () => rej(new Error("파일을 읽지 못했습니다.")); rd.readAsDataURL(f); });
+      const mime = f.type || (/\.m4a$/i.test(f.name) ? "audio/mp4" : /\.mp3$/i.test(f.name) ? "audio/mpeg" : /\.wav$/i.test(f.name) ? "audio/wav" : /\.webm$/i.test(f.name) ? "audio/webm" : "audio/mp4");
+      msg.textContent = "전사하는 중… 길이에 따라 1~3분 걸립니다.";
+      const j = await gasCall({ action: "transcribe", audio: b64, mime, hint: `지원: ${appTitle(a)}` }, 300000);
+      const r = j.result || {};
+      (a.transcripts = a.transcripts || []).push({ id: uid(), name: f.name.replace(/[가-힣]{2,4}(?=\.[a-z0-9]+$)/i, m => m), createdAt: new Date().toISOString(), model: r.model || "", segments: r.segments || [], notes: r.notes || [], text: r.text || "" });
+      HUB.open.add(a.id); await dbPut(st); renderApps();
+      $(`tr-${a.id}`).querySelector("[data-trmsg]").textContent = `전사했습니다 — ${(r.segments || []).length}구간. 틀린 곳은 글상자에서 바로 고치세요.`;
+    } catch (e) { msg.textContent = "오류: " + (e?.message || e); pick.disabled = false; }
+    file.value = "";
+  };
+  host.querySelectorAll("textarea[data-trtext]").forEach(ta => ta.addEventListener("input", () => { const t = (a.transcripts || []).find(x => x.id === ta.dataset.trtext); if (t) { t.text = ta.value; dbPut(st); } }));
+  host.querySelectorAll("[data-trcopy]").forEach(b => b.onclick = async () => { const t = (a.transcripts || []).find(x => x.id === b.dataset.trcopy); try { await navigator.clipboard.writeText(t.text); msg.textContent = "복사했습니다."; } catch { msg.textContent = "복사하지 못했습니다."; } });
+  host.querySelectorAll("[data-trdel]").forEach(b => b.onclick = async () => { if (!confirm("이 전사를 지울까요?")) return; a.transcripts = (a.transcripts || []).filter(x => x.id !== b.dataset.trdel); await dbPut(st); renderApps(); });
+}
 /* 복기 재료 — 면접 복기·학습 노트 1부(모의면접 기록) 꼴. 이름 없이 라벨만. */
 function exportRetrace(st, a) {
   const u = HUB.cards?.universities.find(x => x.id === a.univId), adm = findAdm(u, a.admId);
@@ -6547,6 +6586,7 @@ function exportRetrace(st, a) {
     }
     L.push("");
   }
+  for (const t of a.transcripts || []) { L.push(`## 모의면접 녹음 전사 · ${t.name} · ${new Date(t.createdAt).toLocaleString("ko-KR")}${t.notes?.length ? " · " + t.notes.join(" / ") : ""}`, t.text, ""); }
   const qset = a.qset?.data;
   if (qset) L.push(`## 이번 질문 세트가 덮은 것`, ...arrOf(qset.sections).map(s => `- ${SECTION_KO[s.key] || s.title}: ${arrOf(s.items).filter(x => !x.deleted && (x.q || "").trim()).length}문항`), "");
   const text = L.join("\n");
