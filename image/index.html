@@ -290,11 +290,32 @@
   .scan-sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 8px; line-height: 1.5; }
   .scan-sec-head b { font-size: 13px; }
   .scan-sec-head span { font-size: 12px; color: var(--ink-soft); word-break: keep-all; }
-  .batch-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; line-height: 1.2; }
-  .batch-list:empty { display: none; }
-  .bitem { position: relative; width: 72px; font-size: 11px; color: var(--ink-soft); text-align: center; }
-  .bitem canvas { display: block; width: 72px; height: 96px; border: 1px solid var(--line); border-radius: 6px; background: #F5F5F4; }
-  .bitem span { display: block; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pagestrip {
+    display: flex; align-items: center; gap: 8px;
+    margin: -4px 0 12px;
+  }
+  .pagethumbs {
+    display: flex; flex: 1; min-width: 0; gap: 8px; overflow-x: auto; padding: 6px 4px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+  }
+  .pthumb {
+    position: relative; flex: 0 0 auto; cursor: pointer;
+    border: 2px solid var(--line); border-radius: 8px; background: #F5F5F4;
+    transition: border-color .12s;
+  }
+  .pthumb canvas { display: block; width: 56px; height: 72px; border-radius: 6px; }
+  .pthumb b {
+    position: absolute; left: 4px; bottom: 4px; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 9px; background: rgba(28,25,23,.75); color: #fff;
+    font-size: 11px; line-height: 18px; text-align: center;
+  }
+  .pthumb.on { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber-soft); }
+  .pthumb .pdel { display: none; }
+  .pthumb:hover .pdel, .pthumb.on .pdel { display: block; }
+  @media (max-width: 520px) {
+    .pagestrip { flex-wrap: wrap; }
+    .pagethumbs { order: -1; flex: 1 0 100%; }
+  }
   #scanPresetSeg { flex-wrap: wrap; }
   #scanPresetSeg button { flex: 1 0 auto; }
   @media (max-width: 520px) {
@@ -436,16 +457,17 @@
     body[data-tab="color"] #editor.show {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 330px;
-      grid-template-rows: auto auto auto 1fr;
+      grid-template-rows: auto auto auto auto 1fr;
       column-gap: 16px;
       align-items: start;
     }
     body[data-tab="color"] .tabbar { grid-column: 1 / -1; }
-    body[data-tab="color"] .status { grid-column: 1; grid-row: 2; }
-    body[data-tab="color"] .canvas-holder { grid-column: 1; grid-row: 3; }
-    body[data-tab="color"] .footnote { grid-column: 1; grid-row: 4; }
+    body[data-tab="color"] .pagestrip { grid-column: 1 / -1; grid-row: 2; }
+    body[data-tab="color"] .status { grid-column: 1; grid-row: 3; }
+    body[data-tab="color"] .canvas-holder { grid-column: 1; grid-row: 4; }
+    body[data-tab="color"] .footnote { grid-column: 1; grid-row: 5; }
     body[data-tab="color"] #panel-color {
-      grid-column: 2; grid-row: 2 / 5;
+      grid-column: 2; grid-row: 3 / 6;
       position: sticky; top: 16px;
       max-height: calc(100vh - 32px); overflow-y: auto;
       margin-bottom: 0;
@@ -455,6 +477,7 @@
   @media (max-width: 979px) {
     body[data-tab="color"] #editor.show { display: flex; flex-direction: column; }
     body[data-tab="color"] .tabbar { order: 0; }
+    body[data-tab="color"] .pagestrip { order: 1; }
     body[data-tab="color"] .status { order: 1; }
     body[data-tab="color"] .canvas-holder {
       order: 2; position: sticky; top: 0; z-index: 5;
@@ -479,10 +502,10 @@
 
   <div id="dropzone">
     <p>사진을 여기로 끌어다 놓거나, 클릭해서 선택하세요</p>
-    <p>캡처한 화면은 <kbd>Ctrl</kbd> + <kbd>V</kbd> 로 바로 붙여넣을 수 있습니다<br>
+    <p>여러 장을 한꺼번에 넣으면 장마다 오가며 편집하고 PDF 한 파일로도 받을 수 있어요 · 캡처한 화면은 <kbd>Ctrl</kbd> + <kbd>V</kbd> 로 바로 붙여넣을 수 있습니다<br>
        모자이크(개인정보 가림) · 자르기(증명사진/여권 비율) · 색감 필터·보정 · 스캔본처럼 · AI 배경 지우기(누끼) · 크기 조절 · 용량 압축</p>
   </div>
-  <input type="file" id="fileInput" accept="image/*" hidden>
+  <input type="file" id="fileInput" accept="image/*" multiple hidden>
 
   <div id="editor">
     <div class="tabbar">
@@ -498,6 +521,15 @@
       <button class="btn" id="resetBtn" type="button">원본으로</button>
       <button class="btn" id="newBtn" type="button">새 이미지</button>
     </div>
+
+    <div class="pagestrip" id="pageStrip">
+      <button class="btn small" id="pagePrev" type="button" title="이전 장" aria-label="이전 장">◀</button>
+      <div class="pagethumbs" id="pageThumbs"></div>
+      <button class="btn small" id="pageNext" type="button" title="다음 장" aria-label="다음 장">▶</button>
+      <button class="btn small" id="pageAddBtn" type="button">＋ 사진 추가</button>
+      <span class="est" id="pageInfo"></span>
+    </div>
+    <input type="file" id="pageInput" accept="image/*" multiple hidden>
 
     <!-- 모자이크 -->
     <div class="toolbar panel on" id="panel-mosaic">
@@ -588,20 +620,13 @@
           </span>
         </div>
       </div>
-      <div class="scan-sec">
-        <div class="scan-sec-head"><b>여러 장 이어서</b><span>사진 여러 장을 지금 설정으로 한꺼번에 처리해 PDF 한 파일 또는 JPG 각각으로</span></div>
+      <div class="scan-sec" id="scanAllSec" style="display:none">
+        <div class="scan-sec-head"><b>다른 장에도</b><span>지금 설정을 나머지 장에 한꺼번에 적용해요. 장마다 다르게 하려면 위 페이지 띠에서 옮겨 가며 작업하세요</span></div>
         <div class="scan-top">
-          <button class="btn small" id="batchAddBtn" type="button">＋ 사진 여러 장 고르기</button>
-          <button class="btn small" id="batchCurBtn" type="button">현재 이미지 추가</button>
           <label class="chk"><input type="checkbox" id="batchDeskewChk" checked> 모서리 자동 펴기</label>
+          <button class="btn small" id="scanAllBtn" type="button">나머지 장에 같은 효과 적용</button>
           <span class="est" id="batchStatus"></span>
-          <div class="spacer"></div>
-          <button class="btn small" id="batchClearBtn" type="button">모두 비우기</button>
-          <button class="btn small" id="batchJpgBtn" type="button" disabled>JPG 각각 내려받기</button>
-          <button class="btn small primary" id="batchPdfBtn" type="button" disabled>📄 PDF 한 파일로</button>
         </div>
-        <div class="batch-list" id="batchList"></div>
-        <input type="file" id="batchInput" accept="image/*" multiple hidden>
       </div>
     </div>
 
@@ -663,7 +688,11 @@
       </div>
       <div class="est" id="sizeEst">용량 계산 중…</div>
       <div class="spacer"></div>
-      <button class="btn primary" id="saveBtn" type="button">다운로드</button>
+      <span class="group" id="saveAllWrap" style="display:none">
+        <button class="btn" id="saveAllJpgBtn" type="button" title="모든 장을 JPG로 각각">전체 JPG</button>
+        <button class="btn" id="saveAllPdfBtn" type="button" title="모든 장을 PDF 한 파일로">📄 전체 PDF</button>
+      </span>
+      <button class="btn primary" id="saveBtn" type="button">이 장 다운로드</button>
     </div>
 
     <p class="status">현재 이미지: <b id="dims">–</b><span id="origSizeTxt"></span></p>
@@ -924,10 +953,10 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     mosaic: '붓 모드는 가릴 부분을 문지르고, 사각형 모드는 영역을 드래그, 올가미 모드는 원하는 모양대로 빙 둘러 그리면 그 안쪽만 모자이크 처리됩니다. 되돌리기는 Ctrl+Z로도 됩니다.',
     crop: '주황색 상자를 끌어 위치를 옮기고, 모서리 점을 끌어 크기를 조절한 뒤 「자르기 적용」을 누르세요. 「얼굴 자동 맞춤」을 누르면 사진 속 얼굴을 찾아 증명사진 구도로 상자를 잡아 줍니다(얼굴 인식도 이 컴퓨터 안에서만 처리됩니다). 증명사진·여권 비율 선택 시 표준 규격 픽셀(증명 354×472 / 여권 413×531, 300dpi 기준)로 저장할 수 있고, 옆으로 누운 사진은 회전 버튼으로 바로 세울 수 있습니다.',
     color: '「기록·활동」「조명 보정」「필름 룩」「카메라 룩」처럼 쓰임새별로 묶인 필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래에서 빛·톤 곡선(그래프)·색·색 섞기(8가지 색깔별)·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 「✨ 자동 보정」은 사진의 밝기 분포와 회색을 읽어 화이트밸런스·노출·레벨을 한 번에 맞춰 주고, 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
-    scan: '비스듬히 찍힌 종이는 먼저 「종이 펴기」로 — 「모서리 자동 찾기」를 누르면 종이 귀퉁이를 찾아 표시하고(배경이 종이보다 어두울 때 잘 찾아요), 주황 점을 끌어 맞춘 뒤 「펴기 적용」을 누르면 반듯해집니다. 사진 여러 장은 「여러 장 이어서」에 모아 두고 같은 설정으로 PDF 한 파일 또는 JPG 각각으로 받을 수 있어요. 문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
+    scan: '비스듬히 찍힌 종이는 먼저 「종이 펴기」로 — 「모서리 자동 찾기」를 누르면 종이 귀퉁이를 찾아 표시하고(배경이 종이보다 어두울 때 잘 찾아요), 주황 점을 끌어 맞춘 뒤 「펴기 적용」을 누르면 반듯해집니다. 사진이 여러 장이면 위 페이지 띠에서 옮겨 다니며 장마다 펴고 효과를 조절하고, 「다른 장에도」로 나머지 장에 같은 설정을 한꺼번에 적용할 수 있어요. 저장 탭에서 전체를 PDF 한 파일로 받을 수 있습니다. 문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
-    save: 'JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
+    save: '여러 장을 불러왔다면 「전체 PDF」로 한 파일에 묶거나 「전체 JPG」로 장마다 받을 수 있어요(품질 슬라이더 적용). JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
   };
 
   var dropzone = document.getElementById('dropzone');
@@ -995,38 +1024,37 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
 
   /* ── 파일 불러오기 ── */
 
-  function loadFile(file) {
-    if (!file || file.type.indexOf('image') !== 0) return;
-    baseName = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
-    origFileSize = file.size || 0;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      var img = new Image();
-      img.onload = function () { setupImage(img); };
-      img.src = e.target.result;
+  // 파일 하나 → 한 장(페이지)으로 추가. 여러 파일은 고른 순서대로.
+  function loadFile(file, done) {
+    if (!file || file.type.indexOf('image') !== 0) { if (done) done(); return; }
+    var name = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+    var size = file.size || 0;
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      pageAdd(name, size, c);
+      if (done) done();
     };
-    reader.readAsDataURL(file);
+    img.onerror = function () { URL.revokeObjectURL(url); if (done) done(); };
+    img.src = url;
   }
-
-  function setupImage(img) {
-    var w = img.naturalWidth, h = img.naturalHeight;
-    var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
-    w = Math.round(w * scale);
-    h = Math.round(h * scale);
-
-    cv.width = w; cv.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
-
-    originalCanvas.width = w; originalCanvas.height = h;
-    originalCanvas.getContext('2d').drawImage(cv, 0, 0);
-
-    history = [];
-    crop = null;
-    updateUndoBtn();
-    dropzone.style.display = 'none';
-    editor.classList.add('show');
-    origSizeTxt.textContent = origFileSize ? ' · 원본 파일 ' + fmtSize(origFileSize) : '';
-    afterImageChange();
+  function loadFiles(fileList) {
+    var list = Array.prototype.slice.call(fileList || []).filter(function (f) { return f.type.indexOf('image') === 0; });
+    if (!list.length) return;
+    var idx = 0, before = pages.length;
+    (function next() {
+      if (idx >= list.length) {
+        if (list.length > 1 || before) toast((pages.length - before) + '장 추가 · 모두 ' + pages.length + '장');
+        return;
+      }
+      loadFile(list[idx++], next);
+    })();
   }
 
   function fmtSize(bytes) {
@@ -1036,7 +1064,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
 
   dropzone.addEventListener('click', function () { fileInput.click(); });
   fileInput.addEventListener('change', function () {
-    if (fileInput.files[0]) loadFile(fileInput.files[0]);
+    loadFiles(fileInput.files);
     fileInput.value = '';
   });
 
@@ -1054,7 +1082,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   });
   document.addEventListener('drop', function (e) {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFiles(e.dataTransfer.files);
   });
   document.addEventListener('paste', function (e) {
     var items = (e.clipboardData || {}).items || [];
@@ -1065,6 +1093,168 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
         return;
       }
     }
+  });
+
+  /* ── 여러 장 (페이지) ──
+     불러온 사진마다 한 장씩. 탭 아래 띠에서 옮겨 다니며 장마다 따로 편집하고,
+     저장 탭에서 현재 장 또는 전체(PDF·JPG)로 내려받는다. */
+
+  var pages = [];          // { name, size, original, canvas, history, el }
+  var pageCur = -1;
+  var pageThumbs = document.getElementById('pageThumbs');
+  var pageInfo = document.getElementById('pageInfo');
+  var pageInput = document.getElementById('pageInput');
+
+  function cloneCanvas(src) {
+    var c = document.createElement('canvas');
+    c.width = src.width; c.height = src.height;
+    c.getContext('2d').drawImage(src, 0, 0);
+    return c;
+  }
+
+  // 지금 편집 중인 장의 상태를 페이지에 되돌려 둔다 (색감·스캔 미리보기는 적용해서)
+  function pageCommit() {
+    if (pageCur < 0 || !pages[pageCur]) return;
+    if (activeTab === 'scan') { if (deskewOn) deskewStop(); applyScan(true); }
+    if (activeTab === 'color') applyColor(true);
+    var pg = pages[pageCur];
+    pg.canvas = cloneCanvas(cv);
+    pg.history = history;
+    pageThumbDraw(pg);
+  }
+
+  function pageLoad(i) {
+    if (i < 0 || i >= pages.length) return;
+    if (i !== pageCur) pageCommit();
+    pageCur = i;
+    var pg = pages[i];
+    cv.width = pg.canvas.width; cv.height = pg.canvas.height;
+    ctx.drawImage(pg.canvas, 0, 0);
+    originalCanvas.width = pg.original.width; originalCanvas.height = pg.original.height;
+    originalCanvas.getContext('2d').drawImage(pg.original, 0, 0);
+    history = pg.history || [];
+    crop = null;
+    baseName = pg.name;
+    origFileSize = pg.size || 0;
+    updateUndoBtn();
+    dropzone.style.display = 'none';
+    editor.classList.add('show');
+    origSizeTxt.textContent = origFileSize ? ' · 원본 파일 ' + fmtSize(origFileSize) : '';
+    afterImageChange();
+    pageStripRender();
+  }
+
+  function pageAdd(name, size, canvas) {
+    var pg = { name: name, size: size, original: cloneCanvas(canvas), canvas: canvas, history: [] };
+    pages.push(pg);
+    pageStripRender();
+    if (pageCur < 0) pageLoad(0);
+    else pageInfo.textContent = pages.length + '장 중 ' + (pageCur + 1) + '번째';
+  }
+
+  function pageRemove(i) {
+    if (i < 0 || i >= pages.length) return;
+    if (i === pageCur) {
+      pages.splice(i, 1);
+      pageCur = -1;
+      if (!pages.length) { newBtn.click(); return; }
+      pageLoad(Math.min(i, pages.length - 1));
+    } else {
+      pages.splice(i, 1);
+      if (i < pageCur) pageCur--;
+      pageStripRender();
+    }
+  }
+
+  function pageThumbDraw(pg) {
+    if (!pg.el) return;
+    var t = pg.el.querySelector('canvas'), tc = t.getContext('2d');
+    tc.clearRect(0, 0, t.width, t.height);
+    var s = Math.min(t.width / pg.canvas.width, t.height / pg.canvas.height);
+    tc.drawImage(pg.canvas, (t.width - pg.canvas.width * s) / 2, (t.height - pg.canvas.height * s) / 2, pg.canvas.width * s, pg.canvas.height * s);
+  }
+
+  function pageStripRender() {
+    pageThumbs.innerHTML = '';
+    pages.forEach(function (pg, i) {
+      var el = document.createElement('div');
+      el.className = 'pthumb' + (i === pageCur ? ' on' : '');
+      el.title = pg.name;
+      var t = document.createElement('canvas');
+      t.width = 56; t.height = 72;
+      var num = document.createElement('b');
+      num.textContent = i + 1;
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'pdel'; del.textContent = '×';
+      del.title = '이 장 빼기';
+      del.setAttribute('aria-label', (i + 1) + '번째 장 빼기');
+      del.addEventListener('click', function (e) { e.stopPropagation(); pageRemove(i); });
+      el.appendChild(t); el.appendChild(num); el.appendChild(del);
+      el.addEventListener('click', function () { if (i !== pageCur) pageLoad(i); });
+      pageThumbs.appendChild(el);
+      pg.el = el;
+      pageThumbDraw(pg);
+    });
+    pageInfo.textContent = pages.length ? pages.length + '장 중 ' + (pageCur + 1) + '번째' : '';
+    document.getElementById('pagePrev').disabled = pageCur <= 0;
+    document.getElementById('pageNext').disabled = pageCur >= pages.length - 1;
+    var multi = pages.length > 1;
+    document.getElementById('saveAllWrap').style.display = multi ? '' : 'none';
+    document.getElementById('scanAllSec').style.display = multi ? '' : 'none';
+    var on = pageThumbs.querySelector('.pthumb.on');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  document.getElementById('pagePrev').addEventListener('click', function () { pageLoad(pageCur - 1); });
+  document.getElementById('pageNext').addEventListener('click', function () { pageLoad(pageCur + 1); });
+  document.getElementById('pageAddBtn').addEventListener('click', function () { pageInput.click(); });
+  pageInput.addEventListener('change', function () { loadFiles(pageInput.files); pageInput.value = ''; });
+
+  /* 전체 내려받기 (저장 탭) */
+
+  function pagesToJpegs(quality, cb) {
+    pageCommit();
+    var out = [], idx = 0;
+    (function next() {
+      if (idx >= pages.length) { cb(out); return; }
+      var pg = pages[idx++];
+      // JPG는 투명도가 없으므로 흰 배경을 깔아 준다
+      var c = document.createElement('canvas');
+      c.width = pg.canvas.width; c.height = pg.canvas.height;
+      var x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(pg.canvas, 0, 0);
+      c.toBlob(function (blob) { out.push({ blob: blob, w: c.width, h: c.height, name: pg.name }); next(); }, 'image/jpeg', quality);
+    })();
+  }
+  function downloadBlob(blob, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+  document.getElementById('saveAllPdfBtn').addEventListener('click', function () {
+    var btn = this; btn.disabled = true;
+    toast('PDF 만드는 중…');
+    pagesToJpegs(parseInt(qualityInput.value, 10) / 100, function (list) {
+      cMakePdf(list).then(function (pdf) {
+        downloadBlob(pdf, (pages[0].name || '문서') + '_외' + (pages.length - 1) + '장.pdf');
+        btn.disabled = false;
+        toast('PDF ' + list.length + '쪽을 내려받았어요');
+      });
+    });
+  });
+  document.getElementById('saveAllJpgBtn').addEventListener('click', function () {
+    var btn = this; btn.disabled = true;
+    pagesToJpegs(parseInt(qualityInput.value, 10) / 100, function (list) {
+      // 브라우저가 여러 파일 내려받기를 물어볼 수 있어요 — 허용하면 한 번에 받아진다
+      list.forEach(function (r, i) {
+        setTimeout(function () { downloadBlob(r.blob, r.name + '_편집.jpg'); }, i * 350);
+      });
+      btn.disabled = false;
+      toast('JPG ' + list.length + '장을 내려받아요');
+    });
   });
 
   /* ── 공통: 이미지가 바뀔 때마다 ── */
@@ -3736,132 +3926,37 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   document.getElementById('deskewApplyBtn').addEventListener('click', applyDeskew);
   document.getElementById('deskewCancelBtn').addEventListener('click', deskewStop);
 
-  /* ── 여러 장 이어서 ──
-     같은 스캔 설정으로 여러 사진을 처리해 PDF 한 파일 또는 JPG 각각으로 내려받는다. */
+  /* 지금 스캔 설정을 나머지 장에도 적용 */
 
-  var batchItems = [];   // { name, canvas, el }
-  var batchList = document.getElementById('batchList');
-  var batchInput = document.getElementById('batchInput');
   var batchStatus = document.getElementById('batchStatus');
-
-  function batchAdd(name, canvas) {
-    var item = { name: name, canvas: canvas };
-    var el = document.createElement('div');
-    el.className = 'bitem';
-    var t = document.createElement('canvas');
-    t.width = 72; t.height = 96;
-    var tc = t.getContext('2d');
-    var s = Math.min(72 / canvas.width, 96 / canvas.height);
-    tc.drawImage(canvas, (72 - canvas.width * s) / 2, (96 - canvas.height * s) / 2, canvas.width * s, canvas.height * s);
-    var nm = document.createElement('span');
-    nm.textContent = name;
-    var del = document.createElement('button');
-    del.type = 'button'; del.className = 'pdel'; del.textContent = '×'; del.title = '빼기';
-    del.setAttribute('aria-label', name + ' 빼기');
-    del.addEventListener('click', function () {
-      batchItems.splice(batchItems.indexOf(item), 1);
-      el.remove();
-      batchUpdate();
-    });
-    el.appendChild(t); el.appendChild(nm); el.appendChild(del);
-    item.el = el;
-    batchItems.push(item);
-    batchList.appendChild(el);
-    batchUpdate();
-  }
-  function batchUpdate() {
-    batchStatus.textContent = batchItems.length ? batchItems.length + '장 준비됨' : '';
-    document.getElementById('batchPdfBtn').disabled = document.getElementById('batchJpgBtn').disabled = !batchItems.length;
-  }
-  function batchLoadFiles(files) {
-    var list = Array.prototype.slice.call(files).filter(function (f) { return f.type.indexOf('image') === 0; });
-    if (!list.length) return;
+  document.getElementById('scanAllBtn').addEventListener('click', function () {
+    var btn = this;
+    var autoDeskew = document.getElementById('batchDeskewChk').checked;
+    var targets = pages.map(function (pg, i) { return i; }).filter(function (i) { return i !== pageCur; });
+    if (!targets.length) { toast('다른 장이 없어요'); return; }
+    btn.disabled = true;
     var idx = 0;
     (function next() {
-      if (idx >= list.length) { toast(list.length + '장 추가했어요'); return; }
-      var f = list[idx++];
-      var url = URL.createObjectURL(f);
-      var img = new Image();
-      img.onload = function () {
-        var w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, MAX_SIDE / Math.max(w, h));
-        var c = document.createElement('canvas');
-        c.width = Math.round(w * s); c.height = Math.round(h * s);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        batchAdd((f.name || 'image').replace(/\.[^.]+$/, ''), c);
-        next();
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); next(); };
-      img.src = url;
-    })();
-  }
-  batchInput.addEventListener('change', function () { batchLoadFiles(batchInput.files); batchInput.value = ''; });
-  document.getElementById('batchAddBtn').addEventListener('click', function () { batchInput.click(); });
-  document.getElementById('batchCurBtn').addEventListener('click', function () {
-    var c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height;
-    c.getContext('2d').drawImage(cv, 0, 0);
-    batchAdd(baseName, c);
-  });
-
-  // 한 장 처리: (선택) 자동 펴기 → 스캔 효과 → JPEG blob
-  function batchProcessOne(item, autoDeskew, cb) {
-    var c = item.canvas;
-    if (autoDeskew) {
-      var q = cFindPaper(c);
-      if (q) { var sz = cQuadSize(q); c = cWarpQuad(c, q, sz.w, sz.h); }
-    }
-    var out = scanProcess(c, scanParams);
-    out.toBlob(function (blob) { cb(blob, out.width, out.height); }, 'image/jpeg', 0.88);
-  }
-
-  function batchRun(mode) {
-    if (!batchItems.length) return;
-    var autoDeskew = document.getElementById('batchDeskewChk').checked;
-    var results = [], idx = 0;
-    var btns = [document.getElementById('batchPdfBtn'), document.getElementById('batchJpgBtn')];
-    btns.forEach(function (b) { b.disabled = true; });
-    (function next() {
-      if (idx >= batchItems.length) {
-        btns.forEach(function (b) { b.disabled = false; });
-        batchStatus.textContent = batchItems.length + '장 완료';
-        if (mode === 'pdf') {
-          cMakePdf(results).then(function (pdf) {
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(pdf);
-            a.download = (batchItems.length === 1 ? batchItems[0].name : '스캔_' + batchItems.length + '장') + '.pdf';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-            toast('PDF ' + results.length + '쪽을 내려받았어요');
-          });
-        } else {
-          // 브라우저가 여러 파일 내려받기를 물어볼 수 있어요 — 허용하면 한 번에 받아진다
-          results.forEach(function (r, i) {
-            setTimeout(function () {
-              var a = document.createElement('a');
-              a.href = URL.createObjectURL(r.blob);
-              a.download = batchItems[i].name + '_스캔.jpg';
-              document.body.appendChild(a); a.click(); document.body.removeChild(a);
-              setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-            }, i * 350);
-          });
-          toast('JPG ' + results.length + '장을 내려받아요');
-        }
+      if (idx >= targets.length) {
+        btn.disabled = false;
+        batchStatus.textContent = targets.length + '장에 적용했어요';
+        toast('나머지 ' + targets.length + '장에 같은 효과를 적용했어요');
         return;
       }
-      batchStatus.textContent = '처리 중… ' + (idx + 1) + ' / ' + batchItems.length;
-      var item = batchItems[idx++];
+      batchStatus.textContent = '적용 중… ' + (idx + 1) + ' / ' + targets.length;
+      var pg = pages[targets[idx++]];
       setTimeout(function () {
-        batchProcessOne(item, autoDeskew, function (blob, w, h) {
-          results.push({ blob: blob, w: w, h: h });
-          next();
-        });
+        var c = pg.canvas;
+        if (autoDeskew) {
+          var q = cFindPaper(c);
+          if (q) { var sz = cQuadSize(q); c = cWarpQuad(c, q, sz.w, sz.h); }
+        }
+        pg.canvas = scanProcess(c, scanParams);
+        pg.history = [];
+        pageThumbDraw(pg);
+        next();
       }, 20);
     })();
-  }
-  document.getElementById('batchPdfBtn').addEventListener('click', function () { batchRun('pdf'); });
-  document.getElementById('batchJpgBtn').addEventListener('click', function () { batchRun('jpg'); });
-  document.getElementById('batchClearBtn').addEventListener('click', function () {
-    batchItems = []; batchList.innerHTML = ''; batchUpdate();
   });
 
   // JPEG 여러 장 → PDF (외부 라이브러리 없이, 각 쪽은 JPEG을 그대로 품는 DCTDecode 이미지)
@@ -3921,6 +4016,10 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   });
 
   newBtn.addEventListener('click', function () {
+    if (deskewOn) deskewStop();
+    pages = [];
+    pageCur = -1;
+    pageStripRender();
     editor.classList.remove('show');
     dropzone.style.display = 'block';
     history = [];
