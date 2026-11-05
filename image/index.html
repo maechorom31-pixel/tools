@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>이미지 도구 — 모자이크·자르기·색감·압축</title>
+<title>이미지 도구 — 모자이크·자르기·색감·스캔·압축</title>
 <style>
   :root {
     --bg: #FAFAF9;
@@ -277,6 +277,22 @@
   }
   body[data-tab="color"] #cv { display: none; }
   body[data-tab="color"] #colorCv { display: inline-block; }
+  #scanCv { display: none; max-width: 100%; border-radius: 4px; }
+  body[data-tab="scan"] #cv { display: none; }
+  body[data-tab="scan"] #scanCv { display: inline-block; }
+  #panel-scan.on { display: block; padding: 14px 18px; }
+  .scan-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 6px; }
+  #scanPresetSeg { flex-wrap: wrap; }
+  #scanPresetSeg button { flex: 1 0 auto; }
+  @media (max-width: 520px) {
+    #scanPresetSeg { width: 100%; }
+    #scanPresetSeg button + button { border-left: 0; }
+    #scanPresetSeg button { border: 1px solid var(--line); margin: -1px 0 0 -1px; }
+  }
+  .scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 24px; }
+  .scan-grid .adj { padding: 4px 0; }
+  .scan-grid .adj output { color: var(--ink-soft); }
+  .scan-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
   #panel-color.on { display: block; padding: 16px; }
   .cp-head {
     display: flex; align-items: baseline; justify-content: space-between;
@@ -451,7 +467,7 @@
   <div id="dropzone">
     <p>사진을 여기로 끌어다 놓거나, 클릭해서 선택하세요</p>
     <p>캡처한 화면은 <kbd>Ctrl</kbd> + <kbd>V</kbd> 로 바로 붙여넣을 수 있습니다<br>
-       모자이크(개인정보 가림) · 자르기(증명사진/여권 비율) · 색감 필터·보정 · AI 배경 지우기(누끼) · 크기 조절 · 용량 압축</p>
+       모자이크(개인정보 가림) · 자르기(증명사진/여권 비율) · 색감 필터·보정 · 스캔본처럼 · AI 배경 지우기(누끼) · 크기 조절 · 용량 압축</p>
   </div>
   <input type="file" id="fileInput" accept="image/*" hidden>
 
@@ -460,6 +476,7 @@
       <button class="tab on" data-tab="mosaic" type="button">🟫 모자이크</button>
       <button class="tab" data-tab="crop" type="button">✂️ 자르기</button>
       <button class="tab" data-tab="color" type="button">🎨 색감</button>
+      <button class="tab" data-tab="scan" type="button">📠 스캔처럼</button>
       <button class="tab" data-tab="bg" type="button">🪄 배경 지우기</button>
       <button class="tab" data-tab="resize" type="button">📐 크기 조절</button>
       <button class="tab" data-tab="save" type="button">💾 저장·압축</button>
@@ -537,6 +554,18 @@
       </div>
     </div>
 
+    <!-- 스캔처럼 -->
+    <div class="toolbar panel" id="panel-scan">
+      <div class="scan-top">
+        <div class="seg" id="scanPresetSeg"></div>
+        <label class="chk"><input type="checkbox" id="scanGray"> 흑백</label>
+      </div>
+      <div class="scan-grid" id="scanAdj"></div>
+      <div class="scan-actions">
+        <button class="btn primary" id="scanApplyBtn" type="button">스캔 효과 적용</button>
+      </div>
+    </div>
+
     <!-- 배경 지우기 -->
     <div class="toolbar panel" id="panel-bg">
       <button class="btn primary" id="nukkiRunBtn" type="button">🪄 배경 지우기 실행</button>
@@ -603,6 +632,7 @@
     <div class="canvas-holder">
       <canvas id="cv" class="brushmode"></canvas>
       <canvas id="colorCv" title="누르고 있으면 보정 전 모습이 보입니다"></canvas>
+      <canvas id="scanCv"></canvas>
       <div id="brushCursor"></div>
       <div id="rectPreview"></div>
       <canvas id="lassoPreview"></canvas>
@@ -854,6 +884,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     mosaic: '붓 모드는 가릴 부분을 문지르고, 사각형 모드는 영역을 드래그, 올가미 모드는 원하는 모양대로 빙 둘러 그리면 그 안쪽만 모자이크 처리됩니다. 되돌리기는 Ctrl+Z로도 됩니다.',
     crop: '주황색 상자를 끌어 위치를 옮기고, 모서리 점을 끌어 크기를 조절한 뒤 「자르기 적용」을 누르세요. 「얼굴 자동 맞춤」을 누르면 사진 속 얼굴을 찾아 증명사진 구도로 상자를 잡아 줍니다(얼굴 인식도 이 컴퓨터 안에서만 처리됩니다). 증명사진·여권 비율 선택 시 표준 규격 픽셀(증명 354×472 / 여권 413×531, 300dpi 기준)로 저장할 수 있고, 옆으로 누운 사진은 회전 버튼으로 바로 세울 수 있습니다.',
     color: '「기록·활동」「조명 보정」「필름 룩」「카메라 룩」처럼 쓰임새별로 묶인 필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래에서 빛·톤 곡선(그래프)·색·색 섞기(8가지 색깔별)·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 「✨ 자동 보정」은 사진의 밝기 분포와 회색을 읽어 화이트밸런스·노출·레벨을 한 번에 맞춰 주고, 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
+    scan: '문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
     save: 'JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
@@ -882,6 +913,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   var modeLassoBtn = document.getElementById('modeLasso');
   var lassoCv = document.getElementById('lassoPreview');
   var colorCv = document.getElementById('colorCv');
+  var scanCv = document.getElementById('scanCv');
   var brushSizeGroup = document.getElementById('brushSizeGroup');
   var brushSizeInput = document.getElementById('brushSize');
   var brushSizeVal = document.getElementById('brushSizeVal');
@@ -1014,6 +1046,8 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     cv.style.height = 'auto';
     colorCv.style.width = cv.style.width;
     colorCv.style.height = 'auto';
+    scanCv.style.width = cv.style.width;
+    scanCv.style.height = 'auto';
   }
 
   function afterImageChange() {
@@ -1023,6 +1057,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     syncResizeInputs();
     if (activeTab === 'crop') { initCropBox(); }
     if (activeTab === 'color') { initColor(); }
+    if (activeTab === 'scan') { initScan(); }
     if (activeTab === 'save') { scheduleEstimate(); }
   }
 
@@ -1044,11 +1079,12 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     activeTab = t;
     // 색감 탭을 떠날 때 조정해 둔 값은 원본 해상도로 적용해 다음 작업에 이어지게 한다
     if (prev === 'color' && t !== 'color') applyColor(true);
+    if (prev === 'scan' && t !== 'scan') applyScan(true);
     document.body.setAttribute('data-tab', t);
     document.querySelectorAll('.tabbar .tab').forEach(function (b) {
       b.classList.toggle('on', b.getAttribute('data-tab') === t);
     });
-    ['mosaic', 'crop', 'color', 'bg', 'resize', 'save'].forEach(function (k) {
+    ['mosaic', 'crop', 'color', 'scan', 'bg', 'resize', 'save'].forEach(function (k) {
       document.getElementById('panel-' + k).classList.toggle('on', k === t);
     });
     footnote.textContent = FOOTNOTES[t];
@@ -1057,6 +1093,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     fitDisplay(); // 탭마다 툴바 높이가 달라 표시 배율을 다시 맞춘다
     if (t === 'crop') initCropBox();
     if (t === 'color' && prev !== 'color') initColor();
+    if (t === 'scan' && prev !== 'scan') initScan();
     if (t === 'resize') syncResizeInputs();
     if (t === 'save') scheduleEstimate();
   }
@@ -3211,6 +3248,207 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   cBuildAdjustments();
   cSyncInputs();
   cDrawCurve();
+
+  /* ── 스캔처럼 ──
+     문서 사진·캡처를 실제 스캔본처럼: 살짝 기울이고, 흑백·대비를 올리고, 해상도를 낮추고,
+     입자와 가장자리 그림자를 더한다. 미리보기는 긴 변 1280px 사본, 적용은 원본 해상도. */
+
+  var SCAN_PREVIEW_MAX = 1280;
+  var SP = [
+    { k: 'angle',    label: '기울기',        min: -3,  max: 3,   step: 0.1, dec: 1, unit: '°' },
+    { k: 'bright',   label: '밝기',          min: -40, max: 40 },
+    { k: 'contrast', label: '대비',          min: 0,   max: 80 },
+    { k: 'blur',     label: '흐림(저해상도)', min: 0,   max: 4,   step: 0.5, dec: 1 },
+    { k: 'noise',    label: '입자',          min: 0,   max: 50 },
+    { k: 'shadow',   label: '가장자리 그림자', min: 0,   max: 100 },
+    { k: 'paper',    label: '종이색(누렇게)',  min: 0,   max: 100 }
+  ];
+  var SCAN_PRESETS = [
+    { id: 'copier', name: '복사기 흑백',  p: { gray: 1, angle: 0.6, bright: 6, contrast: 30, blur: 1, noise: 12, shadow: 25, paper: 0 } },
+    { id: 'color',  name: '컬러 스캔',    p: { gray: 0, angle: 0.4, bright: 4, contrast: 15, blur: 0.5, noise: 8, shadow: 20, paper: 10 } },
+    { id: 'fax',    name: '팩스',        p: { gray: 1, angle: 1.2, bright: 10, contrast: 70, blur: 2.5, noise: 25, shadow: 10, paper: 0 } },
+    { id: 'old',    name: '오래된 문서',   p: { gray: 0, angle: 0.8, bright: -4, contrast: 20, blur: 1.5, noise: 20, shadow: 55, paper: 60 } },
+    { id: 'clean',  name: '깨끗한 스캔',   p: { gray: 0, angle: 0, bright: 8, contrast: 20, blur: 0, noise: 4, shadow: 10, paper: 0 } }
+  ];
+
+  var scanCtx = scanCv.getContext('2d');
+  var scanInputs = {};
+  var scanParams = {};
+  var scanRaf = 0;
+  var scanSeed = 1;
+
+  function scanRand() {     // 같은 사진에서 미리보기와 적용본의 입자가 같은 모양이 되도록 고정 시드
+    scanSeed = (scanSeed * 1664525 + 1013904223) >>> 0;
+    return scanSeed / 4294967296;
+  }
+
+  // src 캔버스 → 새 캔버스 (같은 크기, 회전으로 생기는 귀퉁이는 종이색으로)
+  function scanProcess(src, p) {
+    var w = src.width, h = src.height;
+    var out = document.createElement('canvas');
+    out.width = w; out.height = h;
+    var octx = out.getContext('2d');
+    var paper = p.paper / 100;
+    var pr = 255, pg = Math.round(255 - paper * 18), pb = Math.round(255 - paper * 60);
+    octx.fillStyle = 'rgb(' + pr + ',' + pg + ',' + pb + ')';
+    octx.fillRect(0, 0, w, h);
+
+    // 1) 해상도 낮추기: 줄였다 키우면 스캐너의 뭉개짐이 난다
+    var mid = src;
+    if (p.blur > 0) {
+      var f = 1 / (1 + p.blur * 0.9 * Math.max(1, Math.max(w, h) / 1280));
+      var sw = Math.max(1, Math.round(w * f)), sh = Math.max(1, Math.round(h * f));
+      var small = drawScaled(src, 0, 0, w, h, sw, sh);
+      mid = document.createElement('canvas');
+      mid.width = w; mid.height = h;
+      var mctx = mid.getContext('2d');
+      mctx.imageSmoothingEnabled = true;
+      mctx.imageSmoothingQuality = 'high';
+      mctx.drawImage(small, 0, 0, sw, sh, 0, 0, w, h);
+    }
+
+    // 2) 기울이기
+    octx.save();
+    octx.translate(w / 2, h / 2);
+    octx.rotate(p.angle * Math.PI / 180);
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = 'high';
+    octx.drawImage(mid, -w / 2, -h / 2);
+    octx.restore();
+
+    // 3) 픽셀 단위: 흑백·밝기·대비·종이색·입자
+    var id = octx.getImageData(0, 0, w, h), d = id.data;
+    var c = p.contrast / 100, k = 1 + c * 1.6, br = p.bright * 2.55;
+    var lut = new Uint8ClampedArray(256);
+    for (var i = 0; i < 256; i++) {
+      var x = (i + br) / 255;
+      x = x < 0 ? 0 : x > 1 ? 1 : x;
+      if (k !== 1) x = x < 0.5 ? 0.5 * Math.pow(2 * x, k) : 1 - 0.5 * Math.pow(2 - 2 * x, k);
+      lut[i] = x * 255;
+    }
+    var gray = p.gray >= 0.5, nz = p.noise / 100 * 60;
+    var tr = 1, tg = 1 - paper * 0.07, tb = 1 - paper * 0.24;
+    scanSeed = 7;
+    for (i = 0; i < d.length; i += 4) {
+      var r = d[i], g = d[i + 1], b = d[i + 2];
+      if (gray) { r = g = b = 0.299 * r + 0.587 * g + 0.114 * b; }
+      r = lut[r | 0]; g = lut[g | 0]; b = lut[b | 0];
+      if (nz) { var n = (scanRand() + scanRand() - 1) * nz; r += n; g += n; b += n; }
+      if (paper) { r *= tr; g *= tg; b *= tb; }
+      d[i] = r; d[i + 1] = g; d[i + 2] = b;
+    }
+    octx.putImageData(id, 0, 0);
+
+    // 4) 가장자리 그림자: 종이가 유리에 뜬 것처럼 한쪽이 어둡게 + 모서리
+    if (p.shadow > 0) {
+      var s = p.shadow / 100;
+      octx.globalCompositeOperation = 'multiply';
+      var g1 = octx.createLinearGradient(0, 0, w * 0.35, 0);
+      g1.addColorStop(0, 'rgba(0,0,0,' + (0.45 * s) + ')');
+      g1.addColorStop(1, 'rgba(0,0,0,0)');
+      octx.fillStyle = g1; octx.fillRect(0, 0, w, h);
+      var g2 = octx.createLinearGradient(0, h, 0, h * 0.75);
+      g2.addColorStop(0, 'rgba(0,0,0,' + (0.25 * s) + ')');
+      g2.addColorStop(1, 'rgba(0,0,0,0)');
+      octx.fillStyle = g2; octx.fillRect(0, 0, w, h);
+      var g3 = octx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.45, w / 2, h / 2, Math.max(w, h) * 0.75);
+      g3.addColorStop(0, 'rgba(0,0,0,0)');
+      g3.addColorStop(1, 'rgba(0,0,0,' + (0.3 * s) + ')');
+      octx.fillStyle = g3; octx.fillRect(0, 0, w, h);
+      octx.globalCompositeOperation = 'source-over';
+    }
+    return out;
+  }
+
+  var scanSrc = null;   // 미리보기용 축소 원본
+  function initScan() {
+    var w = cv.width, h = cv.height;
+    var sc = Math.min(1, SCAN_PREVIEW_MAX / Math.max(w, h));
+    var pw = Math.max(1, Math.round(w * sc)), ph = Math.max(1, Math.round(h * sc));
+    scanSrc = sc < 1 ? drawScaled(cv, 0, 0, w, h, pw, ph) : (function () {
+      var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(cv, 0, 0); return c;
+    })();
+    scanCv.width = pw; scanCv.height = ph;
+    scanCv.style.width = cv.style.width;
+    scanCv.style.height = 'auto';
+    scanRenderNow();
+  }
+  function scanRenderNow() {
+    if (!scanSrc) return;
+    var out = scanProcess(scanSrc, scanParams);
+    scanCtx.clearRect(0, 0, scanCv.width, scanCv.height);
+    scanCtx.drawImage(out, 0, 0);
+  }
+  function scanRender() {
+    if (scanRaf) return;
+    scanRaf = requestAnimationFrame(function () { scanRaf = 0; scanRenderNow(); });
+  }
+
+  function scanSync() {
+    SP.forEach(function (d) {
+      var it = scanInputs[d.k];
+      it.input.value = scanParams[d.k];
+      it.out.textContent = (d.dec ? scanParams[d.k].toFixed(d.dec) : String(Math.round(scanParams[d.k]))) + (d.unit || '');
+    });
+    document.getElementById('scanGray').checked = scanParams.gray >= 0.5;
+    document.querySelectorAll('#scanPresetSeg button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-id') === scanParams.id);
+    });
+  }
+  function scanSelect(pr) {
+    scanParams = {};
+    SP.forEach(function (d) { scanParams[d.k] = pr.p[d.k] || 0; });
+    scanParams.gray = pr.p.gray || 0;
+    scanParams.id = pr.id;
+    scanSync();
+    scanRender();
+  }
+  function scanManual() { scanParams.id = 'custom'; scanSync(); scanRender(); }
+
+  (function buildScanPanel() {
+    var seg = document.getElementById('scanPresetSeg');
+    SCAN_PRESETS.forEach(function (pr) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = pr.name;
+      b.setAttribute('data-id', pr.id);
+      b.addEventListener('click', function () { scanSelect(pr); });
+      seg.appendChild(b);
+    });
+    var list = document.getElementById('scanAdj');
+    SP.forEach(function (d) {
+      var row = document.createElement('div');
+      row.className = 'adj';
+      var id = 's_' + d.k;
+      var label = document.createElement('label');
+      label.setAttribute('for', id);
+      label.textContent = d.label;
+      var out = document.createElement('output');
+      var rg = document.createElement('input');
+      rg.type = 'range'; rg.id = id; rg.min = d.min; rg.max = d.max; rg.step = d.step || 1;
+      rg.addEventListener('input', function () { scanParams[d.k] = parseFloat(rg.value); scanManual(); });
+      row.appendChild(label); row.appendChild(out); row.appendChild(rg);
+      list.appendChild(row);
+      scanInputs[d.k] = { input: rg, out: out };
+    });
+    document.getElementById('scanGray').addEventListener('change', function () {
+      scanParams.gray = this.checked ? 1 : 0; scanManual();
+    });
+    scanSelect(SCAN_PRESETS[0]);
+  })();
+
+  function applyScan(auto) {
+    if (!editor.classList.contains('show')) return;
+    pushSnapshot();
+    var out = scanProcess(cv, scanParams);
+    ctx.drawImage(out, 0, 0);
+    afterImageChange();
+    toast(auto ? '스캔 효과 적용됨 · 되돌리기 가능' : '스캔 효과를 적용했어요');
+  }
+  document.getElementById('scanApplyBtn').addEventListener('click', function () {
+    toast('적용 중…');
+    setTimeout(function () { applyScan(false); }, 30);
+  });
 
   /* ── 상단 버튼 ── */
 
