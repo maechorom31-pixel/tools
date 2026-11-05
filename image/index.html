@@ -150,6 +150,23 @@
     font-variant-numeric: tabular-nums;
   }
   .status b { color: var(--ink); font-weight: 600; }
+  .status #zoomBtn { margin-left: 10px; vertical-align: middle; }
+  #viewer {
+    position: fixed; inset: 0; z-index: 90; background: #141210;
+    display: flex; flex-direction: column;
+  }
+  #viewer[hidden] { display: none; }
+  .viewer-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    color: #E7E5E4; font-size: 13px; font-variant-numeric: tabular-nums;
+    background: rgba(0,0,0,.35);
+  }
+  .viewer-bar .btn { background: #292524; color: #E7E5E4; border-color: #44403C; }
+  .viewer-bar .btn.on { background: var(--amber); border-color: var(--amber); color: #fff; }
+  .viewer-body { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; -webkit-overflow-scrolling: touch; }
+  .viewer-body.full { display: block; }
+  #viewerCv { display: block; max-width: 100%; max-height: 100%; cursor: zoom-in; touch-action: pan-x pan-y; }
+  .viewer-body.full #viewerCv { max-width: none; max-height: none; cursor: zoom-out; margin: 0 auto; }
 
   .canvas-holder {
     position: relative;
@@ -517,7 +534,8 @@
       <button class="tab" data-tab="resize" type="button">📐 크기 조절</button>
       <button class="tab" data-tab="save" type="button">💾 저장·압축</button>
       <div class="spacer"></div>
-      <button class="btn" id="undoBtn" type="button" disabled>되돌리기</button>
+      <button class="btn" id="undoBtn" type="button" disabled title="Ctrl+Z">되돌리기</button>
+      <button class="btn" id="redoBtn" type="button" disabled title="Ctrl+Shift+Z">다시 실행</button>
       <button class="btn" id="resetBtn" type="button">원본으로</button>
       <button class="btn" id="newBtn" type="button">새 이미지</button>
     </div>
@@ -608,6 +626,7 @@
       <div class="scan-grid" id="scanAdj"></div>
       <div class="scan-actions">
         <button class="btn primary" id="scanApplyBtn" type="button">스캔 효과 적용</button>
+        <button class="btn" id="scanNextBtn" type="button" style="display:none">적용하고 다음 장 ▶</button>
       </div>
       <div class="scan-sec">
         <div class="scan-sec-head"><b>종이 펴기</b><span>비스듬히 찍힌 종이를 반듯한 직사각형으로 — 네 꼭짓점을 찾아 맞춘 뒤 펴요</span></div>
@@ -615,8 +634,18 @@
           <button class="btn small" id="deskewAutoBtn" type="button">🔍 모서리 자동 찾기</button>
           <button class="btn small" id="deskewManualBtn" type="button">꼭짓점 직접 맞추기</button>
           <span id="deskewTools" style="display:none">
+            <span class="group">
+              <label>종이 비율</label>
+              <div class="seg" id="paperRatioSeg">
+                <button data-r="auto" class="on" type="button">사진대로</button>
+                <button data-r="iso" type="button">A4·B4 (1:√2)</button>
+                <button data-r="letter" type="button">Letter</button>
+                <button data-r="34" type="button">3:4</button>
+              </div>
+            </span>
             <button class="btn small primary" id="deskewApplyBtn" type="button">펴기 적용</button>
             <button class="btn small" id="deskewCancelBtn" type="button">취소</button>
+            <span class="est" id="paperHint"></span>
           </span>
         </div>
       </div>
@@ -625,6 +654,7 @@
         <div class="scan-top">
           <label class="chk"><input type="checkbox" id="batchDeskewChk" checked> 모서리 자동 펴기</label>
           <button class="btn small" id="scanAllBtn" type="button">나머지 장에 같은 효과 적용</button>
+          <span class="est">지금 고른 효과, 없으면 마지막에 적용한 효과</span>
           <span class="est" id="batchStatus"></span>
         </div>
       </div>
@@ -695,7 +725,8 @@
       <button class="btn primary" id="saveBtn" type="button">이 장 다운로드</button>
     </div>
 
-    <p class="status">현재 이미지: <b id="dims">–</b><span id="origSizeTxt"></span></p>
+    <p class="status">현재 이미지: <b id="dims">–</b><span id="origSizeTxt"></span>
+      <button class="btn small" id="zoomBtn" type="button" title="화면 가득 크게 보기 (누르면 100%·맞춤 전환, Esc로 닫기)">🔍 크게 보기</button></p>
 
     <div class="canvas-holder">
       <canvas id="cv" class="brushmode"></canvas>
@@ -719,6 +750,17 @@
 
     <p class="footnote" id="footnote"></p>
   </div>
+</div>
+<div id="viewer" hidden>
+  <div class="viewer-bar">
+    <span id="viewerInfo"></span>
+    <button class="btn small" id="viewerFitBtn" type="button">맞춤</button>
+    <button class="btn small" id="viewerFullBtn" type="button">100%</button>
+    <button class="btn small" id="viewerOrigBtn" type="button" title="누르고 있으면 원본">원본 비교</button>
+    <div class="spacer"></div>
+    <button class="btn small" id="viewerCloseBtn" type="button">닫기 ✕</button>
+  </div>
+  <div class="viewer-body" id="viewerBody"><canvas id="viewerCv"></canvas></div>
 </div>
 <div id="toast"></div>
 
@@ -953,7 +995,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     mosaic: '붓 모드는 가릴 부분을 문지르고, 사각형 모드는 영역을 드래그, 올가미 모드는 원하는 모양대로 빙 둘러 그리면 그 안쪽만 모자이크 처리됩니다. 되돌리기는 Ctrl+Z로도 됩니다.',
     crop: '주황색 상자를 끌어 위치를 옮기고, 모서리 점을 끌어 크기를 조절한 뒤 「자르기 적용」을 누르세요. 「얼굴 자동 맞춤」을 누르면 사진 속 얼굴을 찾아 증명사진 구도로 상자를 잡아 줍니다(얼굴 인식도 이 컴퓨터 안에서만 처리됩니다). 증명사진·여권 비율 선택 시 표준 규격 픽셀(증명 354×472 / 여권 413×531, 300dpi 기준)로 저장할 수 있고, 옆으로 누운 사진은 회전 버튼으로 바로 세울 수 있습니다.',
     color: '「기록·활동」「조명 보정」「필름 룩」「카메라 룩」처럼 쓰임새별로 묶인 필터를 누르면 바로 미리 보이고, 「필터 강도」로 세기를 조절할 수 있어요. 아래에서 빛·톤 곡선(그래프)·색·색 섞기(8가지 색깔별)·색조·효과를 세밀하게 다듬을 수 있고, 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다. 사진이나 「원본 비교」를 누르고 있으면 보정 전 모습이 보여요. 「보정 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되며, 되돌리기로 취소할 수 있습니다. 「✨ 자동 보정」은 사진의 밝기 분포와 회색을 읽어 화이트밸런스·노출·레벨을 한 번에 맞춰 주고, 자주 쓰는 조합은 「내 필터로 저장」해 두면 다음 사진에도 한 번에 쓸 수 있어요.',
-    scan: '비스듬히 찍힌 종이는 먼저 「종이 펴기」로 — 「모서리 자동 찾기」를 누르면 종이 귀퉁이를 찾아 표시하고(배경이 종이보다 어두울 때 잘 찾아요), 주황 점을 끌어 맞춘 뒤 「펴기 적용」을 누르면 반듯해집니다. 사진이 여러 장이면 위 페이지 띠에서 옮겨 다니며 장마다 펴고 효과를 조절하고, 「다른 장에도」로 나머지 장에 같은 설정을 한꺼번에 적용할 수 있어요. 저장 탭에서 전체를 PDF 한 파일로 받을 수 있습니다. 문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
+    scan: '효과는 「스캔 효과 적용」(또는 「적용하고 다음 장」)을 눌러야 들어가고, 적용되면 설정이 원본으로 돌아가 겹쳐 쌓이지 않아요. 비스듬히 찍힌 종이는 먼저 「종이 펴기」로 — 「모서리 자동 찾기」를 누르면 종이 귀퉁이를 찾아 표시하고(배경이 종이보다 어두울 때 잘 찾아요), 주황 점을 끌어 맞춘 뒤 「펴기 적용」을 누르면 반듯해집니다. 「종이 비율」에서 A4·B4(1:√2)·Letter를 고르면 그 규격 비율로 반듯하게 맞춰 주고, 찾은 모양이 A4에 가까우면 자동으로 골라 둬요. 「🔍 크게 보기」로 화면 가득 확인할 수 있어요. 사진이 여러 장이면 위 페이지 띠에서 옮겨 다니며 장마다 펴고 효과를 조절하고, 「다른 장에도」로 나머지 장에 같은 설정을 한꺼번에 적용할 수 있어요. 저장 탭에서 전체를 PDF 한 파일로 받을 수 있습니다. 문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
     save: '여러 장을 불러왔다면 「전체 PDF」로 한 파일에 묶거나 「전체 JPG」로 장마다 받을 수 있어요(품질 슬라이더 적용). JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
@@ -1120,6 +1162,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var pg = pages[pageCur];
     pg.canvas = cloneCanvas(cv);
     pg.history = history;
+    pg.redo = redoStack;
     pageThumbDraw(pg);
   }
 
@@ -1133,6 +1176,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     originalCanvas.width = pg.original.width; originalCanvas.height = pg.original.height;
     originalCanvas.getContext('2d').drawImage(pg.original, 0, 0);
     history = pg.history || [];
+    redoStack = pg.redo || [];
     crop = null;
     baseName = pg.name;
     origFileSize = pg.size || 0;
@@ -1164,6 +1208,13 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
       if (i < pageCur) pageCur--;
       pageStripRender();
     }
+  }
+
+  function pushPageSnapshot(pg) {
+    pg.history = pg.history || [];
+    pg.history.push({ type: 'snapshot', canvas: cloneCanvas(pg.canvas) });
+    if (pg.history.length > HISTORY_CAP) pg.history.shift();
+    pg.redo = [];
   }
 
   function pageThumbDraw(pg) {
@@ -1201,6 +1252,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var multi = pages.length > 1;
     document.getElementById('saveAllWrap').style.display = multi ? '' : 'none';
     document.getElementById('scanAllSec').style.display = multi ? '' : 'none';
+    document.getElementById('scanNextBtn').style.display = (multi && pageCur < pages.length - 1) ? '' : 'none';
     var on = pageThumbs.querySelector('.pthumb.on');
     if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
@@ -1265,6 +1317,8 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var availW = holder.clientWidth - 34;
     var absTop = holder.getBoundingClientRect().top + window.scrollY;
     var availH = Math.max(280, window.innerHeight - absTop - 46);
+    // 자르기 탭만 핸들이 화면 안에 들어오도록 높이를 제한하고, 다른 탭은 너비에 맞춰 크게 보여 준다
+    if (activeTab !== 'crop') availH = Math.max(availH, Math.round(window.innerHeight * 0.95), 520);
     if (activeTab === 'color' && window.innerWidth < 980) {
       // 좁은 화면의 색감 탭은 사진을 위에 붙여 두므로 슬라이더가 보일 만큼만 차지한다
       availW = holder.clientWidth - 22;
@@ -1395,10 +1449,41 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
 
   /* ── 되돌리기 ── */
 
+  var redoStack = [];
+  var redoBtn = document.getElementById('redoBtn');
+
   function pushHistory(entry) {
     history.push(entry);
     if (history.length > HISTORY_CAP) history.shift();
+    redoStack = [];   // 새 작업을 하면 다시 실행할 것은 없어진다
     updateUndoBtn();
+  }
+
+  // 기록 한 건을 되감으면서, 반대 방향으로 되감을 기록을 돌려준다
+  function applyRecord(rec) {
+    var inverse;
+    if (rec.type === 'snapshot') {
+      var cur = document.createElement('canvas');
+      cur.width = cv.width; cur.height = cv.height;
+      cur.getContext('2d').drawImage(cv, 0, 0);
+      inverse = { type: 'snapshot', canvas: cur };
+      cv.width = rec.canvas.width;
+      cv.height = rec.canvas.height;
+      ctx.drawImage(rec.canvas, 0, 0);
+      crop = null;
+      afterImageChange();
+    } else {
+      var back = [];
+      for (var i = rec.patches.length - 1; i >= 0; i--) {
+        var p = rec.patches[i];
+        back.push({ x: p.x, y: p.y, data: ctx.getImageData(p.x, p.y, p.data.width, p.data.height) });
+        ctx.putImageData(p.data, p.x, p.y);
+      }
+      inverse = { type: 'patches', patches: back };
+      if (typeof invalidateNukki === 'function') invalidateNukki();
+      if (activeTab === 'save') scheduleEstimate();
+    }
+    return inverse;
   }
 
   function pushPatches(patches) {
@@ -1417,23 +1502,23 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   function undo() {
     var rec = history.pop();
     if (!rec) return;
-    if (rec.type === 'snapshot') {
-      cv.width = rec.canvas.width;
-      cv.height = rec.canvas.height;
-      ctx.drawImage(rec.canvas, 0, 0);
-      crop = null;
-      afterImageChange();
-    } else {
-      for (var i = rec.patches.length - 1; i >= 0; i--) {
-        var p = rec.patches[i];
-        ctx.putImageData(p.data, p.x, p.y);
-      }
-      if (activeTab === 'save') scheduleEstimate();
-    }
+    if (deskewOn) deskewStop();
+    redoStack.push(applyRecord(rec));
+    updateUndoBtn();
+  }
+  function redo() {
+    var rec = redoStack.pop();
+    if (!rec) return;
+    if (deskewOn) deskewStop();
+    history.push(applyRecord(rec));
     updateUndoBtn();
   }
 
-  function updateUndoBtn() { undoBtn.disabled = history.length === 0; }
+  function updateUndoBtn() {
+    undoBtn.disabled = history.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+  }
+  redoBtn.addEventListener('click', redo);
 
   /* ── 모자이크 포인터 이벤트 ── */
 
@@ -3494,6 +3579,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     { k: 'paper',    label: '종이색(누렇게)',  min: 0,   max: 100 }
   ];
   var SCAN_PRESETS = [
+    { id: 'none',   name: '원본',        p: {} },
     { id: 'copier', name: '복사기 흑백',  p: { gray: 1, angle: 0.6, bright: 6, contrast: 30, blur: 1, noise: 12, shadow: 25, paper: 0 } },
     { id: 'color',  name: '컬러 스캔',    p: { gray: 0, angle: 0.4, bright: 4, contrast: 15, blur: 0.5, noise: 8, shadow: 20, paper: 10 } },
     { id: 'fax',    name: '팩스',        p: { gray: 1, angle: 1.2, bright: 10, contrast: 70, blur: 2.5, noise: 25, shadow: 10, paper: 0 } },
@@ -3558,14 +3644,21 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     }
     var gray = p.gray >= 0.5, nz = p.noise / 100 * 60;
     var tr = 1, tg = 1 - paper * 0.07, tb = 1 - paper * 0.24;
-    scanSeed = 7;
-    for (i = 0; i < d.length; i += 4) {
-      var r = d[i], g = d[i + 1], b = d[i + 2];
-      if (gray) { r = g = b = 0.299 * r + 0.587 * g + 0.114 * b; }
-      r = lut[r | 0]; g = lut[g | 0]; b = lut[b | 0];
-      if (nz) { var n = (scanRand() + scanRand() - 1) * nz; r += n; g += n; b += n; }
-      if (paper) { r *= tr; g *= tg; b *= tb; }
-      d[i] = r; d[i + 1] = g; d[i + 2] = b;
+    // 입자는 해상도가 달라도 같은 굵기로 보이도록 칸 단위로 (미리보기 1280px 기준)
+    var cell = Math.max(1, Math.round(Math.max(w, h) / 1280)), ncache = null, ny = -1;
+    if (nz) { ncache = new Float32Array(Math.ceil(w / cell) + 1); }
+    i = 0;
+    for (var yy = 0; yy < h; yy++) {
+      var cy = (yy / cell) | 0;
+      if (nz && cy !== ny) { ny = cy; for (var cx = 0; cx < ncache.length; cx++) ncache[cx] = (scanRand() + scanRand() - 1) * nz; }
+      for (var xx = 0; xx < w; xx++, i += 4) {
+        var r = d[i], g = d[i + 1], b = d[i + 2];
+        if (gray) { r = g = b = 0.299 * r + 0.587 * g + 0.114 * b; }
+        r = lut[r | 0]; g = lut[g | 0]; b = lut[b | 0];
+        if (nz) { var n = ncache[(xx / cell) | 0]; r += n; g += n; b += n; }
+        if (paper) { r *= tr; g *= tg; b *= tb; }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b;
+      }
     }
     octx.putImageData(id, 0, 0);
 
@@ -3640,6 +3733,14 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     scanRender();
   }
   function scanManual() { scanParams.id = 'custom'; scanSync(); scanRender(); }
+  // 효과가 하나라도 켜져 있나 (원본 그대로면 적용할 것이 없다)
+  function scanIsDirty(p) {
+    p = p || scanParams;
+    if (p.gray >= 0.5) return true;
+    for (var i = 0; i < SP.length; i++) if (Math.abs(p[SP[i].k] || 0) > 1e-6) return true;
+    return false;
+  }
+  var scanLastApplied = null;   // 마지막으로 적용한 설정 — 「나머지 장에도」에서 쓴다
 
   (function buildScanPanel() {
     var seg = document.getElementById('scanPresetSeg');
@@ -3674,16 +3775,24 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   })();
 
   function applyScan(auto) {
-    if (!editor.classList.contains('show')) return;
+    if (!editor.classList.contains('show') || !scanIsDirty()) return;
     pushSnapshot();
     var out = scanProcess(cv, scanParams);
     ctx.drawImage(out, 0, 0);
+    scanLastApplied = JSON.parse(JSON.stringify(scanParams));
+    scanSelect(SCAN_PRESETS[0]);   // 적용했으니 설정은 원본으로 — 다시 들어와도 겹쳐 쌓이지 않게
     afterImageChange();
     toast(auto ? '스캔 효과 적용됨 · 되돌리기 가능' : '스캔 효과를 적용했어요');
   }
   document.getElementById('scanApplyBtn').addEventListener('click', function () {
+    if (!scanIsDirty()) { toast('먼저 위에서 효과를 골라 주세요'); return; }
     toast('적용 중…');
     setTimeout(function () { applyScan(false); }, 30);
+  });
+  document.getElementById('scanNextBtn').addEventListener('click', function () {
+    if (pageCur >= pages.length - 1) return;
+    applyScan(true);
+    pageLoad(pageCur + 1);
   });
 
   /* ── 종이 펴기 (원근 보정) ──
@@ -3862,8 +3971,15 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     deskewQuad = q || [[m, m], [w - m, m], [w - m, h - m], [m, h - m]];
     document.getElementById('deskewTools').style.display = '';
     deskewCv.style.display = 'block';
+    // 찾은 사각형이 A4·B4 비율에 가까우면 규격 비율을 기본으로 고른다 (학교 문서는 대부분 A4)
+    if (q) {
+      var szq = cQuadSize(q), rq = Math.max(szq.w, szq.h) / Math.max(1, Math.min(szq.w, szq.h));
+      paperRatio = Math.abs(rq - Math.SQRT2) / Math.SQRT2 < 0.08 ? 'iso' : 'auto';
+      document.querySelectorAll('#paperRatioSeg button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-r') === paperRatio); });
+    }
     scanRenderNow();
     deskewDraw();
+    paperHintUpdate();
   }
   function deskewStop() {
     deskewOn = false;
@@ -3899,6 +4015,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     var p = deskewPoint(e);
     deskewQuad[deskewDrag] = [clamp(p[0], 0, scanCv.width), clamp(p[1], 0, scanCv.height)];
     deskewDraw();
+    paperHintUpdate();
   });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (t) {
     deskewCv.addEventListener(t, function () { if (deskewDrag >= 0) { deskewDrag = -1; deskewDraw(); } });
@@ -3906,11 +4023,40 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   window.addEventListener('resize', function () { if (deskewOn) deskewDraw(); });
 
   // 원본 캔버스에 펴기 적용
+  // 종이 규격 비율 — ISO A·B 계열은 모두 1:√2, Letter는 8.5:11
+  var PAPER_RATIOS = { iso: Math.SQRT2, letter: 11 / 8.5, '34': 4 / 3 };
+  var paperRatio = 'auto';
+
+  // 사각형의 가로·세로 평균 길이에 규격 비율을 입힌 출력 크기. 긴 변은 두고 짧은 변을 맞춘다.
+  function cPaperSize(q, mode) {
+    var sz = cQuadSize(q), r = PAPER_RATIOS[mode];
+    if (!r) return sz;
+    var portrait = sz.h >= sz.w;
+    if (portrait) return { w: Math.round(sz.h / r), h: sz.h };
+    return { w: sz.w, h: Math.round(sz.w / r) };
+  }
+  function paperHintUpdate() {
+    if (!deskewQuad) return;
+    var sz = cQuadSize(deskewQuad), ratio = Math.max(sz.w, sz.h) / Math.max(1, Math.min(sz.w, sz.h));
+    var hint = document.getElementById('paperHint'), near = null;
+    if (Math.abs(ratio - Math.SQRT2) / Math.SQRT2 < 0.08) near = 'A4·B4 비율에 가까워요';
+    else if (Math.abs(ratio - 11 / 8.5) / (11 / 8.5) < 0.06) near = 'Letter 비율에 가까워요';
+    var out = cPaperSize(deskewQuad.map(function (p) { return [p[0] * cv.width / scanCv.width, p[1] * cv.width / scanCv.width]; }), paperRatio);
+    hint.textContent = '지금 비율 1:' + ratio.toFixed(2) + (near ? ' · ' + near : '') + ' → ' + out.w + ' × ' + out.h + ' px';
+  }
+  document.querySelectorAll('#paperRatioSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      paperRatio = b.getAttribute('data-r');
+      document.querySelectorAll('#paperRatioSeg button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      paperHintUpdate();
+    });
+  });
+
   function applyDeskew() {
     if (!deskewQuad) return;
     var sc = cv.width / scanCv.width;
     var q = deskewQuad.map(function (p) { return [p[0] * sc, p[1] * sc]; });
-    var sz = cQuadSize(q);
+    var sz = cPaperSize(q, paperRatio);
     if (sz.w < 16 || sz.h < 16) { toast('사각형이 너무 작아요'); return; }
     pushSnapshot();
     var out = cWarpQuad(cv, q, sz.w, sz.h);
@@ -3918,7 +4064,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     ctx.drawImage(out, 0, 0);
     deskewStop();
     afterImageChange();   // 색감·스캔 미리보기 다시 준비
-    toast('종이를 폈어요 · ' + sz.w + ' × ' + sz.h + ' px');
+    toast('종이를 폈어요 · ' + sz.w + ' × ' + sz.h + ' px' + (PAPER_RATIOS[paperRatio] ? ' · 규격 비율로 맞춤' : ''));
   }
 
   document.getElementById('deskewAutoBtn').addEventListener('click', function () { deskewStart(true); });
@@ -3932,6 +4078,8 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   document.getElementById('scanAllBtn').addEventListener('click', function () {
     var btn = this;
     var autoDeskew = document.getElementById('batchDeskewChk').checked;
+    var use = scanIsDirty() ? scanParams : scanLastApplied;   // 지금 고른 효과, 없으면 마지막에 적용한 효과
+    if (!use && !autoDeskew) { toast('먼저 효과를 고르거나 한 장에 적용해 주세요'); return; }
     var targets = pages.map(function (pg, i) { return i; }).filter(function (i) { return i !== pageCur; });
     if (!targets.length) { toast('다른 장이 없어요'); return; }
     btn.disabled = true;
@@ -3949,10 +4097,10 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
         var c = pg.canvas;
         if (autoDeskew) {
           var q = cFindPaper(c);
-          if (q) { var sz = cQuadSize(q); c = cWarpQuad(c, q, sz.w, sz.h); }
+          if (q) { var sz = cPaperSize(q, paperRatio); c = cWarpQuad(c, q, sz.w, sz.h); }
         }
-        pg.canvas = scanProcess(c, scanParams);
-        pg.history = [];
+        if (use) { pushPageSnapshot(pg); pg.canvas = scanProcess(c, use); }
+        else { pushPageSnapshot(pg); pg.canvas = c; }
         pageThumbDraw(pg);
         next();
       }, 20);
@@ -4002,15 +4150,63 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     });
   }
 
+  /* ── 크게 보기 ── */
+
+  var viewer = document.getElementById('viewer');
+  var viewerBody = document.getElementById('viewerBody');
+  var viewerCv = document.getElementById('viewerCv');
+  var viewerFull = false;
+
+  // 지금 탭이 보여 주는 화면(색감·스캔은 미리보기)을 그대로 크게
+  function viewerSource() {
+    if (activeTab === 'color') return colorCv;
+    if (activeTab === 'scan') return scanCv;
+    return cv;
+  }
+  function viewerDraw(src) {
+    src = src || viewerSource();
+    viewerCv.width = src.width; viewerCv.height = src.height;
+    viewerCv.getContext('2d').drawImage(src, 0, 0);
+    viewerBody.classList.toggle('full', viewerFull);
+    document.getElementById('viewerFitBtn').classList.toggle('on', !viewerFull);
+    document.getElementById('viewerFullBtn').classList.toggle('on', viewerFull);
+    document.getElementById('viewerInfo').textContent = cv.width + ' × ' + cv.height + ' px · ' + (viewerFull ? '100%' : '화면 맞춤');
+  }
+  function viewerOpen() {
+    if (!editor.classList.contains('show')) return;
+    viewerFull = false;
+    viewer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    viewerDraw();
+  }
+  function viewerClose() {
+    viewer.hidden = true;
+    document.body.style.overflow = '';
+  }
+  document.getElementById('zoomBtn').addEventListener('click', viewerOpen);
+  document.getElementById('viewerCloseBtn').addEventListener('click', viewerClose);
+  document.getElementById('viewerFitBtn').addEventListener('click', function () { viewerFull = false; viewerDraw(); });
+  document.getElementById('viewerFullBtn').addEventListener('click', function () { viewerFull = true; viewerDraw(); });
+  viewerCv.addEventListener('click', function () { viewerFull = !viewerFull; viewerDraw(); });
+  (function () {
+    var el = document.getElementById('viewerOrigBtn');
+    function on() { viewerDraw(pages[pageCur] ? pages[pageCur].original : originalCanvas); }
+    function off() { viewerDraw(); }
+    el.addEventListener('pointerdown', function (e) { if (e.button === 0) { el.setPointerCapture(e.pointerId); on(); } });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (t) { el.addEventListener(t, off); });
+  })();
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !viewer.hidden) viewerClose(); });
+
   /* ── 상단 버튼 ── */
 
   undoBtn.addEventListener('click', undo);
 
   resetBtn.addEventListener('click', function () {
+    if (deskewOn) deskewStop();
+    pushSnapshot();   // 「원본으로」도 되돌릴 수 있게
     cv.width = originalCanvas.width;
     cv.height = originalCanvas.height;
     ctx.drawImage(originalCanvas, 0, 0);
-    history = [];
     updateUndoBtn();
     afterImageChange();
   });
@@ -4023,15 +4219,19 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     editor.classList.remove('show');
     dropzone.style.display = 'block';
     history = [];
+    redoStack = [];
     updateUndoBtn();
   });
 
   document.addEventListener('keydown', function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-      if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
-      e.preventDefault();
-      undo();
-    }
+    if (!(e.ctrlKey || e.metaKey)) return;
+    var k = e.key.toLowerCase();
+    if (k !== 'z' && k !== 'y') return;
+    var el = document.activeElement, tag = el ? el.tagName : '';
+    // 글자를 입력하는 칸에서만 단축키를 양보한다 (슬라이더·체크박스·버튼 위에서는 동작)
+    if (tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'INPUT' && !/^(range|checkbox|radio|button|file)$/.test(el.type))) return;
+    e.preventDefault();
+    if (k === 'y' || e.shiftKey) redo(); else undo();
   });
 
   footnote.textContent = FOOTNOTES.mosaic;
