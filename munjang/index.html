@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>생기부 문장 작업대</title>
+<meta name="description" content="공통 문구와 학생별 관찰을 이어 붙여 세특·창체·행특을 쓰는 도구. 자료는 브라우저 안에만 저장됩니다.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23F59E0B%27/%3E%3Cpath d=%27M9 22h14M9 16h14M9 10h9%27 stroke=%27%231A1A1A%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
 <style>
 :root{--bg:#FAF9F7;--surface:#fff;--sub:#F3F1ED;--line:#E8E6E2;--text:#1A1A1A;--mut:#6B6B6B;--amber:#F59E0B;--amber-d:#B45309;--amber-l:#FCD68A;--err:#9F2D20}
 *{box-sizing:border-box}
@@ -12,6 +14,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,-app
 .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 header.top{background:var(--surface);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+a.back{font-size:13px;color:var(--mut);text-decoration:none;margin-right:12px;white-space:nowrap}a.back:hover{color:var(--amber-d)}
 h1{font-size:20px;font-weight:700;margin:0 16px 0 0;line-height:1.3}
 .pill{font-size:13px;color:var(--mut);border:1px solid var(--line);border-radius:9999px;padding:2px 12px;margin-left:8px;background:var(--surface);font-variant-numeric:tabular-nums}
 .pill.on{color:var(--text);background:var(--amber-l);border-color:var(--amber-l)}
@@ -132,11 +135,12 @@ ol.steps li{counter-increment:s;padding-left:40px;position:relative;margin-botto
 ol.steps li:before{content:counter(s,decimal-leading-zero);position:absolute;left:0;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber-d)}
 @media (max-width:900px){.work{grid-template-columns:1fr}.list{max-height:260px}.grid2,.grid4{grid-template-columns:1fr}.opt{grid-template-columns:28px 1fr}.opt>textarea,.opt>.optb{grid-column:2}.optb{flex-direction:row}.optb button{margin:0 4px 0 0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{header.top .pill,nav.tabs,.where,button,#status{display:none!important}body{background:#fff;color:#000}.card,.list{border:1px solid #ccc}}
+@media print{a.back,header.top .pill,nav.tabs,.where,button,#status{display:none!important}body{background:#fff;color:#000}.card,.list{border:1px solid #ccc}}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
+  <a class="back" href="../">← 바로가기 모음</a>
   <h1>생기부 문장 작업대</h1>
   <span class="pill" id="saveSt">불러오는 중</span>
   <button type="button" class="pill" id="undoB" data-a="undo" disabled>되돌리기</button>
@@ -1040,7 +1044,7 @@ function renderHelp() {
     '<h2>검사 결과 읽는 법</h2><div class="card"><table><thead><tr><th>표시</th><th>뜻</th><th>상태에 미치는 영향</th></tr></thead><tbody><tr><td><b style="color:var(--err)">고칠 곳</b></td><td>상한 초과, 학생 이름</td><td>고칠 때까지 완료가 되지 않습니다</td></tr><tr><td><b style="color:var(--amber-d)">확인</b></td><td>맺음, 호칭, 문예체, 기재 금지 의심, AI 초안과 거의 같음 등</td><td>고치거나 [읽고 확인했습니다]를 누르면 완료가 됩니다</td></tr><tr><td><b class="mut">참고</b></td><td>반복, 분량, 띄어쓰기</td><td>완료를 막지 않습니다</td></tr></tbody></table><p style="margin-top:8px">최종 검토 칸에서는 걸린 자리에 바로 색을 칠합니다. 붉은 바탕은 고칠 곳(보이지 않는 문자, 이모지, 탭), 노란 바탕은 확인할 곳, 붉은 밑줄은 학생 이름, 점선 밑줄은 &#39;~다.&#39;로 끝난 문장, 옅은 바탕은 120자가 넘는 긴 문장과 상한을 넘은 구간입니다. [문자 정리]는 보이지 않는 문자와 특수 공백을 지우고, 둥근 따옴표·말줄임표·줄표를 기본 부호로 바꾸며, 겹친 공백을 하나로 줄입니다.</p><p class="mut" style="margin-top:8px">낱말을 찾는 방식이라 문맥은 보지 못합니다. 걸렸다고 틀린 것은 아니고, 걸리지 않았다고 다 맞는 것도 아닙니다.</p></div>' +
     '<h2>되돌리기와 백업</h2><div class="card"><ul><li><b>되돌리기</b> 화면 위 [되돌리기]는 방금 한 일을 한 단계씩 되돌립니다(최근 40단계). 글자 입력은 잠깐 쉰 데까지를 한 단계로, 찾아 바꾸기는 통째로 한 단계로 셉니다. 여러 명 AI 요청도 받는 동안 다른 것을 고치지 않았다면 통째로 한 단계입니다. 되돌리면 바뀐 시트와 학생을 화면에 보여 줍니다. 칸 밖에서는 Ctrl+Z로도 됩니다. 탭을 닫으면 되돌리기 기록은 사라집니다.</li><li><b>자동 백업</b> 탭을 닫은 뒤에도 남는 것은 [04 저장·내보내기]의 자동 백업입니다. 시트·항목·학생을 지우거나 명단을 바꾸는 것처럼 크게 고치기 직전의 모습이 남아 있어, 그때로 되살릴 수 있습니다.</li><li><b>파일 저장</b> 백업은 이 브라우저 안에만 있습니다. 브라우저 기록을 지우거나 컴퓨터를 바꾸면 사라지므로, 작업을 마칠 때는 파일로 저장해 주세요.</li><li><b>찾아 바꾸기</b> [03 작성]의 [찾아 바꾸기]는 바꾸기 전에 바뀔 곳을 먼저 보여 줍니다. 활동 이름을 한 가지로 맞추거나 호칭을 고칠 때 씁니다. 글자가 같으면 다른 낱말의 일부(&#39;책&#39;을 찾을 때의 &#39;책임감&#39;)도 찾으므로, 목록에서 바꾸지 않을 곳의 표시를 풀거나 [낱말로 쓰인 곳만 찾기]를 켜 주세요. 받침이 달라지면 바로 뒤의 조사도 맞추지만(토의를 → 토론을), &#39;낱낱이&#39;의 &#39;이&#39;처럼 조사가 아닌 글자를 조사로 잘못 볼 수 있어 맞춘 곳마다 &#39;조사 맞춤&#39;이라고 적어 둡니다. 그 줄은 한 번 더 읽어 주세요.</li><li><b>글쇠</b> Ctrl+S는 지금까지 고친 것이 저장됐는지 확인하고, Ctrl+F는 찾아 바꾸기를 엽니다. [03 작성]에서 Ctrl+↓(또는 Ctrl+Enter)와 Ctrl+↑는 다음·이전 학생으로 옮기며, 쓰던 칸에 그대로 커서를 둡니다.</li></ul></div>' +
     '<h2>AI 점독과 과제물 요약 읽는 법</h2><div class="card"><ul><li><b>AI 점독</b>은 고쳐 주지 않고 다시 볼 자리만 짚습니다. [가]는 문장만 보고 걸린 곳(두 가지로 읽히는 말, 가리키는 대상이 흐린 지시어, 너무 긴 문장), [나]는 세부 항목과 견주어 걸린 곳(자료에 없는 사실, 달라진 평가 수준)입니다. 짚은 것이 틀릴 수 있고, 짚지 않았다고 문제가 없는 것도 아닙니다.</li><li><b>과제물 요약</b>은 학생이 낸 글의 요약입니다. 학생이 쓴 내용이지 교사가 확인한 사실이 아니므로, 직접 본 것만 남기고 고친 뒤 칸에 넣어 주세요.</li></ul></div>' +
-    '<h2>자료가 있는 곳</h2><div class="card"><ul><li>시트, 명단, 작성 내용은 이 컴퓨터의 이 브라우저 안에만 저장됩니다. 만든 사람에게도 전송되지 않습니다.</li><li>이 파일은 외부 스크립트나 글꼴을 불러오지 않습니다. AI를 연결하지 않으면 인터넷 없이도 모든 기능이 동작합니다.</li><li>같은 자료를 두 탭에서 동시에 고치면 나중에 저장한 쪽만 남습니다. 다른 탭이 열려 있으면 화면 위에 알려 드리니 한 탭에서만 써 주세요.</li><li>브라우저에 따라서는 이 HTML 파일을 다른 폴더로 옮기거나 이름을 바꾸면 저장해 둔 자료가 보이지 않을 수 있습니다. 옮기기 전에 파일로 저장해 두고, 옮긴 뒤 불러와 주세요.</li><li>내 컴퓨터에서 여는 다른 HTML 파일도 브라우저의 같은 저장 공간에 닿을 수 있습니다. 출처를 모르는 HTML 파일은 이 브라우저에서 열지 말고, 여럿이 쓰는 컴퓨터에서는 작업 뒤 [모든 자료 지우기]를 눌러 주세요.</li><li>AI 초안은 다듬기용입니다. 기재요령은 AI가 만든 문장을 그대로 넣지 않고 교사가 사실과 표현을 확인하도록 하고 있습니다.</li></ul></div>' +
+    '<h2>자료가 있는 곳</h2><div class="card"><ul><li>시트, 명단, 작성 내용은 이 컴퓨터의 이 브라우저 안에만 저장됩니다. 만든 사람에게도 전송되지 않습니다.</li><li>이 페이지는 외부 스크립트나 글꼴을 불러오지 않습니다. 페이지를 연 뒤에는 AI를 연결하지 않는 한 인터넷이 끊겨도 모든 기능이 동작합니다.</li><li>같은 자료를 두 탭에서 동시에 고치면 나중에 저장한 쪽만 남습니다. 다른 탭이 열려 있으면 화면 위에 알려 드리니 한 탭에서만 써 주세요.</li><li>자료는 이 주소와 이 브라우저에 묶여 있습니다. 다른 컴퓨터나 다른 브라우저(크롬 ↔ 엣지), 시크릿 창에서는 보이지 않으니 [04 저장·내보내기]의 파일 저장으로 옮겨 주세요.</li><li>사파리(아이폰·아이패드·맥)는 한동안 열지 않은 사이트의 저장 자료를 지울 수 있습니다. 사파리에서 쓴다면 작업을 마칠 때마다 파일로 저장해 두세요.</li><li>여럿이 쓰는 컴퓨터에서는 작업 뒤 [모든 자료 지우기]를 눌러 주세요. 다음 사람이 같은 주소를 열면 자료가 그대로 보입니다.</li><li>AI 초안은 다듬기용입니다. 기재요령은 AI가 만든 문장을 그대로 넣지 않고 교사가 사실과 표현을 확인하도록 하고 있습니다.</li></ul></div>' +
     '<h2>이 도구에 대하여</h2><div class="card"><p>공통 문구와 학생별 관찰을 이어 붙여 초안을 만드는 방식은 박석경 선생님이 소개한 반구조화 생기부 작성법에서 착안했습니다. 화면과 코드, AI 작성 지침, 문장 규칙 검사는 이 도구를 위해 새로 썼습니다.</p><p class="mut">2차에서 되돌리기와 자동 백업, 찾아 바꾸기, AI 점독, 과제물 요약, 다른 표현 받기를 더했습니다. 3차에서 &#39;세특 검증 편집기&#39;의 글자 단위 검사와 자리 표시, 문자 정리, 바이트 셈을 옮겨 왔습니다. 4차에서 준비·작성·관리의 탭 순서, 다섯 단계, 반 전체 표를 넣어 처음 착안한 작성법의 흐름에 다시 맞췄습니다.</p></div>';
 }
 
@@ -1419,6 +1423,7 @@ window.addEventListener('beforeunload', e => { if (U.busy || !U.storage) { e.pre
     let pend = null; try { pend = JSON.parse(localStorage.getItem(PEND) || 'null'); } catch (e) { pend = null; }
     if (pend && pend.S && (!rec || pend.t > (rec.t || 0))) { S = normalize(pend.S); saveNow(); } }
   catch (e) { U.storage = false; $('#saveSt').textContent = '브라우저 저장 안 됨'; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { /* 없음 */ }); } catch (e) { /* 없음 */ } // 브라우저가 저장 자료를 함부로 비우지 않게 부탁한다
   lastSnap = snapS(); bkLast = Date.now(); if (S.sheets.length && U.storage) backup('도구를 열 때');
   if (S.sheets.length) U.tab = 'write';
   render(); paintUndo(); tabsInit();
