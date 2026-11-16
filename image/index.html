@@ -343,7 +343,7 @@
   .scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 24px; }
   .scan-grid .adj { padding: 4px 0; }
   .scan-grid .adj output { color: var(--ink-soft); }
-  .scan-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .scan-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 8px; }
   #panel-color.on { display: block; padding: 16px; }
   .cp-head {
     display: flex; align-items: baseline; justify-content: space-between;
@@ -627,6 +627,7 @@
       <div class="scan-actions">
         <button class="btn primary" id="scanApplyBtn" type="button">스캔 효과 적용</button>
         <button class="btn" id="scanNextBtn" type="button" style="display:none">적용하고 다음 장 ▶</button>
+        <button class="btn" id="scanPdfBtn" type="button" title="지금 효과를 적용하고 모든 장을 PDF 한 파일로 (쪽 크기·여백은 저장 탭 설정)">📄 PDF로 내보내기</button>
       </div>
       <div class="scan-sec">
         <div class="scan-sec-head"><b>종이 펴기</b><span>비스듬히 찍힌 종이를 반듯한 직사각형으로 — 네 꼭짓점을 찾아 맞춘 뒤 펴요</span></div>
@@ -704,6 +705,22 @@
         <button data-fmt="image/jpeg" class="on" type="button">JPG</button>
         <button data-fmt="image/png" type="button">PNG</button>
         <button data-fmt="image/webp" type="button">WebP</button>
+        <button data-fmt="application/pdf" type="button">PDF</button>
+      </div>
+      <div class="group" id="pdfOpts" style="display:none">
+        <label>쪽 크기</label>
+        <div class="seg" id="pdfPaperSeg">
+          <button data-p="a4" class="on" type="button">A4</button>
+          <button data-p="b4" type="button">B4</button>
+          <button data-p="letter" type="button">Letter</button>
+          <button data-p="fit" type="button">사진 크기대로</button>
+        </div>
+        <label>여백</label>
+        <div class="seg" id="pdfMarginSeg">
+          <button data-m="0" type="button">없음</button>
+          <button data-m="18" class="on" type="button">좁게</button>
+          <button data-m="42" type="button">보통</button>
+        </div>
       </div>
       <div class="group" id="qualityGroup">
         <label for="quality">품질</label>
@@ -998,7 +1015,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     scan: '효과는 「스캔 효과 적용」(또는 「적용하고 다음 장」)을 눌러야 들어가고, 적용되면 설정이 원본으로 돌아가 겹쳐 쌓이지 않아요. 비스듬히 찍힌 종이는 먼저 「종이 펴기」로 — 「모서리 자동 찾기」를 누르면 종이 귀퉁이를 찾아 표시하고(배경이 종이보다 어두울 때 잘 찾아요), 주황 점을 끌어 맞춘 뒤 「펴기 적용」을 누르면 반듯해집니다. 「종이 비율」에서 A4·B4(1:√2)·Letter를 고르면 그 규격 비율로 반듯하게 맞춰 주고, 찾은 모양이 A4에 가까우면 자동으로 골라 둬요. 「🔍 크게 보기」로 화면 가득 확인할 수 있어요. 사진이 여러 장이면 위 페이지 띠에서 옮겨 다니며 장마다 펴고 효과를 조절하고, 「다른 장에도」로 나머지 장에 같은 설정을 한꺼번에 적용할 수 있어요. 저장 탭에서 전체를 PDF 한 파일로 받을 수 있습니다. 문서 사진·화면 캡처·직접 만든 안내문을 실제로 스캔한 것처럼 만들어요. 「복사기 흑백」「컬러 스캔」「팩스」「오래된 문서」「깨끗한 스캔」 중 하나를 고른 뒤 기울기·밝기·대비·흐림·입자·가장자리 그림자·종이색을 조절하세요. 「스캔 효과 적용」을 누르거나 다른 탭으로 넘어가면 원본 해상도로 적용되고, 되돌리기로 취소할 수 있어요. 흑백·흐림 효과는 저장 탭에서 JPG로 내보내면 더 스캔본답게 보입니다.',
     bg: '「배경 지우기 실행」을 누르면 AI가 인물·사물을 찾아 배경을 지웁니다. AI 모델(약 15MB)은 최초 1회만 내려받아 이 브라우저 안에서 실행되며, 사진은 어디로도 전송되지 않습니다. 증명사진을 만들 땐 흰색·연한 파랑 배경을, 투명 배경이 필요하면 저장 탭에서 PNG를 선택하세요.',
     resize: '가로·세로 크기를 직접 입력하거나 75%/50%/25% 버튼으로 줄인 뒤 「크기 적용」을 누르세요. 크기를 줄이면 파일 용량도 함께 줄어듭니다.',
-    save: '여러 장을 불러왔다면 「전체 PDF」로 한 파일에 묶거나 「전체 JPG」로 장마다 받을 수 있어요(품질 슬라이더 적용). JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
+    save: '「PDF」를 고르면 쪽 크기(A4·B4·Letter·사진 크기대로)와 여백을 정해 PDF로 저장할 수 있어요 — 사진 방향에 맞춰 가로·세로 쪽을 고르고 가운데에 놓습니다. 여러 장을 불러왔다면 「전체 PDF」로 한 파일에 묶거나 「전체 JPG」로 장마다 받을 수 있어요(품질 슬라이더 적용). JPG·WebP는 품질 슬라이더로 용량을 조절할 수 있고, 예상 용량이 실시간으로 표시됩니다. 업로드 용량 제한이 있는 곳(나이스·업무포털 등)에 올릴 땐 목표 용량을 입력하고 「자동 맞춤」을 누르면 품질을 알아서 맞춰 줍니다. (투명 배경이 필요하면 PNG)'
   };
 
   var dropzone = document.getElementById('dropzone');
@@ -1286,14 +1303,27 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
   }
-  document.getElementById('saveAllPdfBtn').addEventListener('click', function () {
-    var btn = this; btn.disabled = true;
+  function exportAllPdf(btn) {
+    if (!pages.length) return;
+    if (btn) btn.disabled = true;
     toast('PDF 만드는 중…');
     pagesToJpegs(parseInt(qualityInput.value, 10) / 100, function (list) {
-      cMakePdf(list).then(function (pdf) {
-        downloadBlob(pdf, (pages[0].name || '문서') + '_외' + (pages.length - 1) + '장.pdf');
-        btn.disabled = false;
-        toast('PDF ' + list.length + '쪽을 내려받았어요');
+      cMakePdf(list, { paper: pdfPaper, margin: pdfMargin }).then(function (pdf) {
+        var nm = (pages[0].name || '문서') + (pages.length > 1 ? '_외' + (pages.length - 1) + '장' : '_스캔');
+        downloadBlob(pdf, nm + '.pdf');
+        if (btn) btn.disabled = false;
+        var label = PDF_PAPERS[pdfPaper] ? { a4: 'A4', b4: 'B4', letter: 'Letter' }[pdfPaper] : '사진 크기';
+        toast('PDF ' + list.length + '쪽 · ' + label + ' · ' + fmtSize(pdf.size));
+      });
+    });
+  }
+  document.getElementById('saveAllPdfBtn').addEventListener('click', function () { exportAllPdf(this); });
+  [['#pdfPaperSeg', 'p'], ['#pdfMarginSeg', 'm']].forEach(function (cfg) {
+    document.querySelectorAll(cfg[0] + ' button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (cfg[1] === 'p') pdfPaper = b.getAttribute('data-p'); else pdfMargin = parseFloat(b.getAttribute('data-m'));
+        document.querySelectorAll(cfg[0] + ' button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        scheduleEstimate();
       });
     });
   });
@@ -2154,7 +2184,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   /* ── 저장·압축 ── */
 
   function exportCanvas() {
-    if (saveFormat === 'image/jpeg') {
+    if (saveFormat === 'image/jpeg' || saveFormat === 'application/pdf') {
       // JPG는 투명도가 없으므로 흰 배경을 깔아 준다
       var out = document.createElement('canvas');
       out.width = cv.width; out.height = cv.height;
@@ -2167,10 +2197,19 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     return cv;
   }
 
-  function makeBlob(cb) {
-    var q = parseInt(qualityInput.value, 10) / 100;
-    exportCanvas().toBlob(cb, saveFormat, saveFormat === 'image/png' ? undefined : q);
+  // q: 0~1. PDF는 JPEG로 압축한 사진을 쪽에 얹는다
+  function makeBlobAt(q, cb) {
+    var c = exportCanvas();
+    if (saveFormat === 'application/pdf') {
+      c.toBlob(function (jpg) {
+        if (!jpg) { cb(null); return; }
+        cMakePdf([{ blob: jpg, w: c.width, h: c.height }], { paper: pdfPaper, margin: pdfMargin }).then(cb);
+      }, 'image/jpeg', q);
+      return;
+    }
+    c.toBlob(cb, saveFormat, saveFormat === 'image/png' ? undefined : q);
   }
+  function makeBlob(cb) { makeBlobAt(parseInt(qualityInput.value, 10) / 100, cb); }
 
   function scheduleEstimate() {
     if (activeTab !== 'save') return;
@@ -2204,6 +2243,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
       var lossy = saveFormat !== 'image/png';
       qualityInput.disabled = !lossy;
       document.getElementById('qualityGroup').style.opacity = lossy ? '1' : '.35';
+      document.getElementById('pdfOpts').style.display = saveFormat === 'application/pdf' ? '' : 'none';
       scheduleEstimate();
     });
   });
@@ -2225,7 +2265,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     btn.disabled = true;
     var targetBytes = target * 1024;
     var lo = 10, hi = 100, best = null;
-    function blobAt(q, cb) { exportCanvas().toBlob(cb, saveFormat, q / 100); }
+    function blobAt(q, cb) { makeBlobAt(q / 100, cb); }
     function step() {
       if (lo > hi) {
         btn.disabled = false;
@@ -2256,7 +2296,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   saveBtn.addEventListener('click', function () {
     makeBlob(function (blob) {
       if (!blob) { alert('이 브라우저에서는 해당 형식을 지원하지 않습니다.'); return; }
-      var ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[saveFormat];
+      var ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' }[saveFormat];
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = baseName + '_편집.' + ext;
@@ -3789,6 +3829,12 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     toast('적용 중…');
     setTimeout(function () { applyScan(false); }, 30);
   });
+  document.getElementById('scanPdfBtn').addEventListener('click', function () {
+    var btn = this;
+    if (deskewOn) deskewStop();
+    applyScan(true);
+    setTimeout(function () { exportAllPdf(btn); }, 30);
+  });
   document.getElementById('scanNextBtn').addEventListener('click', function () {
     if (pageCur >= pages.length - 1) return;
     applyScan(true);
@@ -3870,13 +3916,20 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
   // 종이 네 귀퉁이 자동 찾기: 작은 사본에서 밝은(종이) 영역의 가장 큰 덩어리를 찾아
   // 대각선 방향 극점 4개를 꼭짓점으로 삼는다. 배경이 종이만큼 밝으면 찾지 못한다(null).
   function cFindPaper(src) {
-    var W = 320, sc = W / Math.max(src.width, src.height);
+    var W = 360, sc = W / Math.max(src.width, src.height);
     var w = Math.max(8, Math.round(src.width * sc)), h = Math.max(8, Math.round(src.height * sc));
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     var x = c.getContext('2d'); x.drawImage(src, 0, 0, w, h);
     var d = x.getImageData(0, 0, w, h).data, n = w * h;
-    var L = new Float32Array(n), hist = new Uint32Array(256), i;
-    for (i = 0; i < n; i++) { L[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]; hist[L[i] | 0]++; }
+    // 종이는 "밝고 색이 없는" 곳이다 — 나무 책상(갈색)이나 색 물건과 구분되도록 채도를 깎은 밝기로 본다
+    var Wt = new Float32Array(n), hist = new Uint32Array(256), i;
+    for (i = 0; i < n; i++) {
+      var r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+      var mx = r > g ? (r > b ? r : b) : (g > b ? g : b), mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+      var v = 0.299 * r + 0.587 * g + 0.114 * b - 0.9 * (mx - mn);
+      v = v < 0 ? 0 : v > 255 ? 255 : v;
+      Wt[i] = v; hist[v | 0]++;
+    }
     // Otsu 문턱값
     var sum = 0, sumB = 0, wB = 0, best = 0, thr = 128;
     for (i = 0; i < 256; i++) sum += i * hist[i];
@@ -3884,43 +3937,114 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
       wB += hist[i]; if (!wB) continue;
       var wF = n - wB; if (!wF) break;
       sumB += i * hist[i];
-      var mB = sumB / wB, mF = (sum - sumB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
-      if (v > best) { best = v; thr = i; }
+      var mB = sumB / wB, mF = (sum - sumB) / wF, bv = wB * wF * (mB - mF) * (mB - mF);
+      if (bv > best) { best = bv; thr = i; }
     }
     var mask = new Uint8Array(n), bright = 0;
-    for (i = 0; i < n; i++) if (L[i] > thr) { mask[i] = 1; bright++; }
-    if (bright > n * 0.97 || bright < n * 0.05) return null;        // 전체가 종이이거나 종이가 없음
-    // 가장 큰 밝은 덩어리 (BFS)
-    var label = new Int32Array(n), stack = new Int32Array(n), bestId = 0, bestCnt = 0, id = 0;
-    for (var s = 0; s < n; s++) {
-      if (!mask[s] || label[s]) continue;
-      id++; var top = 0, cnt = 0; stack[top++] = s; label[s] = id;
+    for (i = 0; i < n; i++) if (Wt[i] > thr) { mask[i] = 1; bright++; }
+    if (bright > n * 0.97 || bright < n * 0.03) return null;        // 전체가 종이이거나 종이가 없음
+
+    // 닫힘 연산(팽창 → 침식): 종이를 가로지르는 연필·글씨 때문에 종이가 끊기지 않게
+    function morph(m, rad, dilate) {
+      var t = new Uint8Array(n), o = new Uint8Array(n), xx, yy, k, hit;
+      for (yy = 0; yy < h; yy++) for (xx = 0; xx < w; xx++) {
+        hit = dilate ? 0 : 1;
+        for (k = -rad; k <= rad; k++) {
+          var q = xx + k; if (q < 0 || q >= w) continue;
+          if (dilate ? m[yy * w + q] : !m[yy * w + q]) { hit = dilate ? 1 : 0; break; }
+        }
+        t[yy * w + xx] = hit;
+      }
+      for (yy = 0; yy < h; yy++) for (xx = 0; xx < w; xx++) {
+        hit = dilate ? 0 : 1;
+        for (k = -rad; k <= rad; k++) {
+          var q2 = yy + k; if (q2 < 0 || q2 >= h) continue;
+          if (dilate ? t[q2 * w + xx] : !t[q2 * w + xx]) { hit = dilate ? 1 : 0; break; }
+        }
+        o[yy * w + xx] = hit;
+      }
+      return o;
+    }
+    var rad = Math.max(2, Math.round(W / 120));
+    mask = morph(morph(mask, rad, true), rad, false);
+
+    // 덩어리 나누기 — 넓고, 화면 가운데에 가까운 덩어리를 종이로 고른다
+    var label = new Int32Array(n), stack = new Int32Array(n), id = 0, bestId = 0, bestScore = 0;
+    var cxImg = w / 2, cyImg = h / 2, dMax = Math.hypot(cxImg, cyImg);
+    for (var s0 = 0; s0 < n; s0++) {
+      if (!mask[s0] || label[s0]) continue;
+      id++; var top = 0, cnt = 0, sx = 0, sy = 0; stack[top++] = s0; label[s0] = id;
       while (top) {
         var p = stack[--top]; cnt++;
-        var px = p % w, py = (p / w) | 0;
+        var px = p % w, py = (p / w) | 0; sx += px; sy += py;
         if (px > 0 && mask[p - 1] && !label[p - 1]) { label[p - 1] = id; stack[top++] = p - 1; }
         if (px < w - 1 && mask[p + 1] && !label[p + 1]) { label[p + 1] = id; stack[top++] = p + 1; }
         if (py > 0 && mask[p - w] && !label[p - w]) { label[p - w] = id; stack[top++] = p - w; }
         if (py < h - 1 && mask[p + w] && !label[p + w]) { label[p + w] = id; stack[top++] = p + w; }
       }
-      if (cnt > bestCnt) { bestCnt = cnt; bestId = id; }
+      if (cnt < n * 0.02) continue;
+      var dc = Math.hypot(sx / cnt - cxImg, sy / cnt - cyImg) / dMax;
+      var score = cnt * (1 - 0.75 * dc);
+      if (score > bestScore) { bestScore = score; bestId = id; }
     }
-    if (bestCnt < n * 0.08) return null;
-    var tl = null, tr = null, br = null, bl = null, vtl = 1e9, vtr = -1e9, vbr = -1e9, vbl = 1e9;
-    for (i = 0; i < n; i++) {
-      if (label[i] !== bestId) continue;
-      var xx = i % w, yy = (i / w) | 0, a = xx + yy, b = xx - yy;
-      if (a < vtl) { vtl = a; tl = [xx, yy]; }
-      if (a > vbr) { vbr = a; br = [xx, yy]; }
-      if (b > vtr) { vtr = b; tr = [xx, yy]; }
-      if (b < vbl) { vbl = b; bl = [xx, yy]; }
+    if (!bestId) return null;
+
+    // 덩어리 테두리 → 볼록 껍질
+    var pts = [];
+    for (var yy2 = 0; yy2 < h; yy2++) {
+      var first = -1, last = -1;
+      for (var xx2 = 0; xx2 < w; xx2++) if (label[yy2 * w + xx2] === bestId) { if (first < 0) first = xx2; last = xx2; }
+      if (first >= 0) { pts.push([first, yy2]); if (last !== first) pts.push([last + 1, yy2]); }
     }
-    // 귀퉁이가 거의 이미지 전체면 펼 것이 없다
-    var q = [tl, tr, br, bl].map(function (p) { return [(p[0] + 0.5) / sc, (p[1] + 0.5) / sc]; });
-    var sz = cQuadSize(q);
-    if (sz.w > src.width * 0.97 && sz.h > src.height * 0.97) return null;
-    return q;
+    pts.sort(function (a, b2) { return a[0] - b2[0] || a[1] - b2[1]; });
+    function cross(o, a, b2) { return (a[0] - o[0]) * (b2[1] - o[1]) - (a[1] - o[1]) * (b2[0] - o[0]); }
+    var lower = [], upper = [], k2;
+    for (k2 = 0; k2 < pts.length; k2++) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pts[k2]) <= 0) lower.pop();
+      lower.push(pts[k2]);
+    }
+    for (k2 = pts.length - 1; k2 >= 0; k2--) {
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pts[k2]) <= 0) upper.pop();
+      upper.push(pts[k2]);
+    }
+    var hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+    var m = hull.length;
+    if (m < 4) return null;
+
+    // 껍질 위의 네 점으로 만들 수 있는 가장 넓은 사각형 (꼭짓점을 하나씩 옮기며 넓이를 키운다)
+    function area4(ix) {
+      var A = 0;
+      for (var t = 0; t < 4; t++) { var P = hull[ix[t]], Q = hull[ix[(t + 1) % 4]]; A += P[0] * Q[1] - Q[0] * P[1]; }
+      return Math.abs(A) / 2;
+    }
+    var ix = [0, Math.floor(m / 4), Math.floor(m / 2), Math.floor(3 * m / 4)];
+    var bestA = area4(ix), improved = true, guard = 0;
+    while (improved && guard++ < 20) {
+      improved = false;
+      for (var t2 = 0; t2 < 4; t2++) {
+        var lo = ix[(t2 + 3) % 4], hi = ix[(t2 + 1) % 4];
+        for (var j = (lo + 1) % m; j !== hi; j = (j + 1) % m) {
+          var save = ix[t2]; ix[t2] = j;
+          var a2 = area4(ix);
+          if (a2 > bestA + 1e-6) { bestA = a2; improved = true; } else ix[t2] = save;
+        }
+      }
+    }
+    if (bestA < n * 0.04) return null;
+    var quad = ix.map(function (k) { return hull[k]; });
+    // 좌상 → 우상 → 우하 → 좌하 순서로
+    var mcx = 0, mcy = 0;
+    quad.forEach(function (q) { mcx += q[0] / 4; mcy += q[1] / 4; });
+    quad.sort(function (a, b2) { return Math.atan2(a[1] - mcy, a[0] - mcx) - Math.atan2(b2[1] - mcy, b2[0] - mcx); });
+    var start = 0, bestS = 1e9;
+    quad.forEach(function (q, k) { if (q[0] + q[1] < bestS) { bestS = q[0] + q[1]; start = k; } });
+    quad = quad.slice(start).concat(quad.slice(0, start));
+    var out = quad.map(function (p2) { return [clamp(p2[0] / sc, 0, src.width), clamp(p2[1] / sc, 0, src.height)]; });
+    var sz = cQuadSize(out);
+    if (sz.w > src.width * 0.97 && sz.h > src.height * 0.97) return null;   // 이미 종이만 찍힌 사진
+    return out;
   }
+
 
   /* 미리보기 위 꼭짓점 편집 */
 
@@ -3974,7 +4098,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     // 찾은 사각형이 A4·B4 비율에 가까우면 규격 비율을 기본으로 고른다 (학교 문서는 대부분 A4)
     if (q) {
       var szq = cQuadSize(q), rq = Math.max(szq.w, szq.h) / Math.max(1, Math.min(szq.w, szq.h));
-      paperRatio = Math.abs(rq - Math.SQRT2) / Math.SQRT2 < 0.08 ? 'iso' : 'auto';
+      paperRatio = Math.abs(rq - Math.SQRT2) / Math.SQRT2 < 0.035 ? 'iso' : 'auto';
       document.querySelectorAll('#paperRatioSeg button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-r') === paperRatio); });
     }
     scanRenderNow();
@@ -4039,7 +4163,7 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
     if (!deskewQuad) return;
     var sz = cQuadSize(deskewQuad), ratio = Math.max(sz.w, sz.h) / Math.max(1, Math.min(sz.w, sz.h));
     var hint = document.getElementById('paperHint'), near = null;
-    if (Math.abs(ratio - Math.SQRT2) / Math.SQRT2 < 0.08) near = 'A4·B4 비율에 가까워요';
+    if (Math.abs(ratio - Math.SQRT2) / Math.SQRT2 < 0.035) near = 'A4·B4 비율에 가까워요';
     else if (Math.abs(ratio - 11 / 8.5) / (11 / 8.5) < 0.06) near = 'Letter 비율에 가까워요';
     var out = cPaperSize(deskewQuad.map(function (p) { return [p[0] * cv.width / scanCv.width, p[1] * cv.width / scanCv.width]; }), paperRatio);
     hint.textContent = '지금 비율 1:' + ratio.toFixed(2) + (near ? ' · ' + near : '') + ' → ' + out.w + ' × ' + out.h + ' px';
@@ -4109,7 +4233,12 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
 
   // JPEG 여러 장 → PDF (외부 라이브러리 없이, 각 쪽은 JPEG을 그대로 품는 DCTDecode 이미지)
   // 쪽 크기는 A4 너비(595pt)에 맞추고 세로는 비율대로.
-  function cMakePdf(pages) {
+  // 쪽 크기(pt, 세로 기준). B4는 학교 시험지에 쓰는 257×364mm(KS·JIS B4)
+  var PDF_PAPERS = { a4: [595.28, 841.89], b4: [728.50, 1031.81], letter: [612, 792] };
+  var pdfPaper = 'a4', pdfMargin = 18;
+
+  function cMakePdf(pages, opts) {
+    opts = opts || { paper: 'fit', margin: 0 };
     var enc = new TextEncoder();
     var parts = [], offsets = [], pos = 0;
     function push(u8) { parts.push(u8); pos += u8.length; }
@@ -4132,11 +4261,23 @@ var FACEFINDER_B64 = "AwAAAIF/gX8GAAAA1AEAAO8kyQd85BbNCOHx3gbzZVEUzu3LwAneIgnWxq
           return;
         }
         var pg = pages[idx], base = 3 + idx * 3;
-        var pw = 595.28, ph = pw * pg.h / pg.w;
+        var mg = opts.margin || 0, pw, ph, iw, ih;
+        var paper = PDF_PAPERS[opts.paper];
+        if (paper) {
+          // 사진이 가로로 길면 가로 쪽으로. 여백 안에 비율을 지켜 가운데 놓는다
+          var land = pg.w > pg.h;
+          pw = land ? paper[1] : paper[0]; ph = land ? paper[0] : paper[1];
+          var s = Math.min((pw - 2 * mg) / pg.w, (ph - 2 * mg) / pg.h);
+          iw = pg.w * s; ih = pg.h * s;
+        } else {
+          iw = 595.28 - 2 * mg; ih = iw * pg.h / pg.w;
+          pw = iw + 2 * mg; ph = ih + 2 * mg;
+        }
+        var ox = (pw - iw) / 2, oy = (ph - ih) / 2;
         pg.blob.arrayBuffer().then(function (buf) {
           var jpg = new Uint8Array(buf);
           obj(base, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pw.toFixed(2) + ' ' + ph.toFixed(2) + '] /Resources << /XObject << /Im' + idx + ' ' + (base + 2) + ' 0 R >> >> /Contents ' + (base + 1) + ' 0 R >>');
-          var content = 'q ' + pw.toFixed(2) + ' 0 0 ' + ph.toFixed(2) + ' 0 0 cm /Im' + idx + ' Do Q';
+          var content = 'q ' + iw.toFixed(2) + ' 0 0 ' + ih.toFixed(2) + ' ' + ox.toFixed(2) + ' ' + oy.toFixed(2) + ' cm /Im' + idx + ' Do Q';
           obj(base + 1, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
           obj(base + 2, function () {
             pushStr('<< /Type /XObject /Subtype /Image /Width ' + pg.w + ' /Height ' + pg.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n');
